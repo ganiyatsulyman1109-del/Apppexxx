@@ -10,7 +10,7 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 async function verifySchema() {
-  console.log('🔍 Verifying JOEBEK AUTO-MART Database Schema...\n')
+  console.log('🔍 Verifying Apex Enterprise Database Schema...\n')
   
   try {
     // 1. List all tables in public schema

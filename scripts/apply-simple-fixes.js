@@ -6,7 +6,7 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 async function applySchemaFixes() {
-  console.log('🚀 Applying JOEBEK AUTO-MART Schema Fixes...\n')
+  console.log('🚀 Applying Apex Enterprise Schema Fixes...\n')
   
   const fixes = [
     // Add receipt_number column to orders table

@@ -1,4 +1,4 @@
--- JOEBEK AUTO-MART Complete Database Schema
+-- Apex Enterprise Complete Database Schema
 -- Single migration file with proper execution order
 
 -- STEP 1: HELPER FUNCTIONS (Create these first)
@@ -442,7 +442,7 @@ ALTER TABLE easybuy_purchases REPLICA IDENTITY FULL;
 -- STEP 7: DEFAULT SETTINGS (Insert after table exists)
 
 INSERT INTO settings (key, value, data_type, category, description, is_public) VALUES
-('site_name', 'JOEBEK AUTO-MART', 'string', 'general', 'Website name', true),
+('site_name', 'Apex Enterprise', 'string', 'general', 'Website name', true),
 ('site_description', 'Premium Auto Parts Store in Lagos, Nigeria', 'string', 'general', 'Website description', true),
 ('currency', 'NGN', 'string', 'general', 'Default currency', true),
 ('tax_rate', '7.5', 'number', 'general', 'Default tax rate percentage', false),

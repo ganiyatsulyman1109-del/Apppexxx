@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Terms & Conditions - JOEBEK AUTO-MART",
+  title: "Terms & Conditions - Apex Enterprise",
   description: "Read our terms and conditions for purchasing car parts and accessories.",
 }
 
@@ -18,7 +18,7 @@ export default function TermsPage() {
             <div className="prose prose-gray dark:prose-invert max-w-none">
               <p className="text-lg text-muted-foreground mb-6">
                 Please read these terms and conditions carefully before using our website and purchasing 
-                products from JOEBEK AUTO-MART. By accessing and using our services, you agree to be 
+                products from Apex Enterprise. By accessing and using our services, you agree to be 
                 bound by these terms.
               </p>
               
@@ -30,10 +30,10 @@ export default function TermsPage() {
                 1. General Terms
               </h2>
               <p className="text-muted-foreground mb-6">
-                By accessing and placing an order with JOEBEK AUTO-MART, you confirm that you are in 
+                By accessing and placing an order with Apex Enterprise, you confirm that you are in 
                 agreement with and bound by the terms and conditions contained in this agreement. 
                 These terms apply to the entire website and any email or other type of communication 
-                between you and JOEBEK AUTO-MART.
+                between you and Apex Enterprise.
               </p>
               
               <h2 className="text-2xl font-semibold text-foreground mb-4">
@@ -93,7 +93,7 @@ export default function TermsPage() {
               </h2>
               <p className="text-muted-foreground mb-6">
                 All content, features, and functionality of our website, including text, 
-                graphics, logos, and software, are the exclusive property of JOEBEK AUTO-MART 
+                graphics, logos, and software, are the exclusive property of Apex Enterprise 
                 and are protected by copyright, trademark, and other intellectual property laws.
               </p>
               
@@ -101,7 +101,7 @@ export default function TermsPage() {
                 8. Limitation of Liability
               </h2>
               <p className="text-muted-foreground mb-6">
-                To the maximum extent permitted by law, JOEBEK AUTO-MART shall not be liable 
+                To the maximum extent permitted by law, Apex Enterprise shall not be liable 
                 for any indirect, incidental, special, consequential, or punitive damages, or any 
                 loss of profits or revenues, whether incurred directly or indirectly, or any 
                 loss of data, use, goodwill, or other intangible losses.
@@ -133,7 +133,7 @@ export default function TermsPage() {
                 <p className="text-muted-foreground">
                   If you have any questions about these terms and conditions, please contact us at:<br />
                   Phone: 08135494508<br />
-                  Email: joebekautomartintl.ltd.ng@gmail.com
+                  Email: hello@apexenterprise.co
                 </p>
               </div>
             </div>

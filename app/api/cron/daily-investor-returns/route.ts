@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
 
     // 1. Verify Cron Secret
     const authHeader = request.headers.get('x-cron-secret')
-    const cronSecret = process.env.CRON_SECRET || 'joebek-cron-2026' // Fallback for dev, set in env for prod
+    const cronSecret = process.env.CRON_SECRET || 'apex-cron-2026' // Fallback for dev, set in env for prod
     
     // Allow localhost/admin manual trigger too if authenticated as admin
     // But primarily rely on secret for external cron

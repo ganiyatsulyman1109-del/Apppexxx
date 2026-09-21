@@ -15,7 +15,7 @@ export function generateWhatsAppLink({
   const phone = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '2348000000000'
   const emailPart = customerEmail ? ` and email is ${customerEmail}` : ''
   const message = encodeURIComponent(
-    `Hello Joebek Auto-mart, my name is ${customerName}${emailPart}. ` +
+    `Hello! My name is ${customerName}${emailPart}. ` +
     `I purchased ${productNames} ` +
     `for ₦${orderTotal.toLocaleString('en-NG')}. ` +
     `My order ID is ${orderNumber}. What is the next step?`

@@ -3,7 +3,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Updated colors to JOEBEK brand: Blue primary, Orange accent */
+/* Updated colors to Apex brand: Blue primary, Orange accent */
 :root {
   --background: oklch(0.98 0.005 250);
   --foreground: oklch(0.2 0.02 250);

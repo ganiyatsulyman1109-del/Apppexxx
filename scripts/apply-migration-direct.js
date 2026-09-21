@@ -8,7 +8,7 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 async function executeSQLDirect() {
-  console.log('🚀 Applying JOEBEK AUTO-MART Database Schema via Direct SQL...\n')
+  console.log('🚀 Applying Apex Enterprise Database Schema via Direct SQL...\n')
   
   try {
     // Read the migration file

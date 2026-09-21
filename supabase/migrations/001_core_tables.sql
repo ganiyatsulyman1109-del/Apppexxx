@@ -1,4 +1,4 @@
--- JOEBEK AUTO-MART Complete Database Schema - Part 1: Core Tables
+-- Apex Enterprise Complete Database Schema - Part 1: Core Tables
 -- This migration creates all tables with proper structure
 
 -- Create the missing update_updated_at_column function first

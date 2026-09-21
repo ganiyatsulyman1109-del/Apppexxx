@@ -108,7 +108,7 @@ function CustomerSignupContent() {
           <CardHeader className="text-center space-y-4">
             <BrandLogo size={64} className="mx-auto rounded-full" />
             <div>
-              <CardTitle className="text-2xl font-bold text-blue-900">JOEBEK AUTO-MART</CardTitle>
+              <CardTitle className="text-2xl font-bold text-blue-900">Apex Enterprise</CardTitle>
               <CardDescription className="text-lg mt-1">Create Your Account</CardDescription>
             </div>
           </CardHeader>

@@ -10,7 +10,7 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 async function verifySecurityPoliciesActive() {
-  console.log('🔒 JOEBEK AUTO-MART SECURITY POLICIES VERIFICATION')
+  console.log('🔒 Apex Enterprise SECURITY POLICIES VERIFICATION')
   console.log('='.repeat(70))
   
   let verificationPassed = 0

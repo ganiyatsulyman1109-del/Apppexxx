@@ -10,7 +10,7 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 async function verifyCompleteSchema() {
-  console.log('🔍 Verifying JOEBEK AUTO-MART Database Schema...\n')
+  console.log('🔍 Verifying Apex Enterprise Database Schema...\n')
   
   const results = {
     tables: [],

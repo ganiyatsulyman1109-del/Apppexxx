@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Shipping & Delivery - JOEBEK AUTO-MART",
+  title: "Shipping & Delivery - Apex Enterprise",
   description: "Learn about our shipping and delivery policies for car parts in Nigeria.",
 }
 
@@ -17,7 +17,7 @@ export default function ShippingPage() {
           <div className="bg-card rounded-lg shadow-sm p-8 mb-8">
             <div className="prose prose-gray dark:prose-invert max-w-none">
               <p className="text-lg text-muted-foreground mb-6">
-                At JOEBEK AUTO-MART, we strive to provide fast and reliable delivery services 
+                At Apex Enterprise, we strive to provide fast and reliable delivery services 
                 for all your automotive parts needs across Nigeria.
               </p>
               

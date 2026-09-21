@@ -1,4 +1,4 @@
-# JOEBEK Fixes Batch 4 Spec
+# Apex Fixes Batch 4 Spec
 
 ## Why
 Address critical bugs and UI issues reported in "PROMPT BATCH 4", including payment failures, login issues, staff ID formatting, and UI glitches.

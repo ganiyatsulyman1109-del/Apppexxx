@@ -1,4 +1,4 @@
--- JOEBEK AUTO-MART Schema Alignment Fixes
+-- Apex Enterprise Schema Alignment Fixes
 -- This migration fixes all schema inconsistencies found in the audit
 
 -- FIX 1a: Add receipt_number column to orders table

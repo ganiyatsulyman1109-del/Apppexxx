@@ -166,7 +166,7 @@ export default function CustomerAccountPage() {
             <div className="flex items-center">
               <Link href="/" className="flex items-center text-blue-600 hover:text-blue-700">
                 <BrandLogo size={24} className="mr-2" />
-                <span className="font-semibold">JOEBEK AUTO-MART</span>
+                <span className="font-semibold">Apex Enterprise</span>
               </Link>
             </div>
             <Button variant="outline" size="sm" onClick={handleLogout}>

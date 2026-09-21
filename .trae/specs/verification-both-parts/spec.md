@@ -1,7 +1,7 @@
 # System Verification Spec (Part 1 & 2)
 
 ## Why
-To ensure the stability, security, and correctness of the recent fixes applied to the JOEBEK system, specifically focusing on audit logging, role-based access control, payment processing, and investor management.
+To ensure the stability, security, and correctness of the recent fixes applied to the Apex system, specifically focusing on audit logging, role-based access control, payment processing, and investor management.
 
 ## What Changes
 - This is a verification and fix pass. No new features are planned unless verification fails.

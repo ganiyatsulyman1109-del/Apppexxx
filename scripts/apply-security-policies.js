@@ -12,7 +12,7 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 async function applySecurityPolicies() {
-  console.log('🔒 APPLYING SECURITY POLICIES TO JOEBEK AUTO-MART DATABASE')
+  console.log('🔒 APPLYING SECURITY POLICIES TO Apex Enterprise DATABASE')
   console.log('='.repeat(70))
   
   try {

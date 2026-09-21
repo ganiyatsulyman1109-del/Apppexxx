@@ -1,4 +1,4 @@
-# JOEBEK — FIXES PROMPT Spec
+# Apex — FIXES PROMPT Spec
 
 ## Why
 Multiple critical issues have been identified in the current codebase affecting staff authentication, investor creation, customer login/orders, easybuy payments, and analytics. These need to be fixed to ensure system stability and correctness.

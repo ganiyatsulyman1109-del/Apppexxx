@@ -12,7 +12,7 @@ if (!supabaseUrl || !supabaseServiceKey) {
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 async function applyDatabaseSchema() {
-  console.log('🚀 Applying JOEBEK AUTO-MART Database Schema...\n')
+  console.log('🚀 Applying Apex Enterprise Database Schema...\n')
 
   try {
     // Read the migration files
@@ -78,7 +78,7 @@ async function applyDatabaseSchema() {
 
 // Since we can't execute raw SQL directly through the client, let's try a different approach
 async function createTablesDirectly() {
-  console.log('🚀 Creating JOEBEK AUTO-MART Database Schema Directly...\n')
+  console.log('🚀 Creating Apex Enterprise Database Schema Directly...\n')
 
   try {
     // Create tables one by one using the client

@@ -1,4 +1,4 @@
-# JOEBEK Fixes Batch 7 Spec
+# Apex Fixes Batch 7 Spec
 
 ## Why
 Address critical client-side crashes in the EasyBuy customer profile, fix missing product names in admin views for older orders, handle missing customer phone numbers, and correct navigation issues where the admin profile button logs out instead of opening settings.

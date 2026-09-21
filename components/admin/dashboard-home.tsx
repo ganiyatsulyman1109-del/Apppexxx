@@ -264,7 +264,7 @@ export function DashboardHome({ onLogout, isLoggingOut }: DashboardHomeProps = {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">Dashboard Overview</h1>
-            <p className="text-muted-foreground">Welcome back to JOEBEK Admin</p>
+            <p className="text-muted-foreground">Welcome back</p>
           </div>
         </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -290,7 +290,7 @@ export function DashboardHome({ onLogout, isLoggingOut }: DashboardHomeProps = {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Dashboard Overview</h1>
-          <p className="text-muted-foreground">Welcome back to JOEBEK Admin</p>
+          <p className="text-muted-foreground">Welcome back</p>
         </div>
         <div className="flex items-center gap-2">
           {onLogout && (

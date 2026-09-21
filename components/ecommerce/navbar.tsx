@@ -21,7 +21,7 @@ export function Navbar() {
           <Link href="/" className="flex items-center gap-2 group">
             <BrandLogo size={40} className="rounded-xl group-hover:scale-105 transition-transform" />
             <div className="hidden sm:block">
-              <div className="font-bold text-gray-900 text-lg leading-none">JOEBEK</div>
+              <div className="font-bold text-gray-900 text-lg leading-none">Apex</div>
               <div className="text-xs text-gray-600">AUTO-MART</div>
             </div>
           </Link>

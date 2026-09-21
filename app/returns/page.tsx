@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Return Policy - JOEBEK AUTO-MART",
+  title: "Return Policy - Apex Enterprise",
   description: "Learn about our return policy for car parts and accessories.",
 }
 
@@ -17,7 +17,7 @@ export default function ReturnsPage() {
           <div className="bg-card rounded-lg shadow-sm p-8 mb-8">
             <div className="prose prose-gray dark:prose-invert max-w-none">
               <p className="text-lg text-muted-foreground mb-6">
-                At JOEBEK AUTO-MART, we want you to be completely satisfied with your purchase. 
+                At Apex Enterprise, we want you to be completely satisfied with your purchase. 
                 If you need to return an item, please review our return policy below.
               </p>
               
@@ -93,7 +93,7 @@ export default function ReturnsPage() {
                 <p className="text-muted-foreground">
                   For return inquiries, please contact us at:<br />
                   Phone: +234 801 234 5678<br />
-                  Email: returns@joebekautomart.com<br />
+                  Email: returns@apexenterprise.co<br />
                   Hours: Monday-Saturday, 8 AM - 6 PM
                 </p>
               </div>

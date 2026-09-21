@@ -12,11 +12,11 @@ function getResendClient(): Resend | null {
 
 // Configuration for email sender and branding
 const EMAIL_CONFIG = {
-  from: 'JOEBEK AUTO-MART <onboarding@resend.dev>',
-  replyTo: 'joebekautomartintl.ltd.ng@gmail.com',
-  brandName: 'JOEBEK AUTO-MART INTL. LTD',
+  from: 'Apex Enterprise <onboarding@resend.dev>',
+  replyTo: 'hello@apexenterprise.co',
+  brandName: 'Apex Enterprise',
   phone: '08135494508',
-  email: 'joebekautomartintl.ltd.ng@gmail.com',
+  email: 'hello@apexenterprise.co',
   address: 'HQ: No. 1a Amule Road, Amule Bus stop, Ayobo, Lagos State | Branch: No. 608 Lagos-Abeokuta Express way, Ijaye Bus stop, Lagos State',
   whatsapp: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '08135494508'
 }
@@ -57,7 +57,7 @@ const getEmailTemplate = (content: string, title: string) => `
     <div class="footer">
       <p style="margin: 0 0 8px 0;"><strong>${EMAIL_CONFIG.address}</strong></p>
       <p style="margin: 0 0 8px 0;">📞 Phone: ${EMAIL_CONFIG.phone} | 📧 Email: ${EMAIL_CONFIG.email}</p>
-      <p style="margin: 0;">&copy; ${new Date().getFullYear()} ${EMAIL_CONFIG.brandName}. All rights reserved.</p>
+      <p style="margin: 0;">© 2026 ${EMAIL_CONFIG.brandName}. All rights reserved.</p>
     </div>
   </div>
 </body>

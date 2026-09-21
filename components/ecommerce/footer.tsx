@@ -12,7 +12,7 @@ export function Footer() {
             <div className="flex items-center gap-2 mb-4">
               <BrandLogo size={40} className="rounded-xl" />
               <div>
-                <div className="font-bold text-white text-lg leading-none">JOEBEK</div>
+                <div className="font-bold text-white text-lg leading-none">Apex</div>
                 <div className="text-xs text-gray-400">AUTO-MART</div>
               </div>
             </div>
@@ -125,8 +125,8 @@ export function Footer() {
               </li>
               <li className="flex items-center gap-2">
                 <Mail className="w-4 h-4 flex-shrink-0 text-orange-500" />
-                <a href="mailto:joebekautomartintl.ltd.ng@gmail.com" className="hover:text-orange-500 transition-colors">
-                  joebekautomartintl.ltd.ng@gmail.com
+                <a href="mailto:hello@apexenterprise.co" className="hover:text-orange-500 transition-colors">
+                  hello@apexenterprise.co
                 </a>
               </li>
             </ul>
@@ -135,7 +135,7 @@ export function Footer() {
 
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-gray-800 text-center text-sm text-gray-400">
-          <p>&copy; {new Date().getFullYear()} JOEBEK AUTO-MART INTL. LTD. All rights reserved.</p>
+          <p>© 2026 Apex Enterprise. All rights reserved.</p>
         </div>
       </div>
     </footer>

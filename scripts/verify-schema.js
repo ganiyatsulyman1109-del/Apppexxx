@@ -10,7 +10,7 @@ if (!supabaseUrl || !supabaseServiceKey) {
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 async function verifyDatabaseSchema() {
-  console.log('🔍 Verifying JOEBEK AUTO-MART Database Schema...\n')
+  console.log('🔍 Verifying Apex Enterprise Database Schema...\n')
 
   try {
     // 1. Check all 14 tables exist

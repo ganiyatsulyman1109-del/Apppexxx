@@ -8,7 +8,7 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 async function applyMigrationInParts() {
-  console.log('🚀 Applying JOEBEK AUTO-MART Database Schema (Step by Step)...\n')
+  console.log('🚀 Applying Apex Enterprise Database Schema (Step by Step)...\n')
   
   try {
     // Read the migration file

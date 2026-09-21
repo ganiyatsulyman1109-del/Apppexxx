@@ -1,4 +1,4 @@
-# JOEBEK AUTO-MART — Production Reality Fix Implementation Plan
+# Apex Enterprise — Production Reality Fix Implementation Plan
 
 ## Scope Lock
 - Do not add new features.

@@ -7,16 +7,16 @@ import { ErrorBoundary } from "@/components/error-boundary"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "JOEBEK AUTO-MART - Quality Car Parts in Nigeria",
+  title: "Apex Enterprise - Quality Car Parts in Nigeria",
   description: "Your trusted source for genuine automotive parts and accessories in Nigeria",
   generator: "v0.app",
   icons: {
     icon: [
       {
-        url: "/joebek-logo.png",
+        url: "/apex-logo.png",
       },
     ],
-    apple: "/joebek-logo.png",
+    apple: "/apex-logo.png",
   },
 }
 

@@ -10,7 +10,7 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 async function finalSchemaVerification() {
-  console.log('🔍 FINAL COMPREHENSIVE SCHEMA VERIFICATION FOR JOEBEK AUTO-MART')
+  console.log('🔍 FINAL COMPREHENSIVE SCHEMA VERIFICATION FOR Apex Enterprise')
   console.log('='.repeat(70))
   
   let totalChecks = 0
@@ -276,7 +276,7 @@ async function finalSchemaVerification() {
   
   if (failedChecks === 0) {
     console.log('\n🎉 PERFECT! ALL CHECKS PASSED!')
-    console.log('✅ The JOEBEK AUTO-MART database schema is 100% complete and production-ready!')
+    console.log('✅ The Apex Enterprise database schema is 100% complete and production-ready!')
   } else if (failedChecks <= 2) {
     console.log('\n✅ EXCELLENT! Schema is nearly perfect with minor issues.')
     console.log('🚀 Ready to proceed to the next step!')

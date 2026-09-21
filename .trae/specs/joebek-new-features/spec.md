@@ -1,4 +1,4 @@
-# JOEBEK — NEW FEATURES PROMPT Spec
+# Apex — NEW FEATURES PROMPT Spec
 
 ## Why
 To improve user experience and administrative capabilities, new features are required: enhanced post-payment signup flow, WhatsApp integration, better financial tracking for investors, comprehensive customer management for admins, and clearer navigation options after order confirmation.

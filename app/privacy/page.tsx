@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Privacy Policy - JOEBEK AUTO-MART",
+  title: "Privacy Policy - Apex Enterprise",
   description: "Read our privacy policy to understand how we protect your personal information.",
 }
 
@@ -17,7 +17,7 @@ export default function PrivacyPage() {
           <div className="bg-card rounded-lg shadow-sm p-8 mb-8">
             <div className="prose prose-gray dark:prose-invert max-w-none">
               <p className="text-lg text-muted-foreground mb-6">
-                At JOEBEK AUTO-MART, we are committed to protecting your privacy and ensuring 
+                At Apex Enterprise, we are committed to protecting your privacy and ensuring 
                 the security of your personal information. This Privacy Policy explains how we 
                 collect, use, and safeguard your data.
               </p>
@@ -135,7 +135,7 @@ export default function PrivacyPage() {
                 <p className="text-muted-foreground">
                   If you have questions about this Privacy Policy or your personal information, please contact us at:<br />
                   Phone: 08135494508<br />
-                  Email: joebekautomartintl.ltd.ng@gmail.com
+                  Email: hello@apexenterprise.co
                 </p>
               </div>
             </div>

@@ -1,4 +1,4 @@
-# JOEBEK New Features Batch 4 Checklist
+# Apex New Features Batch 4 Checklist
 
 - [x] Feature 1: WhatsApp Message with Real Data
   - [x] `app/api/payments/verify/route.ts` returns `order_total` and `order_items`

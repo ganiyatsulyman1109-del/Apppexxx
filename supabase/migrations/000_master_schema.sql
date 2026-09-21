@@ -1,4 +1,4 @@
--- JOEBEK AUTO-MART CONSOLIDATED MASTER SCHEMA
+-- Apex Enterprise CONSOLIDATED MASTER SCHEMA
 -- Migration: 000_master_schema.sql
 -- Single source of truth for all tables, functions, triggers, and policies
 

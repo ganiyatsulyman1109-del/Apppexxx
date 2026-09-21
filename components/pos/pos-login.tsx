@@ -57,7 +57,7 @@ export function POSLogin({ onLogin }: POSLoginProps) {
         {/* Logo */}
         <div className="text-center mb-8">
           <BrandLogo size={80} className="mx-auto rounded-2xl mb-4" />
-          <h1 className="text-3xl font-bold text-foreground">JOEBEK</h1>
+          <h1 className="text-3xl font-bold text-foreground">Apex</h1>
           <p className="text-muted-foreground text-lg">AUTO-MART POS</p>
         </div>
 

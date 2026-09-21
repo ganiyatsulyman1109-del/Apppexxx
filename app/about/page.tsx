@@ -1,8 +1,8 @@
 import { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "About Us - JOEBEK AUTO-MART",
-  description: "Learn about JOEBEK AUTO-MART, your trusted car parts supplier in Nigeria.",
+  title: "About Us - Apex Enterprise",
+  description: "Learn about Apex Enterprise, your trusted car parts supplier in Nigeria.",
 }
 
 export default function AboutPage() {
@@ -11,13 +11,13 @@ export default function AboutPage() {
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-4xl font-bold text-foreground mb-8 text-center">
-            About JOEBEK AUTO-MART
+            About Apex Enterprise
           </h1>
           
           <div className="bg-card rounded-lg shadow-sm p-8 mb-8">
             <div className="prose prose-gray dark:prose-invert max-w-none">
               <p className="text-lg text-muted-foreground mb-6">
-                Welcome to JOEBEK AUTO-MART, your premier destination for quality car parts and accessories 
+                Welcome to Apex Enterprise, your premier destination for quality car parts and accessories 
                 in Nigeria. With years of experience in the automotive industry, we pride ourselves 
                 on providing top-quality products and exceptional customer service.
               </p>
@@ -55,7 +55,7 @@ export default function AboutPage() {
                 </h3>
                 <p className="text-muted-foreground">
                   Phone: 08135494508<br />
-                  Email: joebekautomartintl.ltd.ng@gmail.com<br />
+                  Email: hello@apexenterprise.co<br />
                   Head Office: No. 1a Amule Road, Amule Bus stop, Ayobo, Lagos State<br />
                   Branch: No. 608 Lagos-Abeokuta Express way, Ijaye Bus stop, Lagos State
                 </p>

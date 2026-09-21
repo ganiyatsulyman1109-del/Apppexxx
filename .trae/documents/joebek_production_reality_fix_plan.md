@@ -1,4 +1,4 @@
-# JOEBEK AUTO-MART — SURGICAL PRODUCTION FIXES
+# Apex Enterprise — SURGICAL PRODUCTION FIXES
 
 ## 1. Fix `orders_status_check` Constraint Violation
 - [ ] **Analyze Constraints**: Use MCP to query `pg_constraint` for `orders` table to find allowed status values.

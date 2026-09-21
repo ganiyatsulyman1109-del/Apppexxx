@@ -4,7 +4,7 @@ import { MessageCircle } from "lucide-react"
 
 export function WhatsAppButton() {
   const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "+2348012345678"
-  const message = "Hello JOEBEK AUTO-MART, I'm interested in your products"
+  const message = "Hello! I'm interested in your products"
 
   const handleClick = () => {
     // Strip plus sign from WhatsApp number

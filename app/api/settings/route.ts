@@ -3,10 +3,10 @@ import { requireAdminAuth } from '@/lib/auth'
 import { createAdminSupabaseClient } from '@/lib/utils/supabase'
 
 const defaultSettings = [
-  { key: "business_name", value: "JOEBEK AUTO-MART", data_type: "string", category: "business", description: "Business name", is_public: true },
-  { key: "business_email", value: "info@joebekautomart.ng", data_type: "string", category: "business", description: "Business email", is_public: true },
+  { key: "business_name", value: "My Business", data_type: "string", category: "business", description: "Business name", is_public: true },
+  { key: "business_email", value: "hello@mybusiness.com", data_type: "string", category: "business", description: "Business email", is_public: true },
   { key: "business_phone", value: "+234 803 456 7890", data_type: "string", category: "business", description: "Business phone", is_public: true },
-  { key: "business_website", value: "www.joebekautomart.ng", data_type: "string", category: "business", description: "Business website", is_public: true },
+  { key: "business_website", value: "www.mybusiness.com", data_type: "string", category: "business", description: "Business website", is_public: true },
   { key: "business_address", value: "HQ: No. 1a Amule Road, Amule Bus stop, Ayobo, Lagos State | Branch: No. 608 Lagos-Abeokuta Express way, Ijaye Bus stop, Lagos State", data_type: "string", category: "business", description: "Business address", is_public: true },
   { key: "tax_id", value: "RC-1234567", data_type: "string", category: "business", description: "Tax ID", is_public: false },
   { key: "currency", value: "NGN", data_type: "string", category: "business", description: "Currency code", is_public: true },
@@ -16,7 +16,7 @@ const defaultSettings = [
   { key: "low_stock_alerts", value: "true", data_type: "boolean", category: "notifications", description: "Low stock alerts", is_public: false },
   { key: "order_alerts", value: "true", data_type: "boolean", category: "notifications", description: "New order alerts", is_public: false },
   { key: "auto_reorder", value: "false", data_type: "boolean", category: "notifications", description: "Auto reorder", is_public: false },
-  { key: "receipt_header", value: "JOEBEK AUTO-MART", data_type: "string", category: "receipt", description: "Receipt header text", is_public: false },
+  { key: "receipt_header", value: "My Business", data_type: "string", category: "receipt", description: "Receipt header text", is_public: false },
   { key: "receipt_footer", value: "Thank you for your business!", data_type: "string", category: "receipt", description: "Receipt footer text", is_public: false },
   { key: "printer_type", value: "thermal", data_type: "string", category: "receipt", description: "Printer type", is_public: false },
   { key: "auto_print", value: "true", data_type: "boolean", category: "receipt", description: "Auto print receipts", is_public: false }

@@ -22,10 +22,10 @@ export interface ReceiptData {
 }
 
 export function printReceipt(data: ReceiptData): void {
-  const companyName = 'JOEBEK AUTO-MART INTL. LTD'
+  const companyName = 'My Business'
   const address = 'HQ: No. 1a Amule Road, Amule Bus stop, Ayobo, Lagos State<br/>Branch: No. 608 Lagos-Abeokuta Express way, Ijaye Bus stop, Lagos State'
   const phone = '08135494508'
-  const email = 'joebekautomartintl.ltd.ng@gmail.com'
+  const email = 'hello@mybusiness.com'
 
   const formatCurrency = (amount: number) =>
     '₦' + Number(amount || 0).toLocaleString('en-NG')

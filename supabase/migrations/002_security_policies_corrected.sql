@@ -1,5 +1,5 @@
 -- =====================================================
--- JOEBEK AUTO-MART SECURITY POLICIES & RLS RULES
+-- Apex Enterprise SECURITY POLICIES & RLS RULES
 -- Migration: 002_security_policies.sql
 -- =====================================================
 

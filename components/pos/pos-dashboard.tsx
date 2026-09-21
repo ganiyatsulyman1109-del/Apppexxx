@@ -409,7 +409,7 @@ export function POSDashboard({ staffName, staffId, onLogout, onOpenEasyBuy, onOp
       {/* Header */}
       <header className="bg-card border-b p-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold">JOEBEK POS</h1>
+          <h1 className="text-2xl font-bold">Apex POS</h1>
           <span className="text-sm text-muted-foreground">Staff: {staffName}</span>
         </div>
         <div className="flex items-center gap-2">

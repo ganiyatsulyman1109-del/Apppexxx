@@ -10,7 +10,7 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 async function verifySecurityStatus() {
-  console.log('🔒 JOEBEK AUTO-MART SECURITY STATUS VERIFICATION')
+  console.log('🔒 Apex Enterprise SECURITY STATUS VERIFICATION')
   console.log('='.repeat(70))
   
   let verificationPassed = 0
@@ -187,7 +187,7 @@ async function verifySecurityStatus() {
   
   // Summary
   console.log('\n' + '='.repeat(70))
-  console.log('🔒 JOEBEK AUTO-MART SECURITY STATUS SUMMARY')
+  console.log('🔒 Apex Enterprise SECURITY STATUS SUMMARY')
   console.log('='.repeat(70))
   console.log(`✅ Passed: ${verificationPassed} checks`)
   console.log(`❌ Failed: ${verificationFailed} checks`)

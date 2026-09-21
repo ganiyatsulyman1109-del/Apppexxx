@@ -57,7 +57,7 @@ export function AdminSidebar({ currentPage, onPageChange, onLogout }: AdminSideb
         <div className="flex items-center gap-3">
           <BrandLogo size={36} className="rounded-lg" />
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-            <span className="font-semibold text-sm">JOEBEK</span>
+            <span className="font-semibold text-sm">Apex</span>
             <span className="text-xs text-muted-foreground">Admin Panel</span>
           </div>
         </div>

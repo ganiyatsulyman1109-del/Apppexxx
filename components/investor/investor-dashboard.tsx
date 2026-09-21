@@ -189,7 +189,7 @@ export function InvestorDashboard({ investor, onLogout }: InvestorDashboardProps
             <div className="flex items-center gap-3">
               <BrandLogo size={40} className="rounded-lg" />
               <div>
-                <h1 className="font-bold text-blue-900">JOEBEK AUTO-MART</h1>
+                <h1 className="font-bold text-blue-900">Apex Enterprise</h1>
                 <p className="text-xs text-orange-600 font-medium">Investor Portal</p>
               </div>
             </div>
@@ -212,7 +212,7 @@ export function InvestorDashboard({ investor, onLogout }: InvestorDashboardProps
         {isNewInvestor && (
           <Card className="mb-6 border-blue-200 bg-blue-50">
             <CardHeader>
-              <CardTitle className="text-blue-900">Welcome to JOEBEK AUTO-MART Investment Program!</CardTitle>
+              <CardTitle className="text-blue-900">Welcome to the Investment Program</CardTitle>
               <CardDescription className="text-blue-700">
                 Your investment journey starts today. You'll see your first return tomorrow.
               </CardDescription>

@@ -1,4 +1,4 @@
--- JOEBEK AUTO-MART Database Schema
+-- Apex Enterprise Database Schema
 -- Initial migration creating core tables for the multi-module business platform
 
 -- Enable UUID extension

@@ -102,7 +102,7 @@ export function ViewInvestorModal({
             </head>
             <body>
               <div class="header">
-                <h1>JOEBEK AUTO-MART</h1>
+                <h1>Apex Enterprise</h1>
                 <p>Investor Details Report</p>
               </div>
               <div class="section">

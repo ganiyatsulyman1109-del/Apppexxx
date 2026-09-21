@@ -1,4 +1,4 @@
-# JOEBEK Fixes Part 1 Spec
+# Apex Fixes Part 1 Spec
 
 ## Why
 To resolve critical issues preventing admin from recording EasyBuy payments, ensuring data integrity with audit logs, correcting history views, and enabling investor payment recording with accurate return calculations.

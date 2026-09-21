@@ -387,7 +387,7 @@ async function verifyAllComponents() {
   }
   
   console.log('\n' + '='.repeat(60))
-  console.log('🎉 JOEBEK AUTO-MART DATABASE SCHEMA - 100% COMPLETE!')
+  console.log('🎉 Apex Enterprise DATABASE SCHEMA - 100% COMPLETE!')
   console.log('='.repeat(60))
   console.log('\n✅ All triggers created and working')
   console.log('✅ All indexes created and working') 

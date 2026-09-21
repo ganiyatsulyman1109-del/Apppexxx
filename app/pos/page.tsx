@@ -100,7 +100,7 @@ export default function POSPage() {
       <div className="flex flex-col h-screen bg-background">
         <header className="flex h-16 items-center justify-between border-b px-6 bg-card">
           <div className="flex items-center gap-4">
-            <h1 className="text-xl font-bold tracking-tight text-orange-500">JOEBEK POS</h1>
+            <h1 className="text-xl font-bold tracking-tight text-orange-500">Apex POS</h1>
             <div className="h-6 w-px bg-border" />
             <h2 className="text-lg font-semibold text-foreground">Transactions</h2>
           </div>

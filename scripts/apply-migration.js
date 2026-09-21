@@ -13,7 +13,7 @@ if (!supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 async function applyMigration() {
-  console.log('🚀 Applying JOEBEK AUTO-MART Database Schema...\n')
+  console.log('🚀 Applying Apex Enterprise Database Schema...\n')
   
   try {
     // Read the migration file
@@ -78,7 +78,7 @@ async function applyMigration() {
 
 // Alternative approach: Execute SQL directly
 async function executeSQLDirectly() {
-  console.log('🚀 Applying JOEBEK AUTO-MART Database Schema (Direct Method)...\n')
+  console.log('🚀 Applying Apex Enterprise Database Schema (Direct Method)...\n')
   
   try {
     // Read the migration file

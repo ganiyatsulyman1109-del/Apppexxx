@@ -10,7 +10,7 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 async function createMissingTriggersAndIndexes() {
-  console.log('🔧 Creating Missing Triggers and Indexes for JOEBEK AUTO-MART...\n')
+  console.log('🔧 Creating Missing Triggers and Indexes for Apex Enterprise...\n')
   
   let successCount = 0
   let errorCount = 0
@@ -316,7 +316,7 @@ async function finalVerification() {
   }
   
   console.log('\n🎉 FINAL VERIFICATION COMPLETE!')
-  console.log('\n✅ The JOEBEK AUTO-MART database schema is now 100% complete!')
+  console.log('\n✅ The Apex Enterprise database schema is now 100% complete!')
   console.log('\n🚀 Ready to proceed to the next step!')
 }
 

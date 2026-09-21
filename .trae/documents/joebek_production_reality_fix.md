@@ -1,4 +1,4 @@
-# JOEBEK AUTO-MART — Production Reality Fix Plan
+# Apex Enterprise — Production Reality Fix Plan
 
 This plan outlines the steps to fix confirmed broken functionality and ensure real data flows through the application.
 
