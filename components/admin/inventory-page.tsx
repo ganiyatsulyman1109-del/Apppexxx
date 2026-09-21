@@ -109,7 +109,7 @@ export function InventoryPage() {
           <p className="text-muted-foreground">Monitor stock levels and restock alerts</p>
         </div>
         <Button 
-          className="bg-orange-500 hover:bg-orange-600"
+          className="bg-[#2563eb] hover:bg-[#1d4ed8]"
           onClick={() => {
             setProductToAdjust(null)
             setAdjustModalOpen(true)
@@ -161,7 +161,7 @@ export function InventoryPage() {
                 <div className="text-2xl font-bold">₦{stats.inventoryValue.toLocaleString()}</div>
                 <p className="text-sm text-muted-foreground">Inventory Value</p>
               </div>
-              <TrendingUp className="h-8 w-8 text-orange-500" />
+              <TrendingUp className="h-8 w-8 text-[#2563eb]" />
             </div>
           </CardContent>
         </Card>

@@ -92,7 +92,7 @@ export default function ResetPasswordContent() {
             <CardHeader className="text-center space-y-4">
               <BrandLogo size={64} className="mx-auto rounded-full" />
               <div>
-                <CardTitle className="text-2xl font-bold text-blue-900">Invalid Link</CardTitle>
+                <CardTitle className="text-2xl font-bold text-[#111827]">Invalid Link</CardTitle>
                 <CardDescription className="text-lg mt-1">
                   This password reset link is invalid or has expired
                 </CardDescription>
@@ -141,7 +141,7 @@ export default function ResetPasswordContent() {
             <CardHeader className="text-center space-y-4">
               <BrandLogo size={64} className="mx-auto rounded-full" />
               <div>
-                <CardTitle className="text-2xl font-bold text-blue-900">Success!</CardTitle>
+                <CardTitle className="text-2xl font-bold text-[#111827]">Success!</CardTitle>
                 <CardDescription className="text-lg mt-1">
                   Your password has been reset successfully
                 </CardDescription>
@@ -183,7 +183,7 @@ export default function ResetPasswordContent() {
           <CardHeader className="text-center space-y-4">
             <BrandLogo size={64} className="mx-auto rounded-full" />
             <div>
-              <CardTitle className="text-2xl font-bold text-blue-900">Apex Enterprise</CardTitle>
+              <CardTitle className="text-2xl font-bold text-[#111827]">Apex Enterprise</CardTitle>
               <CardDescription className="text-lg mt-1">Reset Your Password</CardDescription>
             </div>
           </CardHeader>

@@ -69,7 +69,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
         {/* Add to Cart Button */}
         <Button
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white group-hover:bg-orange-500 group-hover:hover:bg-orange-600 transition-all"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white group-hover:bg-[#2563eb] group-hover:hover:bg-[#1d4ed8] transition-all"
           disabled={stockStatus === "out-of-stock"}
           onClick={handleAddToCart}
         >
@@ -79,7 +79,7 @@ export function ProductCard({ product }: ProductCardProps) {
       </div>
 
       {/* Hover Glow Effect */}
-      <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/5 to-orange-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-tr from-[#dbeafe]/10 to-[#bfdbfe]/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
     </div>
   )
 }

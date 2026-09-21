@@ -102,7 +102,7 @@ export function RegisterCustomerModal({ onClose, onComplete, staffId }: Register
 
   if (isSubmitted) {
     return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4">
         <Card className="w-full max-w-md p-8 text-center">
           <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
             <Check className="w-8 h-8 text-green-600" />
@@ -124,7 +124,7 @@ export function RegisterCustomerModal({ onClose, onComplete, staffId }: Register
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4">
       <Card className="w-full max-w-2xl max-h-[90vh] overflow-auto">
         <div className="flex items-center justify-between p-4 border-b border-border">
           <div>
@@ -264,7 +264,7 @@ export function RegisterCustomerModal({ onClose, onComplete, staffId }: Register
           <Button
             onClick={handleNext}
             disabled={!canProceed || isSubmitting}
-            className="bg-orange-500 hover:bg-orange-600 text-white touch-target"
+            className="bg-[#2563eb] hover:bg-[#1d4ed8] text-white touch-target"
           >
             {isSubmitting ? (
               <>

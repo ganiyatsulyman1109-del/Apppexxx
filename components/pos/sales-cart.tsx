@@ -155,7 +155,7 @@ export function SalesCart({ items, total, itemCount, onUpdateQuantity, onRemoveI
           </Button>
           <Button
             size="lg"
-            className="h-14 text-lg font-semibold bg-orange-500 hover:bg-orange-600 text-white touch-target disabled:opacity-50"
+            className="h-14 text-lg font-semibold bg-[#2563eb] hover:bg-[#1d4ed8] text-white touch-target disabled:opacity-50"
             disabled={items.length === 0 || items.some(item => item.quantity === 0)}
             onClick={() => onPayment("easybuy")}
           >

@@ -249,7 +249,7 @@ export function OrdersPage() {
     if (source === "easybuy") {
       return <Badge className="bg-purple-600">EasyBuy</Badge>
     }
-    return <Badge className="bg-orange-500">POS</Badge>
+    return <Badge className="bg-[#2563eb]">POS</Badge>
   }
 
   return (

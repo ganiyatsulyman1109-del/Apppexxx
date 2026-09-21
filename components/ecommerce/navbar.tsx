@@ -48,7 +48,7 @@ export function Navbar() {
             <Button variant="ghost" size="icon" className="relative" onClick={openCart}>
               <ShoppingCart className="w-5 h-5" />
               {itemCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#2563eb] text-white text-xs rounded-full flex items-center justify-center font-medium">
                   {itemCount}
                 </span>
               )}
@@ -60,7 +60,7 @@ export function Navbar() {
             <Button variant="ghost" size="icon" className="relative" onClick={openCart}>
               <ShoppingCart className="w-5 h-5" />
               {itemCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#2563eb] text-white text-xs rounded-full flex items-center justify-center font-medium">
                   {itemCount}
                 </span>
               )}

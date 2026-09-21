@@ -257,7 +257,7 @@ export function InvestorsPage() {
           <Button onClick={fetchInvestors} variant="outline" size="icon" title="Refresh">
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
-          <Button onClick={() => setShowAddModal(true)} className="bg-orange-500 hover:bg-orange-600">
+          <Button onClick={() => setShowAddModal(true)} className="bg-[#2563eb] hover:bg-[#1d4ed8]">
             <Plus className="h-4 w-4 mr-2" />
             Add Investor
           </Button>
@@ -346,7 +346,7 @@ export function InvestorsPage() {
           <CardContent className="py-12 text-center">
             <p className="text-muted-foreground mb-4">No investors found</p>
             {investors.length === 0 && (
-              <Button onClick={() => setShowAddModal(true)} className="bg-orange-500 hover:bg-orange-600">
+              <Button onClick={() => setShowAddModal(true)} className="bg-[#2563eb] hover:bg-[#1d4ed8]">
                 <Plus className="h-4 w-4 mr-2" />
                 Add First Investor
               </Button>

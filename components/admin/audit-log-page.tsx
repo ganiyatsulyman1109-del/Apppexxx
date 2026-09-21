@@ -265,7 +265,7 @@ export function AuditLogPage() {
                             <p className="text-sm font-semibold mb-2">What changed:</p>
                             {renderAuditDetails(log).map((change, i) => (
                               <p key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                                <span className="text-orange-500 mt-0.5">•</span>
+                                <span className="text-[#2563eb] mt-0.5">•</span>
                                 {change}
                               </p>
                             ))}

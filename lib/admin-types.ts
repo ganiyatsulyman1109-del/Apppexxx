@@ -120,5 +120,5 @@ export function getStatusColor(status: OrderStatus): string {
 }
 
 export function getSourceColor(source: OrderSource): string {
-  return source === "online" ? "bg-blue-600 text-white" : "bg-orange-500 text-white"
+  return source === "online" ? "bg-blue-600 text-white" : "bg-[#2563eb] text-white"
 }

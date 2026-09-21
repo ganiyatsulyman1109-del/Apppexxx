@@ -52,22 +52,22 @@ export function Footer() {
             <h3 className="font-semibold text-white mb-4">Quick Links</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/shop" className="hover:text-orange-500 transition-colors">
+                <Link href="/shop" className="hover:text-[#2563eb] transition-colors">
                   Shop All Products
                 </Link>
               </li>
               <li>
-                <Link href="/shop?category=electronics" className="hover:text-orange-500 transition-colors">
+                <Link href="/shop?category=electronics" className="hover:text-[#2563eb] transition-colors">
                   Electronics
                 </Link>
               </li>
               <li>
-                <Link href="/shop?category=fashion" className="hover:text-orange-500 transition-colors">
+                <Link href="/shop?category=fashion" className="hover:text-[#2563eb] transition-colors">
                   Fashion
                 </Link>
               </li>
               <li>
-                <Link href="/shop?category=home-office" className="hover:text-orange-500 transition-colors">
+                <Link href="/shop?category=home-office" className="hover:text-[#2563eb] transition-colors">
                   Home & Office
                 </Link>
               </li>
@@ -79,27 +79,27 @@ export function Footer() {
             <h3 className="font-semibold text-white mb-4">Customer Service</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/about" className="hover:text-orange-500 transition-colors">
+                <Link href="/about" className="hover:text-[#2563eb] transition-colors">
                   About Us
                 </Link>
               </li>
               <li>
-                <Link href="/shipping" className="hover:text-orange-500 transition-colors">
+                <Link href="/shipping" className="hover:text-[#2563eb] transition-colors">
                   Shipping & Delivery
                 </Link>
               </li>
               <li>
-                <Link href="/returns" className="hover:text-orange-500 transition-colors">
+                <Link href="/returns" className="hover:text-[#2563eb] transition-colors">
                   Return Policy
                 </Link>
               </li>
               <li>
-                <Link href="/terms" className="hover:text-orange-500 transition-colors">
+                <Link href="/terms" className="hover:text-[#2563eb] transition-colors">
                   Terms & Conditions
                 </Link>
               </li>
               <li>
-                <Link href="/privacy" className="hover:text-orange-500 transition-colors">
+                <Link href="/privacy" className="hover:text-[#2563eb] transition-colors">
                   Privacy Policy
                 </Link>
               </li>
@@ -111,21 +111,21 @@ export function Footer() {
             <h3 className="font-semibold text-white mb-4">Contact Us</h3>
             <ul className="space-y-3 text-sm">
               <li className="flex items-start gap-2">
-                <MapPin className="w-4 h-4 mt-1 flex-shrink-0 text-orange-500" />
+                <MapPin className="w-4 h-4 mt-1 flex-shrink-0 text-[#2563eb]" />
                 <div className="flex flex-col gap-1">
                   <span>HQ: No. 1a Amule Road, Amule Bus stop, Ayobo, Lagos State</span>
                   <span>Branch: No. 608 Lagos-Abeokuta Express way, Ijaye Bus stop, Lagos State</span>
                 </div>
               </li>
               <li className="flex items-center gap-2">
-                <Phone className="w-4 h-4 flex-shrink-0 text-orange-500" />
-                <a href="tel:08135494508" className="hover:text-orange-500 transition-colors">
+                <Phone className="w-4 h-4 flex-shrink-0 text-[#2563eb]" />
+                <a href="tel:08135494508" className="hover:text-[#2563eb] transition-colors">
                   08135494508
                 </a>
               </li>
               <li className="flex items-center gap-2">
-                <Mail className="w-4 h-4 flex-shrink-0 text-orange-500" />
-                <a href="mailto:hello@apexenterprise.co" className="hover:text-orange-500 transition-colors">
+                <Mail className="w-4 h-4 flex-shrink-0 text-[#2563eb]" />
+                <a href="mailto:hello@apexenterprise.co" className="hover:text-[#2563eb] transition-colors">
                   hello@apexenterprise.co
                 </a>
               </li>

@@ -125,7 +125,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
         <Button
           size="lg"
           variant="outline"
-          className="w-full border-2 border-orange-500 text-orange-600 hover:bg-orange-50"
+          className="w-full border-2 border-[#2563eb] text-[#1d4ed8] hover:bg-[#eff6ff]"
           onClick={handleBuyNow}
           disabled={stockStatus === "out-of-stock"}
         >

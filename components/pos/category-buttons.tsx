@@ -97,7 +97,7 @@ export function CategoryButtons({ products, onSelectProduct }: CategoryButtonsPr
                   </div>
                   <p className="font-medium text-sm text-foreground truncate">{product.name}</p>
                   <p className="font-bold text-primary">{formatPrice(product.price)}</p>
-                  <p className={`text-xs ${product.stock > 5 ? "text-green-600" : "text-orange-500"}`}>
+                  <p className={`text-xs ${product.stock > 5 ? "text-green-600" : "text-[#2563eb]"}`}>
                     {product.stock} left
                   </p>
                 </button>

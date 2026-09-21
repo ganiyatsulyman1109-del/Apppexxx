@@ -200,7 +200,7 @@ export function CreditSaleFlow({ cartTotal, cartItems = [], staffId, onClose, on
   // Search Step
   if (step === "search") {
     return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4">
         <Card className="w-full max-w-lg max-h-[80vh] flex flex-col">
           <div className="flex items-center justify-between p-4 border-b border-border">
             <div>
@@ -299,7 +299,7 @@ export function CreditSaleFlow({ cartTotal, cartItems = [], staffId, onClose, on
     const availableAfter = selectedCustomer.creditLimit - newDebt
 
     return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4">
         <Card className="w-full max-w-md p-6">
           <h2 className="text-lg font-bold text-foreground mb-4">Confirm Credit Sale</h2>
 
@@ -366,7 +366,7 @@ export function CreditSaleFlow({ cartTotal, cartItems = [], staffId, onClose, on
     const shortfall = cartTotal - availableCredit
 
     return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4">
         <Card className="w-full max-w-md p-6">
           <div className="text-center mb-4">
             <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
@@ -415,7 +415,7 @@ export function CreditSaleFlow({ cartTotal, cartItems = [], staffId, onClose, on
   // Complete Step
   if (step === "complete" && selectedCustomer) {
     return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4">
         <Card className="w-full max-w-md p-8 text-center">
           <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
             <Check className="w-8 h-8 text-green-600" />

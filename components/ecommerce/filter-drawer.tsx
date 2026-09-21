@@ -46,7 +46,7 @@ export function FilterDrawer({
       {/* Drawer Overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-50 lg:hidden"
+          className="fixed inset-0 bg-slate-900/50 z-50 lg:hidden"
           onClick={() => setIsOpen(false)}
         />
       )}

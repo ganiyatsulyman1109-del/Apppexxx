@@ -145,7 +145,7 @@ export default function PaymentCallbackContent() {
                       <div className="bg-blue-100 p-2 rounded-full">
                         <UserPlus className="w-6 h-6 text-blue-600" />
                       </div>
-                      <h3 className="font-semibold text-blue-900">Track your order easily</h3>
+                      <h3 className="font-semibold text-[#111827]">Track your order easily</h3>
                       <p className="text-sm text-blue-700">
                         Create an account to track your order status, save your shipping details, and get faster checkout next time.
                       </p>
@@ -238,7 +238,7 @@ export default function PaymentCallbackContent() {
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center mt-6">
                   <Link href="/cart">
-                    <Button className="bg-orange-500 hover:bg-orange-600 text-white">
+                    <Button className="bg-[#2563eb] hover:bg-[#1d4ed8] text-white">
                       Return to Cart
                     </Button>
                   </Link>

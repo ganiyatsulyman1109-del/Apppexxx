@@ -84,7 +84,7 @@ export default function ForgotPasswordPage() {
             <CardHeader className="text-center space-y-4">
               <BrandLogo size={64} className="mx-auto rounded-full" />
               <div>
-                <CardTitle className="text-2xl font-bold text-blue-900">Check Your Email</CardTitle>
+                <CardTitle className="text-2xl font-bold text-[#111827]">Check Your Email</CardTitle>
                 <CardDescription className="text-lg mt-1">
                   Password reset instructions have been sent to your email
                 </CardDescription>
@@ -129,7 +129,7 @@ export default function ForgotPasswordPage() {
           <CardHeader className="text-center space-y-4">
             <BrandLogo size={64} className="mx-auto rounded-full" />
             <div>
-              <CardTitle className="text-2xl font-bold text-blue-900">Apex Enterprise</CardTitle>
+              <CardTitle className="text-2xl font-bold text-[#111827]">Apex Enterprise</CardTitle>
               <CardDescription className="text-lg mt-1">Reset Your Password</CardDescription>
             </div>
           </CardHeader>

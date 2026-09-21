@@ -126,7 +126,7 @@ export function ProductSearch({ products, onSelectProduct }: ProductSearchProps)
               </div>
               <div className="text-right flex-shrink-0">
                 <p className="font-bold text-foreground">{formatPrice(product.price)}</p>
-                <p className={`text-sm ${product.stock > 5 ? "text-green-600" : "text-orange-500"}`}>
+                <p className={`text-sm ${product.stock > 5 ? "text-green-600" : "text-[#2563eb]"}`}>
                   {product.stock} in stock
                 </p>
               </div>

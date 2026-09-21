@@ -15,7 +15,7 @@ export function CartDrawer() {
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/50 z-40 animate-in fade-in duration-200"
+        className="fixed inset-0 bg-slate-900/50 z-40 animate-in fade-in duration-200"
         onClick={closeCart}
       />
 
@@ -109,7 +109,7 @@ export function CartDrawer() {
               </Link>
               <Link href="/checkout" onClick={closeCart}>
                 <Button 
-                  className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                  className="w-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white"
                 >
                   Proceed to Checkout
                 </Button>

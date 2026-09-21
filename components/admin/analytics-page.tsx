@@ -615,7 +615,7 @@ export function AnalyticsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               Bottom 5 Products
-              <Badge variant="outline" className="text-orange-500 border-orange-500">
+              <Badge variant="outline" className="text-[#2563eb] border-[#2563eb]">
                 Needs Attention
               </Badge>
             </CardTitle>
@@ -651,7 +651,7 @@ export function AnalyticsPage() {
                     </TableCell>
                     <TableCell className="text-right">{formatCurrency(product.revenue)}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="text-orange-500">
+                      <Badge variant="outline" className="text-[#2563eb]">
                         <AlertTriangle className="h-3 w-3 mr-1" />
                         Low
                       </Badge>
@@ -870,7 +870,7 @@ export function AnalyticsPage() {
                       : aging.range === "31-60 days"
                         ? "bg-yellow-500"
                         : aging.range === "61-90 days"
-                          ? "bg-orange-500"
+                          ? "bg-[#2563eb]"
                           : "bg-red-500"
                   return (
                     <div key={aging.range} className="flex items-center gap-2">

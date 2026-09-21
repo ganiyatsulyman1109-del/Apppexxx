@@ -6,7 +6,7 @@ export function HeroSection() {
   return (
     <section id="hero" className="relative min-h-[500px] lg:min-h-[600px] flex items-center overflow-hidden">
       {/* Background with Gradient Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-blue-800 to-blue-950">
+      <div className="absolute inset-0 bg-gradient-to-br from-[#dbeafe] via-[#bfdbfe] to-[#f8fafc]">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.18),_transparent_45%)]" />
         <div className="absolute inset-0 bg-gradient-to-t from-blue-950/80 to-transparent" />
       </div>
@@ -14,7 +14,7 @@ export function HeroSection() {
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-10 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-[#2563eb]/10 rounded-full blur-3xl animate-pulse delay-1000" />
       </div>
 
       {/* Content */}
@@ -27,7 +27,7 @@ export function HeroSection() {
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
             Everyday essentials,
             <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-orange-500">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#60a5fa] to-[#2563eb]">
               all in one place
             </span>
           </h1>
@@ -40,7 +40,7 @@ export function HeroSection() {
             <Link href="/shop">
               <Button
                 size="lg"
-                className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-500/30 hover:shadow-xl hover:scale-105 transition-all"
+                className="w-full sm:w-auto bg-[#2563eb] hover:bg-[#1d4ed8] text-white shadow-lg shadow-blue-500/20 hover:shadow-xl hover:scale-105 transition-all"
               >
                 Shop Now
                 <ArrowRight className="ml-2 w-5 h-5" />

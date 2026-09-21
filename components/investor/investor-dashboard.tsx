@@ -189,7 +189,7 @@ export function InvestorDashboard({ investor, onLogout }: InvestorDashboardProps
             <div className="flex items-center gap-3">
               <BrandLogo size={40} className="rounded-lg" />
               <div>
-                <h1 className="font-bold text-blue-900">Apex Enterprise</h1>
+                <h1 className="font-bold text-[#111827]">Apex Enterprise</h1>
                 <p className="text-xs text-orange-600 font-medium">Investor Portal</p>
               </div>
             </div>
@@ -212,7 +212,7 @@ export function InvestorDashboard({ investor, onLogout }: InvestorDashboardProps
         {isNewInvestor && (
           <Card className="mb-6 border-blue-200 bg-blue-50">
             <CardHeader>
-              <CardTitle className="text-blue-900">Welcome to the Investment Program</CardTitle>
+              <CardTitle className="text-[#111827]">Welcome to the Investment Program</CardTitle>
               <CardDescription className="text-blue-700">
                 Your investment journey starts today. You'll see your first return tomorrow.
               </CardDescription>
@@ -224,7 +224,7 @@ export function InvestorDashboard({ investor, onLogout }: InvestorDashboardProps
                     <Calendar className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-blue-900">Investment Date</p>
+                    <p className="text-sm font-medium text-[#111827]">Investment Date</p>
                     <p className="text-sm text-blue-700">{formatDate(investor.investmentDate)}</p>
                   </div>
                 </div>
@@ -233,7 +233,7 @@ export function InvestorDashboard({ investor, onLogout }: InvestorDashboardProps
                     <Percent className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-blue-900">Daily Return Rate</p>
+                    <p className="text-sm font-medium text-[#111827]">Daily Return Rate</p>
                     <p className="text-sm text-blue-700">{investor.dailyReturnRate}%</p>
                   </div>
                 </div>
@@ -242,7 +242,7 @@ export function InvestorDashboard({ investor, onLogout }: InvestorDashboardProps
                     <Clock className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-blue-900">First Return</p>
+                    <p className="text-sm font-medium text-[#111827]">First Return</p>
                     <p className="text-sm text-blue-700">Tomorrow</p>
                   </div>
                 </div>
@@ -279,7 +279,7 @@ export function InvestorDashboard({ investor, onLogout }: InvestorDashboardProps
               <Calendar className="h-4 w-4 text-blue-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-900">{formatNaira(dailyReturn)}</div>
+              <div className="text-2xl font-bold text-[#111827]">{formatNaira(dailyReturn)}</div>
               <p className="text-xs text-muted-foreground">Per day return</p>
             </CardContent>
           </Card>
@@ -300,7 +300,7 @@ export function InvestorDashboard({ investor, onLogout }: InvestorDashboardProps
           {/* Revenue Chart */}
           <Card className="bg-white">
             <CardHeader>
-              <CardTitle className="text-blue-900">Revenue Trends</CardTitle>
+              <CardTitle className="text-[#111827]">Revenue Trends</CardTitle>
               <CardDescription className="text-blue-700">Daily revenue from business operations</CardDescription>
             </CardHeader>
             <CardContent>
@@ -335,7 +335,7 @@ export function InvestorDashboard({ investor, onLogout }: InvestorDashboardProps
           {/* Business Performance */}
           <Card className="bg-white">
             <CardHeader>
-              <CardTitle className="text-blue-900">Business Performance</CardTitle>
+              <CardTitle className="text-[#111827]">Business Performance</CardTitle>
               <CardDescription className="text-blue-700">Revenue generated from business operations</CardDescription>
             </CardHeader>
             <CardContent>
@@ -354,9 +354,9 @@ export function InvestorDashboard({ investor, onLogout }: InvestorDashboardProps
                     <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
                       <BarChart3 className="h-4 w-4 text-blue-600" />
                     </div>
-                    <span className="text-sm font-medium text-blue-900">This Week's Revenue</span>
+                    <span className="text-sm font-medium text-[#111827]">This Week's Revenue</span>
                   </div>
-                  <span className="text-sm font-bold text-blue-900">{formatNaira(weekRevenue)}</span>
+                  <span className="text-sm font-bold text-[#111827]">{formatNaira(weekRevenue)}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">

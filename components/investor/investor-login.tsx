@@ -143,7 +143,7 @@ export function InvestorLogin({ onLogin }: InvestorLoginProps) {
           <div className="flex justify-center mb-4">
             <BrandLogo size={64} className="rounded-full shadow-lg" />
           </div>
-          <CardTitle className="text-2xl font-bold text-blue-900">Apex Enterprise</CardTitle>
+          <CardTitle className="text-2xl font-bold text-[#111827]">Apex Enterprise</CardTitle>
           <CardDescription className="text-lg font-medium text-orange-600">
             Investor Portal
           </CardDescription>

@@ -197,7 +197,7 @@ export function EasyBuyDebtOverview() {
             {[
           { label: "0-30 Days", value: stats.debtAging.days0to30, color: "bg-green-500" },
           { label: "31-60 Days", value: stats.debtAging.days31to60, color: "bg-yellow-500" },
-          { label: "61-90 Days", value: stats.debtAging.days61to90, color: "bg-orange-500" },
+          { label: "61-90 Days", value: stats.debtAging.days61to90, color: "bg-[#2563eb]" },
           { label: "90+ Days", value: stats.debtAging.days90plus, color: "bg-red-500" },
         ].map((item) => (
               <div key={item.label}>

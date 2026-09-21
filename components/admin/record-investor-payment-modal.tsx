@@ -89,7 +89,7 @@ export function RecordInvestorPaymentModal({
 
   if (isRecorded) {
     return (
-      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-lg p-6 w-full max-w-md text-center animate-in fade-in zoom-in duration-300">
           <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
             <Check className="w-8 h-8 text-green-600" />
@@ -104,7 +104,7 @@ export function RecordInvestorPaymentModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg p-6 w-full max-w-md animate-in fade-in zoom-in duration-200">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-bold">Record Investor Payment</h2>

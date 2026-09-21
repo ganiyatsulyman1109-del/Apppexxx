@@ -298,7 +298,7 @@ export default function CheckoutPage() {
                   )}
                   
                   <Button 
-                    className="w-full bg-orange-500 hover:bg-orange-600 text-white flex items-center justify-center gap-2"
+                    className="w-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white flex items-center justify-center gap-2"
                     size="lg"
                     onClick={handlePayWithPaystack}
                     disabled={isLoading}

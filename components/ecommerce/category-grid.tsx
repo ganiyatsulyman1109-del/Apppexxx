@@ -7,7 +7,7 @@ const categories = [
     name: "Electronics",
     icon: Zap,
     description: "Smart everyday essentials",
-    gradient: "from-yellow-500 to-orange-500",
+    gradient: "from-[#dbeafe] to-[#60a5fa]",
   },
   {
     id: "fashion",
