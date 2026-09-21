@@ -291,7 +291,7 @@ async function finalVerification() {
   console.log('\n📊 Testing indexes...')
   const indexTests = [
     { table: 'products', column: 'sku', value: 'TEST-SKU-001' },
-    { table: 'products', column: 'category', value: 'batteries' },
+    { table: 'products', column: 'category', value: 'electronics' },
     { table: 'orders', column: 'source', value: 'pos' },
     { table: 'orders', column: 'status', value: 'pending' },
     { table: 'customers', column: 'email', value: 'test@example.com' },

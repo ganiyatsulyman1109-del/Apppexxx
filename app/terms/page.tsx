@@ -2,7 +2,7 @@ import { Metadata } from "next"
 
 export const metadata: Metadata = {
   title: "Terms & Conditions - Apex Enterprise",
-  description: "Read our terms and conditions for purchasing car parts and accessories.",
+  description: "Read our terms and conditions for shopping with Apex Enterprise.",
 }
 
 export default function TermsPage() {

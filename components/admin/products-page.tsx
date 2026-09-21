@@ -123,13 +123,14 @@ export function ProductsPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Categories</SelectItem>
-            <SelectItem value="batteries">Batteries</SelectItem>
-            <SelectItem value="filters">Filters</SelectItem>
-            <SelectItem value="engine-parts">Engine Parts</SelectItem>
-            <SelectItem value="brakes">Brakes</SelectItem>
-            <SelectItem value="electrical">Electrical</SelectItem>
-            <SelectItem value="lubricants">Lubricants</SelectItem>
-            <SelectItem value="accessories">Accessories</SelectItem>
+            <SelectItem value="electronics">Electronics</SelectItem>
+            <SelectItem value="fashion">Fashion</SelectItem>
+            <SelectItem value="food-drinks">Food & Drinks</SelectItem>
+            <SelectItem value="health-beauty">Health & Beauty</SelectItem>
+            <SelectItem value="home-office">Home & Office</SelectItem>
+            <SelectItem value="phones-accessories">Phones & Accessories</SelectItem>
+            <SelectItem value="sporting-goods">Sporting Goods</SelectItem>
+            <SelectItem value="other">Other</SelectItem>
           </SelectContent>
         </Select>
       </div>

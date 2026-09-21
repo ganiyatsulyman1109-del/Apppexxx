@@ -2,7 +2,7 @@ import { Metadata } from "next"
 
 export const metadata: Metadata = {
   title: "Shipping & Delivery - Apex Enterprise",
-  description: "Learn about our shipping and delivery policies for car parts in Nigeria.",
+  description: "Learn about our shipping and delivery policies for your orders.",
 }
 
 export default function ShippingPage() {
@@ -17,8 +17,7 @@ export default function ShippingPage() {
           <div className="bg-card rounded-lg shadow-sm p-8 mb-8">
             <div className="prose prose-gray dark:prose-invert max-w-none">
               <p className="text-lg text-muted-foreground mb-6">
-                At Apex Enterprise, we strive to provide fast and reliable delivery services 
-                for all your automotive parts needs across Nigeria.
+                At Apex Enterprise, we strive to provide fast and reliable delivery services for all your orders across Nigeria.
               </p>
               
               <h2 className="text-2xl font-semibold text-foreground mb-4">

@@ -1,4 +1,14 @@
-export type ProductCategory = "batteries" | "filters" | "engine" | "brakes" | "electrical" | "lubricants" | "accessories"
+export type ProductCategory =
+  | "electronics"
+  | "fashion"
+  | "food-drinks"
+  | "health-beauty"
+  | "home-office"
+  | "phones-accessories"
+  | "sporting-goods"
+  | "automotive"
+  | "books-education"
+  | "other"
 
 export interface EcommerceProduct {
   id: string

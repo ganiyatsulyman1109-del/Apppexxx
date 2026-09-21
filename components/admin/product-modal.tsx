@@ -123,7 +123,7 @@ export function ProductModal({ open, onClose, product, onSuccess }: ProductModal
     }
   }
 
-  const categories = ["batteries", "filters", "engine-parts", "brakes", "electrical", "lubricants", "accessories"]
+  const categories = ["electronics", "fashion", "food-drinks", "health-beauty", "home-office", "phones-accessories", "sporting-goods", "other"]
 
   return (
     <Dialog open={open} onOpenChange={onClose}>

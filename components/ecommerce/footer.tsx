@@ -13,11 +13,11 @@ export function Footer() {
               <BrandLogo size={40} className="rounded-xl" />
               <div>
                 <div className="font-bold text-white text-lg leading-none">Apex</div>
-                <div className="text-xs text-gray-400">AUTO-MART</div>
+                <div className="text-xs text-gray-400">Enterprise</div>
               </div>
             </div>
             <p className="text-sm text-gray-400 mb-4">
-              Your trusted partner for quality automotive parts in Nigeria.
+              Your trusted partner for quality products and everyday essentials.
             </p>
             <div className="flex gap-3">
               <a
@@ -57,18 +57,18 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/shop?category=batteries" className="hover:text-orange-500 transition-colors">
-                  Batteries
+                <Link href="/shop?category=electronics" className="hover:text-orange-500 transition-colors">
+                  Electronics
                 </Link>
               </li>
               <li>
-                <Link href="/shop?category=filters" className="hover:text-orange-500 transition-colors">
-                  Filters
+                <Link href="/shop?category=fashion" className="hover:text-orange-500 transition-colors">
+                  Fashion
                 </Link>
               </li>
               <li>
-                <Link href="/shop?category=engine" className="hover:text-orange-500 transition-colors">
-                  Engine Parts
+                <Link href="/shop?category=home-office" className="hover:text-orange-500 transition-colors">
+                  Home & Office
                 </Link>
               </li>
             </ul>

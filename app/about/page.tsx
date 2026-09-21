@@ -2,7 +2,7 @@ import { Metadata } from "next"
 
 export const metadata: Metadata = {
   title: "About Us - Apex Enterprise",
-  description: "Learn about Apex Enterprise, your trusted car parts supplier in Nigeria.",
+  description: "Learn about Apex Enterprise and our quality products and services.",
 }
 
 export default function AboutPage() {
@@ -17,36 +17,34 @@ export default function AboutPage() {
           <div className="bg-card rounded-lg shadow-sm p-8 mb-8">
             <div className="prose prose-gray dark:prose-invert max-w-none">
               <p className="text-lg text-muted-foreground mb-6">
-                Welcome to Apex Enterprise, your premier destination for quality car parts and accessories 
-                in Nigeria. With years of experience in the automotive industry, we pride ourselves 
-                on providing top-quality products and exceptional customer service.
+                Welcome to Apex Enterprise, your destination for quality everyday essentials and trusted products.
+                We are committed to making shopping simple, convenient, and dependable for every customer.
               </p>
               
               <h2 className="text-2xl font-semibold text-foreground mb-4">
                 Our Mission
               </h2>
               <p className="text-muted-foreground mb-6">
-                To be the leading supplier of automotive parts in Nigeria, offering reliable products 
-                at competitive prices while maintaining the highest standards of customer satisfaction.
+                To deliver reliable products and excellent service at competitive prices while helping customers
+                find what they need quickly and confidently.
               </p>
               
               <h2 className="text-2xl font-semibold text-foreground mb-4">
                 What We Offer
               </h2>
               <ul className="list-disc pl-6 space-y-2 text-muted-foreground mb-6">
-                <li>Wide range of genuine and quality aftermarket parts</li>
-                <li>Expert advice and technical support</li>
-                <li>Competitive pricing and regular promotions</li>
+                <li>Curated products from trusted brands</li>
+                <li>Simple, customer-friendly shopping experience</li>
+                <li>Competitive pricing and regular offers</li>
                 <li>Fast and reliable delivery services</li>
-                <li>Professional installation services</li>
+                <li>Friendly customer support</li>
               </ul>
               
               <h2 className="text-2xl font-semibold text-foreground mb-4">
                 Our Location
               </h2>
               <p className="text-muted-foreground mb-6">
-                Visit our Head Office at No. 1a Amule Road, Amule Bus stop, Ayobo, Lagos State, or our Branch at No. 608 Lagos-Abeokuta Express way, Ijaye Bus stop, Lagos State. Our knowledgeable staff is ready 
-                to assist you with all your automotive needs.
+                Visit our Head Office at No. 1a Amule Road, Amule Bus stop, Ayobo, Lagos State, or our Branch at No. 608 Lagos-Abeokuta Express way, Ijaye Bus stop, Lagos State. Our team is ready to assist with your orders and product questions.
               </p>
               
               <div className="bg-muted rounded-lg p-6 mt-8">

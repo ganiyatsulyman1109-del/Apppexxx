@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Battery, Filter, Cog, Disc, Zap, Droplets, ShoppingBag, X } from "lucide-react"
+import { Zap, ShoppingBag, Coffee, Heart, Home, Smartphone, Activity, Grid, X } from "lucide-react"
 import type { Product, ProductCategory } from "@/lib/pos-types"
 import Image from "next/image"
 
@@ -14,13 +14,14 @@ interface CategoryButtonsProps {
 }
 
 const CATEGORIES: { id: ProductCategory; label: string; icon: React.ReactNode }[] = [
-  { id: "batteries", label: "Batteries", icon: <Battery className="w-5 h-5" /> },
-  { id: "filters", label: "Filters", icon: <Filter className="w-5 h-5" /> },
-  { id: "engine", label: "Engine Parts", icon: <Cog className="w-5 h-5" /> },
-  { id: "brakes", label: "Brake Systems", icon: <Disc className="w-5 h-5" /> },
-  { id: "electrical", label: "Electrical", icon: <Zap className="w-5 h-5" /> },
-  { id: "lubricants", label: "Lubricants", icon: <Droplets className="w-5 h-5" /> },
-  { id: "accessories", label: "Accessories", icon: <ShoppingBag className="w-5 h-5" /> },
+  { id: "electronics", label: "Electronics", icon: <Zap className="w-5 h-5" /> },
+  { id: "fashion", label: "Fashion", icon: <ShoppingBag className="w-5 h-5" /> },
+  { id: "food-drinks", label: "Food & Drinks", icon: <Coffee className="w-5 h-5" /> },
+  { id: "health-beauty", label: "Health & Beauty", icon: <Heart className="w-5 h-5" /> },
+  { id: "home-office", label: "Home & Office", icon: <Home className="w-5 h-5" /> },
+  { id: "phones-accessories", label: "Phones & Accessories", icon: <Smartphone className="w-5 h-5" /> },
+  { id: "sporting-goods", label: "Sporting Goods", icon: <Activity className="w-5 h-5" /> },
+  { id: "other", label: "Other", icon: <Grid className="w-5 h-5" /> },
 ]
 
 export function CategoryButtons({ products, onSelectProduct }: CategoryButtonsProps) {

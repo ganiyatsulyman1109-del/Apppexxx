@@ -126,7 +126,7 @@ CREATE TABLE IF NOT EXISTS products (
     name TEXT NOT NULL,
     sku TEXT UNIQUE NOT NULL,
     brand TEXT,
-    category TEXT NOT NULL CHECK (category IN ('batteries', 'filters', 'engine-parts', 'brakes', 'electrical', 'lubricants', 'accessories')),
+    category TEXT NOT NULL CHECK (category IN ('electronics', 'fashion', 'food-drinks', 'health-beauty', 'home-office', 'phones-accessories', 'sporting-goods', 'books-education', 'other')),
     description TEXT,
     price DECIMAL(10,2) NOT NULL CHECK (price >= 0),
     cost_price DECIMAL(10,2) CHECK (cost_price >= 0),

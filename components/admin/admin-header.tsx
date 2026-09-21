@@ -76,14 +76,14 @@ export function AdminHeader({ currentPage, adminEmail, onLogout }: AdminHeaderPr
   }, [fetchNotifications])
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4">
+    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b border-[#e5e7eb] bg-white px-4 text-[#111827]">
       <SidebarTrigger />
 
       {/* Breadcrumb */}
       <nav className="flex items-center gap-1 text-sm">
-        <span className="text-muted-foreground">Admin</span>
-        <ChevronRight className="h-4 w-4 text-muted-foreground" />
-        <span className="font-medium">{pageLabels[currentPage]}</span>
+        <span className="text-[#6b7280]">Admin</span>
+        <ChevronRight className="h-4 w-4 text-[#6b7280]" />
+        <span className="font-medium text-[#111827]">{pageLabels[currentPage]}</span>
       </nav>
 
       <div className="flex-1" />

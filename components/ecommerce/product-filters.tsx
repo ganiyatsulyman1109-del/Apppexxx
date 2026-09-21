@@ -17,16 +17,17 @@ interface ProductFiltersProps {
   onResetFilters?: () => void
 }
 
-const brands = ["Bosch", "Toyota", "Honda", "Mobil", "Shell", "Brembo", "NGK", "Denso", "Gates", "Mann"]
+const brands = ["TechSound", "UrbanStep", "NatureCup", "GlowSkin", "WorkSmart", "CaseGuard", "FlexFit", "WriteMore"]
 
 const CATEGORIES = [
-  { id: "batteries", name: "Batteries" },
-  { id: "filters", name: "Filters" },
-  { id: "engine-parts", name: "Engine Parts" },
-  { id: "brakes", name: "Brakes" },
-  { id: "electrical", name: "Electrical" },
-  { id: "lubricants", name: "Lubricants" },
-  { id: "accessories", name: "Accessories" }
+  { id: "electronics", name: "Electronics" },
+  { id: "fashion", name: "Fashion" },
+  { id: "food-drinks", name: "Food & Drinks" },
+  { id: "health-beauty", name: "Health & Beauty" },
+  { id: "home-office", name: "Home & Office" },
+  { id: "phones-accessories", name: "Phones & Accessories" },
+  { id: "sporting-goods", name: "Sporting Goods" },
+  { id: "other", name: "Other" }
 ]
 
 export function ProductFilters({ 

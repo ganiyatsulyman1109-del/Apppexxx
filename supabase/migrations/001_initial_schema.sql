@@ -89,7 +89,7 @@ CREATE TABLE products (
     name TEXT NOT NULL,
     sku TEXT NOT NULL UNIQUE,
     brand TEXT,
-    category TEXT NOT NULL CHECK (category IN ('batteries', 'filters', 'engine-parts', 'brakes', 'electrical', 'lubricants', 'accessories')),
+    category TEXT NOT NULL CHECK (category IN ('electronics', 'fashion', 'food-drinks', 'health-beauty', 'home-office', 'phones-accessories', 'sporting-goods', 'books-education', 'other')),
     description TEXT,
     price NUMERIC(10,2) NOT NULL,
     cost_price NUMERIC(10,2),

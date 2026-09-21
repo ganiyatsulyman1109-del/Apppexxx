@@ -2,7 +2,7 @@ import { Metadata } from "next"
 
 export const metadata: Metadata = {
   title: "Return Policy - Apex Enterprise",
-  description: "Learn about our return policy for car parts and accessories.",
+  description: "Learn about our return policy for purchases.",
 }
 
 export default function ReturnsPage() {

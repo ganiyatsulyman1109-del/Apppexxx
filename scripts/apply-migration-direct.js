@@ -174,7 +174,7 @@ async function verifyAppliedSchema() {
   console.log('\n📊 Checking indexes...')
   const indexTests = [
     { table: 'products', column: 'sku', value: 'TEST-SKU-001' },
-    { table: 'products', column: 'category', value: 'batteries' },
+    { table: 'products', column: 'category', value: 'electronics' },
     { table: 'orders', column: 'source', value: 'pos' }
   ]
   

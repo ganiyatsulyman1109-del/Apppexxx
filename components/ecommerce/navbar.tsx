@@ -22,7 +22,7 @@ export function Navbar() {
             <BrandLogo size={40} className="rounded-xl group-hover:scale-105 transition-transform" />
             <div className="hidden sm:block">
               <div className="font-bold text-gray-900 text-lg leading-none">Apex</div>
-              <div className="text-xs text-gray-600">AUTO-MART</div>
+              <div className="text-xs text-gray-600">Enterprise</div>
             </div>
           </Link>
 
@@ -32,7 +32,7 @@ export function Navbar() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <Input
                 type="search"
-                placeholder="Search for parts..."
+                placeholder="Search products..."
                 className="pl-10 pr-4 w-full"
               />
             </div>
@@ -81,7 +81,7 @@ export function Navbar() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
               type="search"
-              placeholder="Search for parts..."
+              placeholder="Search products..."
               className="pl-10 pr-4 w-full"
             />
           </div>

@@ -7,7 +7,7 @@ export function HeroSection() {
     <section id="hero" className="relative min-h-[500px] lg:min-h-[600px] flex items-center overflow-hidden">
       {/* Background with Gradient Overlay */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-blue-800 to-blue-950">
-        <div className="absolute inset-0 bg-[url('/car-parts-bg.jpg')] bg-cover bg-center opacity-20" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.18),_transparent_45%)]" />
         <div className="absolute inset-0 bg-gradient-to-t from-blue-950/80 to-transparent" />
       </div>
 
@@ -21,20 +21,19 @@ export function HeroSection() {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="max-w-3xl">
           <div className="inline-block mb-4 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
-            <span className="text-white/90 text-sm font-medium">🚗 Trusted by Many Customers across Nigeria</span>
+            <span className="text-white/90 text-sm font-medium">Trusted by shoppers across Nigeria</span>
           </div>
           
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
-            Genuine Car Parts
+            Everyday essentials,
             <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-orange-500">
-              in Nigeria
+              all in one place
             </span>
           </h1>
           
           <p className="text-xl text-blue-100 mb-8 leading-relaxed max-w-2xl">
-            Quality automotive parts from trusted brands. Fast Delivery across Nigeria.
-            Your vehicle deserves the best.
+            Discover quality products from trusted brands with fast delivery and hassle-free shopping.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4">

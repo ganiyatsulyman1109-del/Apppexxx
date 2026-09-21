@@ -204,7 +204,7 @@ async function finalSchemaVerification() {
   console.log('\n7️⃣ VERIFYING INDEXES WORK...')
   const indexTests = [
     { table: 'products', column: 'sku', value: 'TEST-SKU-001' },
-    { table: 'products', column: 'category', value: 'batteries' },
+    { table: 'products', column: 'category', value: 'electronics' },
     { table: 'orders', column: 'order_number', value: 'ORD-2024-100001' },
     { table: 'orders', column: 'source', value: 'pos' },
     { table: 'orders', column: 'status', value: 'pending' },

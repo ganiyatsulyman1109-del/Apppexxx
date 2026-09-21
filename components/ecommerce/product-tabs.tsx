@@ -8,13 +8,13 @@ interface ProductTabsProps {
 }
 
 export function ProductTabs({ product }: ProductTabsProps) {
-  const [activeTab, setActiveTab] = useState<"description" | "vehicles" | "specs" | "warranty">("description")
+  const [activeTab, setActiveTab] = useState<"description" | "details" | "specs" | "support">("description")
 
   const tabs = [
     { id: "description" as const, label: "Description" },
-    { id: "vehicles" as const, label: "Compatible Vehicles" },
+    { id: "details" as const, label: "Details" },
     { id: "specs" as const, label: "Specifications" },
-    { id: "warranty" as const, label: "Warranty Info" },
+    { id: "support" as const, label: "Support" },
   ]
 
   return (
@@ -46,36 +46,36 @@ export function ProductTabs({ product }: ProductTabsProps) {
         {activeTab === "description" && (
           <div className="prose max-w-none">
             <p className="text-gray-700 leading-relaxed">
-              {product.description || "High-quality automotive part designed for reliability and performance."}
+              {product.description || "High-quality product designed for everyday use and reliable performance."}
             </p>
             <ul className="mt-4 space-y-2">
-              <li>Premium quality construction</li>
-              <li>Meets or exceeds OEM specifications</li>
-              <li>Tested for durability and performance</li>
-              <li>Easy installation with included instructions</li>
+              <li>Premium quality materials</li>
+              <li>Thoughtfully designed for daily use</li>
+              <li>Built for convenience and durability</li>
+              <li>Easy to enjoy with straightforward setup</li>
             </ul>
           </div>
         )}
 
-        {activeTab === "vehicles" && (
+        {activeTab === "details" && (
           <div className="space-y-4">
-            <p className="text-gray-700">This product is compatible with:</p>
+            <p className="text-gray-700">Key product highlights:</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="p-4 border border-gray-200 rounded-lg">
-                <h4 className="font-semibold mb-2">Toyota</h4>
-                <p className="text-sm text-gray-600">Camry, Corolla, RAV4 (2015-2024)</p>
+                <h4 className="font-semibold mb-2">Quality</h4>
+                <p className="text-sm text-gray-600">Carefully selected from trusted brands.</p>
               </div>
               <div className="p-4 border border-gray-200 rounded-lg">
-                <h4 className="font-semibold mb-2">Honda</h4>
-                <p className="text-sm text-gray-600">Accord, Civic, CR-V (2016-2024)</p>
+                <h4 className="font-semibold mb-2">Convenience</h4>
+                <p className="text-sm text-gray-600">Designed to make everyday life easier.</p>
               </div>
               <div className="p-4 border border-gray-200 rounded-lg">
-                <h4 className="font-semibold mb-2">Nissan</h4>
-                <p className="text-sm text-gray-600">Altima, Sentra, Rogue (2015-2023)</p>
+                <h4 className="font-semibold mb-2">Value</h4>
+                <p className="text-sm text-gray-600">Built for dependable performance at a fair price.</p>
               </div>
               <div className="p-4 border border-gray-200 rounded-lg">
-                <h4 className="font-semibold mb-2">Ford</h4>
-                <p className="text-sm text-gray-600">Focus, Fusion, Escape (2014-2023)</p>
+                <h4 className="font-semibold mb-2">Delivery</h4>
+                <p className="text-sm text-gray-600">Fast and reliable shipping options available.</p>
               </div>
             </div>
           </div>
@@ -114,31 +114,30 @@ export function ProductTabs({ product }: ProductTabsProps) {
           </div>
         )}
 
-        {activeTab === "warranty" && (
+        {activeTab === "support" && (
           <div className="space-y-4">
             <div className="p-6 bg-blue-50 rounded-lg border border-blue-100">
-              <h4 className="font-semibold text-lg mb-2">1 Year Warranty</h4>
+              <h4 className="font-semibold text-lg mb-2">Customer Support</h4>
               <p className="text-gray-700">
-                All products come with a comprehensive 1-year manufacturer warranty covering defects in
-                materials and workmanship.
+                Our team is here to help with product questions, order updates, and after-sales support.
               </p>
             </div>
             <div className="space-y-3">
-              <h4 className="font-semibold">Warranty Coverage Includes:</h4>
+              <h4 className="font-semibold">Support Includes:</h4>
               <ul className="space-y-2 text-gray-700">
-                <li>✓ Manufacturing defects</li>
-                <li>✓ Material failures</li>
-                <li>✓ Performance issues under normal use</li>
-                <li>✓ Free replacement for defective parts</li>
+                <li>✓ Product guidance</li>
+                <li>✓ Order assistance</li>
+                <li>✓ Delivery updates</li>
+                <li>✓ After-sales help</li>
               </ul>
             </div>
             <div className="space-y-3 mt-6">
-              <h4 className="font-semibold">Warranty Exclusions:</h4>
+              <h4 className="font-semibold">Typical Support Topics:</h4>
               <ul className="space-y-2 text-gray-700">
-                <li>✗ Improper installation</li>
-                <li>✗ Normal wear and tear</li>
-                <li>✗ Accident or misuse damage</li>
-                <li>✗ Unauthorized modifications</li>
+                <li>✗ Product availability</li>
+                <li>✗ Order changes</li>
+                <li>✗ Delivery questions</li>
+                <li>✗ Returns and exchanges</li>
               </ul>
             </div>
           </div>
