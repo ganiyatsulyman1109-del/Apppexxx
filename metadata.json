@@ -1,0 +1,8 @@
+{
+  "name": "JOEBEK AUTO-MART",
+  "description": "Automotive parts ecommerce and POS management system in Nigeria",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,13 @@
+- [ ] Fix 1: Staff ID format is `STAFF001` (3 digits) in `app/api/staff/route.ts`.
+- [ ] Fix 1: Existing staff IDs updated via SQL.
+- [ ] Fix 2: Staff login uses `bcrypt.compare` in `app/actions/staff-auth.ts`.
+- [ ] Fix 2: Staff PIN updates are hashed in `app/api/staff/[id]/route.ts`.
+- [ ] Fix 3: Investor creation uses frontend-provided password in `app/api/investors/route.ts`.
+- [ ] Fix 3: Investor password update syncs to auth user in `app/api/investors/[id]/route.ts`.
+- [ ] Fix 4: Customer login uses client-side Supabase auth or API sets cookies correctly.
+- [ ] Fix 5: Customer orders fetch resolves `customer_id` from `customers` table first.
+- [ ] Fix 6: `getStaffSession` removed from `record-payment-modal.tsx`.
+- [ ] Fix 6: `resolveStaffUuid` accepts UUIDs in `app/api/easybuy/payments/route.ts`.
+- [ ] Fix 7: Pending orders count includes all pending orders in `app/api/analytics/dashboard/route.ts`.
+- [ ] Fix 7: Dashboard has realtime subscription for orders.
+- [ ] Build: `pnpm build` completes with success (no TS errors).

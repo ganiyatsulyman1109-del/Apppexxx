@@ -1,0 +1,11 @@
+- [x] FIX 1: EasyBuy payment from admin works (modal uses /api/auth/me, API accepts request).
+- [x] FIX 2: Purchase history shows correct remaining balance and status; updates correctly after payment.
+- [x] FIX 3: "Staff Portal" link is gone from Navbar (desktop/mobile) and no other admin links in ecommerce.
+- [x] FIX 4: POS Login uses simple inputs (no keypad), PIN is masked (no eye toggle).
+- [x] FIX 5: Order confirmation shows "Sign In" and WhatsApp buttons.
+- [x] FIX 6: Customer signup allows immediate login (email confirmed).
+- [x] FIX 7: POS page shows spinner while checking auth (no flash of login).
+- [x] FIX 8: Audit logs show plain English changes instead of raw JSON.
+- [x] FIX 9: Staff creation requires only ID, PIN, Role.
+- [x] FIX 10: Admin can edit order item quantities; stock and totals update correctly.
+- [x] Build passes (`pnpm build`) with zero TypeScript errors.

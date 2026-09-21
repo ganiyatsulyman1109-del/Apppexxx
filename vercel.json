@@ -1,0 +1,10 @@
+{
+  "buildCommand": "pnpm build",
+  "installCommand": "pnpm install",
+  "framework": "nextjs",
+  "outputDirectory": ".next",
+  "crons": [{
+    "path": "/api/cron/daily-investor-returns",
+    "schedule": "0 23 * * *"
+  }]
+}

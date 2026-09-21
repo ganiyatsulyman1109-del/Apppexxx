@@ -1,0 +1,11 @@
+- [x] POS Registration: Modal opens without crashing
+- [x] POS Registration: Customer registration works and returns valid ID
+- [x] Notifications: Clicking notification redirects to correct admin tab
+- [x] Notifications: New notifications are created with correct URL format
+- [x] EasyBuy List: Names displayed correctly (not phone numbers)
+- [x] EasyBuy List: Currency fields formatted correctly
+- [x] EasyBuy List: Realtime updates work
+- [x] Investor Payments: "Record Payment" button is visible
+- [x] Investor Payments: Payment modal opens and submits correctly
+- [x] Investor Payments: Investor balance updates correctly after payment
+- [x] Build: `pnpm build` completes with ZERO errors

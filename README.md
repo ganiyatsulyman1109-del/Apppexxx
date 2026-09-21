@@ -1,11 +1,30 @@
-<div align="center">
+# Joebek Auto-mart POS
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+*Automatically synced with your [v0.app](https://v0.app) deployments*
 
-  <h1>Built with AI Studio</h2>
+[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/sulaimanabd310-7609s-projects/v0-joebek-auto-mart-pos-3m)
+[![Built with v0](https://img.shields.io/badge/Built%20with-v0.app-black?style=for-the-badge)](https://v0.app/chat/j3q44xGhnBu)
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+## Overview
 
-  <a href="https://aistudio.google.com/apps">Start building</a>
+This repository will stay in sync with your deployed chats on [v0.app](https://v0.app).
+Any changes you make to your deployed app will be automatically pushed to this repository from [v0.app](https://v0.app).
 
-</div>
+## Deployment
+
+Your project is live at:
+
+**[https://vercel.com/sulaimanabd310-7609s-projects/v0-joebek-auto-mart-pos-3m](https://vercel.com/sulaimanabd310-7609s-projects/v0-joebek-auto-mart-pos-3m)**
+
+## Build your app
+
+Continue building your app on:
+
+**[https://v0.app/chat/j3q44xGhnBu](https://v0.app/chat/j3q44xGhnBu)**
+
+## How It Works
+
+1. Create and modify your project using [v0.app](https://v0.app)
+2. Deploy your chats from the v0 interface
+3. Changes are automatically pushed to this repository
+4. Vercel deploys the latest version from this repository

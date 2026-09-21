@@ -1,0 +1,15 @@
+- [ ] Audit table `audit_logs` exists
+- [ ] `lib/audit.ts` exists and exports `logAudit`
+- [ ] Admin can record EasyBuy payments (no 400 error)
+- [ ] `resolveStaffUuid` handles UUIDs correctly
+- [ ] EasyBuy payments are audit logged
+- [ ] Customer Detail API uses `Promise.all`
+- [ ] Purchase History tab shows correct columns and status colors
+- [ ] Payment History tab shows correct columns and "processed by"
+- [ ] Customer Detail updates in realtime
+- [ ] Investors Page shows "Pay Investor" button
+- [ ] Investors Page shows correct Earned/Paid/Owed values
+- [ ] Investor Payment Modal works and validates amount
+- [ ] Investor Payment API updates balance correctly
+- [ ] Investor Returns are accumulated on fetch
+- [ ] Build succeeds with ZERO errors

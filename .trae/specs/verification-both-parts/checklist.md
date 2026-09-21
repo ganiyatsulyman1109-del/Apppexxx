@@ -1,0 +1,23 @@
+- [ ] Phase 1: Audit logs table exists and counts are verified
+- [ ] Phase 2: No `getStaffSession` in components
+- [ ] Phase 2: No `processed_by: 'admin'` strings
+- [ ] Phase 2: No `requireAuth` in API routes
+- [ ] Phase 2: No `payment_status` in `easybuy_purchases` inserts
+- [ ] Check 1: `lib/audit.ts` implemented correctly
+- [ ] Check 2: EasyBuy Payment Modal uses correct auth and API
+- [ ] Check 2: EasyBuy Payment API validation and logic correct
+- [ ] Check 3: Purchase History API uses Promise.all
+- [ ] Check 3: Purchase/Payment History tabs render correctly
+- [ ] Check 3: Customer Detail View has realtime subscriptions
+- [ ] Check 4: Investor Page has payment button and correct columns
+- [ ] Check 4: Investor Payment Modal implemented
+- [ ] Check 4: Investor Payment API secure and updates balances
+- [ ] Check 4: Investor GET API calculates returns
+- [ ] Check 5: Order API DELETE/PATCH secure and audit logged
+- [ ] Check 5: Orders Page has edit/delete UI
+- [ ] Check 6: Audit Log API exists
+- [ ] Check 6: Audit Log Page and Navigation implemented
+- [ ] Check 7: WhatsApp link generator exists
+- [ ] Check 7: Callback page has WhatsApp and Auth buttons
+- [ ] Check 7: Signup page handles read-only email
+- [ ] Phase 3: Build passes with zero errors

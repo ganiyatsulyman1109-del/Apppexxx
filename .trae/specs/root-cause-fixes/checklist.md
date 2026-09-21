@@ -1,0 +1,13 @@
+- [x] `lib/order-utils.ts` saves `name` and `product_name` in order items.
+- [x] `app/api/payments/verify/route.ts` enriches existing order items with product names from DB.
+- [x] `app/checkout/page.tsx` sends `customer_name`, `customer_email`, and `customer_phone` in Paystack metadata.
+- [x] `app/api/payments/verify/route.ts` prioritizes `metadata.customer_name` and uses `metadata.customer_phone` for upsert.
+- [x] `lib/whatsapp.ts` uses the exact format with `customerEmail`.
+- [x] `components/ecommerce/payment-callback-content.tsx` calls `generateWhatsAppLink` with `customerEmail` and correct `productNames`.
+- [x] `components/easybuy/customer-detail-view.tsx` does not use `useRouter`.
+- [x] `components/easybuy/customer-detail-view.tsx` has null checks for all `Date` constructors.
+- [x] `components/easybuy/customer-detail-view.tsx` uses optional chaining for customer properties.
+- [x] Admin settings page exists and doesn't return 404.
+- [x] `components/admin/record-investor-payment-modal.tsx` only has "bank_transfer" and "cash" options.
+- [x] Verification grep commands pass.
+- [x] `pnpm build` passes with zero errors.

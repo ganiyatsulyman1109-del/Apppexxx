@@ -1,0 +1,8 @@
+- [x] `useRouter` removed from `components/easybuy/customer-detail-view.tsx`.
+- [x] `loadCustomerData` is fully wrapped in a `try/catch` block.
+- [x] `Date` constructors in customer detail view safely handle nulls/undefined.
+- [x] `app/api/admin/customers/route.ts` successfully fetches and enriches missing product names.
+- [x] `components/admin/customers-page.tsx` displays fallback "No phone" for missing phone data.
+- [x] `components/admin/admin-header.tsx` uses `onClick={() => router.push('/admin?tab=settings')}`.
+- [x] `pnpm build` completes with zero errors.
+- [x] Grep checks pass for all modifications.
