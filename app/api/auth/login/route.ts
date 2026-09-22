@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/utils/supabase'
-import { createAdminSupabaseClient } from '@/lib/utils/supabase'
+import { createAdminClient, createServerClient } from '@/lib/utils/supabase'
 import { checkRateLimitDB, logFailedAttempt } from '@/lib/rate-limiter'
-import { cookies } from 'next/headers'
 import * as Sentry from '@sentry/nextjs'
 
 export async function POST(request: NextRequest) {
@@ -11,9 +9,9 @@ export async function POST(request: NextRequest) {
     || 'unknown'
 
   try {
-    const adminSupabase = createAdminSupabaseClient()
-
+    const adminSupabase = createAdminClient()
     const rateCheck = await checkRateLimitDB(ip, adminSupabase)
+
     if (!rateCheck.allowed) {
       return NextResponse.json(
         { error: rateCheck.message },
@@ -30,22 +28,21 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-    
-    const supabase = createServerSupabaseClient()
 
+    const supabase = await createServerClient()
     const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password
+      email: String(email).trim().toLowerCase(),
+      password: String(password),
     })
 
     if (error) {
-      Sentry.captureMessage('Failed login attempt', { 
-        level: 'warning', 
-        extra: { ip, timestamp: new Date().toISOString() } 
+      Sentry.captureMessage('Failed login attempt', {
+        level: 'warning',
+        extra: { ip, email: String(email).trim().toLowerCase(), timestamp: new Date().toISOString() },
       })
-      
+
       await logFailedAttempt(ip, adminSupabase)
-      
+
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
@@ -59,29 +56,40 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get user role
-    const { data: roleData } = await adminSupabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', data.user.id)
-      .maybeSingle()
+    const [{ data: profileData }, { data: roleData }] = await Promise.all([
+      supabase
+        .from('profiles')
+        .select('full_name, phone, email, avatar_url')
+        .eq('id', data.user.id)
+        .maybeSingle(),
+      supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', data.user.id)
+        .maybeSingle(),
+    ])
 
-    const role = roleData?.role || 'customer'
+    const user = {
+      id: data.user.id,
+      email: profileData?.email ?? data.user.email ?? null,
+      full_name: profileData?.full_name ?? data.user.user_metadata?.full_name ?? null,
+      phone: profileData?.phone ?? data.user.user_metadata?.phone ?? null,
+      avatar_url: profileData?.avatar_url ?? data.user.user_metadata?.avatar_url ?? null,
+    }
 
-    // Build response with session cookies
+    const role = roleData?.role ?? 'customer'
     const response = NextResponse.json({
-      user: data.user,
+      user,
       role,
-      message: 'Login successful'
+      message: 'Login successful',
     })
 
-    // Set session cookies so browser persists the session
     response.cookies.set('sb-access-token', data.session.access_token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: data.session.expires_in,
-      path: '/'
+      path: '/',
     })
 
     response.cookies.set('sb-refresh-token', data.session.refresh_token, {
@@ -89,7 +97,7 @@ export async function POST(request: NextRequest) {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 30,
-      path: '/'
+      path: '/',
     })
 
     return response

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/utils/supabase'
-import { createAdminSupabaseClient } from '@/lib/utils/supabase'
+import { createAdminClient } from '@/lib/utils/supabase'
 
 export async function POST(request: NextRequest) {
   const ip = request.headers.get('x-forwarded-for')
@@ -8,187 +7,224 @@ export async function POST(request: NextRequest) {
     || 'unknown'
 
   try {
-    const supabase = createServerSupabaseClient()
-    const adminSupabase = createAdminSupabaseClient()
+    const adminSupabase = createAdminClient()
+    type CustomerRecord = {
+      id?: string
+      user_id?: string
+      full_name?: string | null
+      phone?: string | null
+    } | null
 
-    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString() 
-    const { count } = await adminSupabase 
-      .from('rate_limits') 
-      .select('*', { count: 'exact', head: true }) 
-      .eq('ip_address', ip) 
-      .eq('action', 'register') 
-      .gte('created_at', fifteenMinutesAgo) 
-    
-    if (count && count >= 5) { 
-      return NextResponse.json( 
-        { error: 'Too many attempts. Please try again in 15 minutes.' }, 
-        { status: 429 } 
-      ) 
-    } 
-    
-    await adminSupabase.from('rate_limits').insert({ 
-      ip_address: ip, 
-      action: 'register', 
-      created_at: new Date().toISOString() 
-    })
-    
+    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString()
+    const { count } = await adminSupabase
+      .from('rate_limits')
+      .select('*', { count: 'exact', head: true })
+      .eq('ip_address', ip)
+      .eq('action', 'register')
+      .gte('created_at', fifteenMinutesAgo)
+
+    if (count && count >= 5) {
+      return NextResponse.json(
+        { error: 'Too many attempts. Please try again in 15 minutes.' },
+        { status: 429 }
+      )
+    }
+
+    await adminSupabase
+      .from('rate_limits')
+      .insert({
+        ip_address: ip,
+        action: 'register',
+        created_at: new Date().toISOString(),
+      })
+      .catch(() => undefined)
+
     const body = await request.json()
     const { email, password, full_name, phone } = body
-    
-    // Check if email already exists first
-    const { data: existingUser } = await adminSupabase
+    const normalizedEmail = String(email ?? '').trim().toLowerCase()
+
+    if (!normalizedEmail || !password) {
+      return NextResponse.json(
+        { error: 'Email and password are required' },
+        { status: 400 }
+      )
+    }
+
+    const { data: existingProfile } = await adminSupabase
       .from('profiles')
       .select('id')
-      .eq('email', email)
+      .eq('email', normalizedEmail)
       .maybeSingle()
-      
-    if (existingUser) {
+
+    if (existingProfile) {
       return NextResponse.json(
         { error: 'Email already registered. Please login instead.' },
         { status: 400 }
       )
     }
 
-    if (!email || !password) {
-      return NextResponse.json({ error: 'Email and password are required' }, { status: 400 })
-    }
-    
-    // Create user with admin client to bypass email confirmation
     const { data: authData, error: authError } = await adminSupabase.auth.admin.createUser({
-      email,
-      password,
+      email: normalizedEmail,
+      password: String(password),
       email_confirm: true,
       user_metadata: {
-        full_name,
-        phone
-      }
+        full_name: full_name || null,
+        phone: phone || null,
+      },
     })
-    
+
     if (authError) {
-      console.error(authError);
-      if (authError.message?.toLowerCase().includes('already registered') || 
-          authError.message?.toLowerCase().includes('already been registered') || 
-          authError.message?.toLowerCase().includes('duplicate') || 
-          authError.status === 422) { 
-        return NextResponse.json( 
-          { error: 'An account with this email already exists. Please log in instead.' }, 
-          { status: 400 } 
-        ) 
-      } 
-      return NextResponse.json( 
-        { error: 'Failed to create account. Please try again.' }, 
-        { status: 400 } 
-      ) 
-    }
-    
-    if (!authData.user) {
-      return NextResponse.json({ error: 'Failed to create user' }, { status: 400 })
+      const errorMessage = String(authError.message || '').toLowerCase()
+
+      if (
+        errorMessage.includes('already registered') ||
+        errorMessage.includes('already been registered') ||
+        errorMessage.includes('duplicate') ||
+        authError.status === 422
+      ) {
+        return NextResponse.json(
+          { error: 'An account with this email already exists. Please log in instead.' },
+          { status: 400 }
+        )
+      }
+
+      console.error('Register auth error:', authError)
+      return NextResponse.json(
+        { error: 'Failed to create account. Please try again.' },
+        { status: 400 }
+      )
     }
 
-    // Check if customer record exists
-    const { data: existingCustomer } = await adminSupabase
+    if (!authData.user) {
+      return NextResponse.json(
+        { error: 'Failed to create user' },
+        { status: 400 }
+      )
+    }
+
+    const { error: profileError } = await adminSupabase
+      .from('profiles')
+      .insert({
+        id: authData.user.id,
+        email: normalizedEmail,
+        full_name: full_name || normalizedEmail.split('@')[0],
+        phone: phone || null,
+        created_at: new Date().toISOString(),
+      })
+
+    if (profileError) {
+      console.error('Profile creation error:', profileError)
+      return NextResponse.json(
+        { error: 'An internal error occurred. Please try again.' },
+        { status: 500 }
+      )
+    }
+
+    const { data: existingCustomer, error: customerLookupError } = await adminSupabase
       .from('customers')
       .select('id, user_id, full_name')
-      .eq('email', email)
+      .eq('email', normalizedEmail)
       .maybeSingle()
 
-    let customerData
-    let customerError
+    if (customerLookupError && customerLookupError.code !== 'PGRST116') {
+      console.error('Customer lookup error:', customerLookupError)
+    }
+
+    let customerData: CustomerRecord = null
 
     if (existingCustomer) {
-      // Customer exists - always update user_id unconditionally
       const { data, error } = await adminSupabase
         .from('customers')
         .update({
           user_id: authData.user.id,
           full_name: full_name || existingCustomer.full_name,
-          updated_at: new Date().toISOString()
+          phone: phone || existingCustomer.phone || null,
+          updated_at: new Date().toISOString(),
         })
-        .eq('email', email)
+        .eq('email', normalizedEmail)
         .select()
         .single()
-      
+
       customerData = data
-      customerError = error
+
+      if (error) {
+        console.error('Customer update error:', error)
+        return NextResponse.json(
+          { error: 'An internal error occurred. Please try again.' },
+          { status: 500 }
+        )
+      }
     } else {
-      // Create new customer record
       const { data, error } = await adminSupabase
         .from('customers')
-        .insert([{
+        .insert({
           user_id: authData.user.id,
-          full_name: full_name || email.split('@')[0],
-          email,
-          phone,
+          full_name: full_name || normalizedEmail.split('@')[0],
+          email: normalizedEmail,
+          phone: phone || null,
           total_orders: 0,
           total_spent: 0,
           created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }])
+          updated_at: new Date().toISOString(),
+        })
         .select()
         .single()
-      
-      customerData = data
-      customerError = error
-    }
-    
-    // Ensure user_id is linked to customer record for ALL cases
-    // This is critical for orders made before registration to be properly linked
-    await adminSupabase.from('customers')
-      .update({
-        user_id: authData.user.id,
-        updated_at: new Date().toISOString()
-      })
-      .eq('email', email)
 
-    if (customerError) {
-      // If we failed to handle customer record, we should ideally rollback auth user creation
-      // But only if we just created it. Since signUp might have just logged in an existing user 
-      // (Supabase behavior depends on config), we should be careful.
-      // For now, we'll return error but not delete auth user to avoid deleting existing accounts.
-      console.error('Customer record error:', customerError)
-      console.error(customerError);
-    return NextResponse.json(
-      { error: 'An internal error occurred. Please try again.' },
-      { status: 500 }
-    )
+      customerData = data
+
+      if (error) {
+        console.error('Customer insert error:', error)
+        return NextResponse.json(
+          { error: 'An internal error occurred. Please try again.' },
+          { status: 500 }
+        )
+      }
     }
-    
-    // Create user role if not exists
+
     const { data: existingRole } = await adminSupabase
       .from('user_roles')
       .select('id')
       .eq('user_id', authData.user.id)
       .maybeSingle()
-      
+
     if (!existingRole) {
       const { error: roleError } = await adminSupabase
         .from('user_roles')
-        .insert([{
+        .insert({
           user_id: authData.user.id,
-          role: 'customer'
-        }])
-      
+          role: 'customer',
+        })
+
       if (roleError) {
         console.error('Role creation error:', roleError)
-        // Non-critical, user just won't have explicit role yet
       }
     }
-    
+
     return NextResponse.json({
       message: 'Account created successfully',
-      customer: customerData
+      user: {
+        id: authData.user.id,
+        email: normalizedEmail,
+        full_name: full_name || customerData?.full_name || null,
+      },
+      customer: customerData,
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Registration catch block error:', error)
-    
-    // Check for duplicate key violation explicitly
-    if (error?.message?.includes('duplicate') || error?.code === '23505') {
+
+    const message = error instanceof Error ? error.message : String(error)
+    const code = typeof error === 'object' && error !== null && 'code' in error ? (error as { code?: string }).code : undefined
+
+    if (message.toLowerCase().includes('duplicate') || code === '23505') {
       return NextResponse.json(
         { error: 'Email already registered. Please login instead.' },
         { status: 400 }
       )
     }
-    
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
   }
 }
