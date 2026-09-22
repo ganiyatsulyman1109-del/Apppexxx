@@ -1,4 +1,8 @@
-import { createBrowserClient, createServerClient, type CookieOptions } from "@supabase/ssr"
+import {
+  createBrowserClient as createSupabaseBrowserClient,
+  createServerClient as createSupabaseServerClient,
+  type CookieOptions,
+} from "@supabase/ssr"
 import { createClient } from "@supabase/supabase-js"
 import type { NextRequest, NextResponse } from "next/server"
 
@@ -13,7 +17,7 @@ const getRequiredEnv = (key: string, value: string | undefined) => {
 export const createBrowserSupabaseClient = () => {
   const url = getRequiredEnv("NEXT_PUBLIC_SUPABASE_URL", process.env.NEXT_PUBLIC_SUPABASE_URL)
   const anonKey = getRequiredEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
-  return createBrowserClient(url, anonKey)
+  return createSupabaseBrowserClient(url, anonKey)
 }
 
 export const createAdminSupabaseClient = () => {
@@ -33,7 +37,7 @@ export const createServerSupabaseClient = (request?: NextRequest, response?: Nex
   
   // For proxy usage
   if (request && response) {
-    return createServerClient(url, anonKey, {
+    return createSupabaseServerClient(url, anonKey, {
       cookies: {
         get(name: string) {
           return request.cookies.get(name)?.value
@@ -67,7 +71,7 @@ export const createServerSupabaseClient = (request?: NextRequest, response?: Nex
   }
 
   // For Route Handlers and Server Actions
-  return createServerClient(url, anonKey, {
+  return createSupabaseServerClient(url, anonKey, {
     cookies: {
       async get(name: string) {
         const { cookies } = await import("next/headers")
@@ -96,5 +100,30 @@ export const createServerSupabaseClient = (request?: NextRequest, response?: Nex
   })
 }
 
-export const getBusinessId = () =>
-  getRequiredEnv("NEXT_PUBLIC_BUSINESS_ID", process.env.NEXT_PUBLIC_BUSINESS_ID)
+export const createBrowserClient = createBrowserSupabaseClient
+
+export async function createServerClient() {
+  return createServerSupabaseClient()
+}
+
+export const createAdminClient = createAdminSupabaseClient
+
+export async function getBusinessId(
+  supabase: ReturnType<typeof createAdminSupabaseClient>
+): Promise<string | null> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return null
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("business_id")
+    .eq("id", user.id)
+    .single()
+
+  return profile?.business_id ?? null
+}
