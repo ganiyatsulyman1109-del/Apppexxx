@@ -202,7 +202,7 @@ async function createTablesDirectly() {
 
     console.log('\n🎉 Database schema creation simulated!')
     console.log('⚠️ Note: To actually apply this schema, you need to:')
-    console.log('1. Go to https://app.supabase.com/project/mjetksgowqitxzjypwsw')
+    console.log('1. Go to https://app.supabase.com')
     console.log('2. Navigate to SQL Editor')
     console.log('3. Copy and paste the SQL from:')
     console.log('   - supabase/migrations/001_complete_schema.sql')
