@@ -2,25 +2,23 @@ import { createBrowserClient, createServerClient, type CookieOptions } from "@su
 import { createClient } from "@supabase/supabase-js"
 import type { NextRequest, NextResponse } from "next/server"
 
-const getEnv = (key: string, value: string | undefined, fallback?: string) => {
+const getRequiredEnv = (key: string, value: string | undefined) => {
   if (!value) {
-    if (fallback !== undefined) return fallback
-    if (key.includes("URL")) return "https://placeholder-supabase.supabase.co"
-    if (key.includes("SERVICE_ROLE")) return "placeholder-service-role-key"
-    return "placeholder-anon-key"
+    throw new Error(`Missing required environment variable: ${key}`)
   }
+
   return value
 }
 
 export const createBrowserSupabaseClient = () => {
-  const url = getEnv("NEXT_PUBLIC_SUPABASE_URL", process.env.NEXT_PUBLIC_SUPABASE_URL)
-  const anonKey = getEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  const url = getRequiredEnv("NEXT_PUBLIC_SUPABASE_URL", process.env.NEXT_PUBLIC_SUPABASE_URL)
+  const anonKey = getRequiredEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
   return createBrowserClient(url, anonKey)
 }
 
 export const createAdminSupabaseClient = () => {
-  const url = getEnv("NEXT_PUBLIC_SUPABASE_URL", process.env.NEXT_PUBLIC_SUPABASE_URL)
-  const serviceKey = getEnv("SUPABASE_SERVICE_ROLE_KEY", process.env.SUPABASE_SERVICE_ROLE_KEY)
+  const url = getRequiredEnv("NEXT_PUBLIC_SUPABASE_URL", process.env.NEXT_PUBLIC_SUPABASE_URL)
+  const serviceKey = getRequiredEnv("SUPABASE_SERVICE_ROLE_KEY", process.env.SUPABASE_SERVICE_ROLE_KEY)
   return createClient(url, serviceKey, {
     auth: {
       autoRefreshToken: false,
@@ -30,8 +28,8 @@ export const createAdminSupabaseClient = () => {
 }
 
 export const createServerSupabaseClient = (request?: NextRequest, response?: NextResponse) => {
-  const url = getEnv("NEXT_PUBLIC_SUPABASE_URL", process.env.NEXT_PUBLIC_SUPABASE_URL)
-  const anonKey = getEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  const url = getRequiredEnv("NEXT_PUBLIC_SUPABASE_URL", process.env.NEXT_PUBLIC_SUPABASE_URL)
+  const anonKey = getRequiredEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
   
   // For proxy usage
   if (request && response) {
@@ -67,7 +65,7 @@ export const createServerSupabaseClient = (request?: NextRequest, response?: Nex
       },
     })
   }
-  
+
   // For Route Handlers and Server Actions
   return createServerClient(url, anonKey, {
     cookies: {
@@ -97,3 +95,6 @@ export const createServerSupabaseClient = (request?: NextRequest, response?: Nex
     },
   })
 }
+
+export const getBusinessId = () =>
+  getRequiredEnv("NEXT_PUBLIC_BUSINESS_ID", process.env.NEXT_PUBLIC_BUSINESS_ID)
