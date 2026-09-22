@@ -1,128 +1,170 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/utils/supabase'
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
+  let userId: string | null = null
+
   try {
-    const body = await request.json()
-    const fullName = typeof body.full_name === 'string' ? body.full_name.trim() : ''
-    const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
-    const phone = typeof body.phone === 'string' ? body.phone.trim() : ''
-    const password = typeof body.password === 'string' ? body.password : ''
+    const { full_name, email, password, phone } = await request.json()
 
-    if (!fullName || fullName.length < 2) {
+    if (!full_name || !email || !password) {
       return NextResponse.json(
-        { error: 'Full name must be at least 2 characters long' },
+        { error: 'Name, email and password required' },
         { status: 400 }
       )
     }
 
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (password.length < 8) {
       return NextResponse.json(
-        { error: 'Please enter a valid email address' },
+        { error: 'Password must be at least 8 characters' },
         { status: 400 }
       )
     }
 
-    if (!password || password.length < 6) {
-      return NextResponse.json(
-        { error: 'Password must be at least 6 characters long' },
-        { status: 400 }
-      )
-    }
+    const adminClient = createAdminClient()
+    const normalizedEmail = email.toLowerCase().trim()
+    const trimmedName = full_name.trim()
+    const trimmedPhone = phone?.trim() || ''
 
-    const adminSupabase = createAdminClient()
-    const { data: existingProfile } = await adminSupabase
-      .from('profiles')
-      .select('id')
-      .eq('email', email)
-      .maybeSingle()
-
-    if (existingProfile) {
-      return NextResponse.json(
-        { error: 'Email already registered. Please login instead.' },
-        { status: 400 }
-      )
-    }
-
-    const { data: authData, error: authError } = await adminSupabase.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-      user_metadata: {
-        full_name: fullName,
-        phone: phone || null,
-      },
-    })
+    const { data: authData, error: authError } =
+      await adminClient.auth.admin.createUser({
+        email: normalizedEmail,
+        password,
+        email_confirm: true,
+        user_metadata: {
+          full_name: trimmedName,
+          phone: trimmedPhone,
+        },
+      })
 
     if (authError || !authData.user) {
-      const message = authError?.message?.toLowerCase() ?? ''
-      if (
-        message.includes('already registered') ||
-        message.includes('already been registered') ||
-        message.includes('duplicate') ||
-        authError?.status === 422
-      ) {
+      const message = authError?.message || ''
+      if (message.toLowerCase().includes('already') || message.toLowerCase().includes('duplicate')) {
         return NextResponse.json(
-          { error: 'Email already registered. Please login instead.' },
-          { status: 400 }
+          { error: 'An account with this email already exists' },
+          { status: 409 }
         )
       }
 
-      console.error('Auth user creation failed:', authError)
       return NextResponse.json(
-        { error: 'Failed to create account. Please try again.' },
+        { error: message || 'Failed to create account' },
         { status: 400 }
       )
     }
 
-    const { error: profileError } = await adminSupabase.from('profiles').insert({
-      id: authData.user.id,
-      email,
-      full_name: fullName,
-      phone: phone || null,
-      created_at: new Date().toISOString(),
-    })
+    userId = authData.user.id
+    await new Promise((resolve) => setTimeout(resolve, 600))
 
-    if (profileError) {
-      console.error('Profile insert error:', profileError)
-      await adminSupabase.auth.admin.deleteUser(authData.user.id).catch(() => undefined)
+    try {
+      const now = new Date().toISOString()
+      const { error: profileError } = await adminClient
+        .from('profiles')
+        .upsert(
+          {
+            id: userId,
+            email: normalizedEmail,
+            full_name: trimmedName,
+            phone: trimmedPhone || null,
+            role: 'business_owner',
+            created_at: now,
+            updated_at: now,
+          },
+          { onConflict: 'id' }
+        )
+
+      if (profileError) {
+        throw profileError
+      }
+
+      const slugBase =
+        normalizedEmail
+          .split('@')[0]
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '')
+          .slice(0, 20) || 'store'
+      const slug = `${slugBase}-${Math.floor(1000 + Math.random() * 9000)}`
+      const trialEndsAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+
+      const { data: business, error: businessError } = await adminClient
+        .from('businesses')
+        .insert({
+          owner_id: userId,
+          name: `${trimmedName}'s Store`,
+          slug,
+          subscription_status: 'trial',
+          subscription_plan: 'growth',
+          trial_ends_at: trialEndsAt,
+          is_onboarded: false,
+          is_published: false,
+          currency: 'NGN',
+          currency_symbol: '₦',
+          country: 'Nigeria',
+        })
+        .select()
+        .single()
+
+      if (businessError || !business) {
+        throw businessError || new Error('Business setup failed')
+      }
+
+      const { error: profileBusinessError } = await adminClient
+        .from('profiles')
+        .update({
+          business_id: business.id,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', userId)
+
+      if (profileBusinessError) {
+        throw profileBusinessError
+      }
+
+      const { error: roleError } = await adminClient
+        .from('user_roles')
+        .upsert(
+          {
+            user_id: userId,
+            business_id: business.id,
+            role: 'business_owner',
+          },
+          {
+            onConflict: 'user_id, business_id, role',
+            ignoreDuplicates: true,
+          }
+        )
+
+      if (roleError) {
+        throw roleError
+      }
+
+      return NextResponse.json({
+        success: true,
+        role: 'business_owner',
+        business_id: business.id,
+        is_onboarded: false,
+        redirect: '/login?registered=true',
+      })
+    } catch (setupError) {
+      console.error('Account setup error:', setupError)
+      await adminClient.auth.admin.deleteUser(userId)
       return NextResponse.json(
-        { error: 'Failed to create account profile. Please try again.' },
+        { error: 'Account setup failed. Please try again.' },
         { status: 500 }
       )
     }
-
-    const { data: existingRole } = await adminSupabase
-      .from('user_roles')
-      .select('id')
-      .eq('user_id', authData.user.id)
-      .maybeSingle()
-
-    if (!existingRole) {
-      const { error: roleError } = await adminSupabase.from('user_roles').insert({
-        user_id: authData.user.id,
-        role: 'customer',
-      })
-
-      if (roleError) {
-        console.error('Role insert error:', roleError)
+  } catch (error) {
+    console.error('Registration error:', error)
+    if (userId) {
+      try {
+        await createAdminClient().auth.admin.deleteUser(userId)
+      } catch (cleanupError) {
+        console.error('Registration cleanup error:', cleanupError)
       }
     }
 
-    return NextResponse.json({
-      message: 'Account created successfully',
-      user: {
-        id: authData.user.id,
-        email,
-        full_name: fullName,
-        phone: phone || null,
-      },
-      role: 'customer',
-    })
-  } catch (error) {
-    console.error('Registration error:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Something went wrong. Please try again.' },
       { status: 500 }
     )
   }

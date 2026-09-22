@@ -1,76 +1,77 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/utils/supabase'
+import { NextResponse } from 'next/server'
+import { createAdminClient, createServerClient } from '@/lib/utils/supabase'
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
-    const body = await request.json()
-    const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
-    const password = typeof body.password === 'string' ? body.password : ''
+    const { email, password } = await request.json()
 
     if (!email || !password) {
       return NextResponse.json(
-        { error: 'Email and password are required' },
+        { error: 'Email and password required' },
         { status: 400 }
       )
     }
 
     const supabase = await createServerClient()
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email.toLowerCase().trim(),
+      password,
+    })
 
-    if (error || !data.user || !data.session) {
+    if (error || !data.user) {
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
       )
     }
 
-    const [{ data: profileData }, { data: roleData }] = await Promise.all([
-      supabase
-        .from('profiles')
-        .select('email, full_name, phone, avatar_url')
-        .eq('id', data.user.id)
-        .maybeSingle(),
-      supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', data.user.id)
-        .maybeSingle(),
-    ])
+    const adminClient = createAdminClient()
+    const { data: profile } = await adminClient
+      .from('profiles')
+      .select('*, businesses(*)')
+      .eq('id', data.user.id)
+      .single()
 
-    const user = {
-      id: data.user.id,
-      email: profileData?.email ?? data.user.email ?? email,
-      full_name: profileData?.full_name ?? data.user.user_metadata?.full_name ?? null,
-      phone: profileData?.phone ?? data.user.user_metadata?.phone ?? null,
+    const role = profile?.role || 'customer'
+    const business = profile?.businesses || null
+    let redirect = '/'
+
+    if (role === 'business_owner' || role === 'staff') {
+      redirect = business?.is_onboarded ? '/admin' : '/onboarding'
+    } else if (role === 'customer') {
+      redirect = '/account'
+    } else if (role === 'investor') {
+      redirect = '/investor/dashboard'
+    } else if (role === 'platform_admin') {
+      redirect = '/platform-admin'
     }
 
-    const response = NextResponse.json({
-      user,
-      role: roleData?.role ?? 'customer',
-      message: 'Login successful',
+    return NextResponse.json({
+      success: true,
+      user: {
+        id: data.user.id,
+        email: data.user.email,
+        full_name: profile?.full_name || data.user.user_metadata?.full_name || null,
+      },
+      role,
+      business_id: profile?.business_id || null,
+      business: business
+        ? {
+            id: business.id,
+            name: business.name,
+            slug: business.slug,
+            is_onboarded: business.is_onboarded,
+            is_published: business.is_published,
+            subscription_status: business.subscription_status,
+            subscription_plan: business.subscription_plan,
+          }
+        : null,
+      redirect,
     })
-
-    response.cookies.set('sb-access-token', data.session.access_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: data.session.expires_in,
-      path: '/',
-    })
-
-    response.cookies.set('sb-refresh-token', data.session.refresh_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 30,
-      path: '/',
-    })
-
-    return response
   } catch (error) {
     console.error('Login error:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Something went wrong. Please try again.' },
       { status: 500 }
     )
   }

@@ -1,55 +1,60 @@
 import { NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/utils/supabase'
+import { createAdminClient, createServerClient } from '@/lib/utils/supabase'
 
 export async function GET() {
   try {
     const supabase = await createServerClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      return NextResponse.json({ user: null }, { status: 401 })
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    const [{ data: profileData, error: profileError }, { data: roleData, error: roleError }] = await Promise.all([
-      supabase
-        .from('profiles')
-        .select('id, email, full_name, phone')
-        .eq('id', user.id)
-        .maybeSingle(),
-      supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .maybeSingle(),
-    ])
+    const adminClient = createAdminClient()
+    const { data: profile } = await adminClient
+      .from('profiles')
+      .select('*, businesses(*)')
+      .eq('id', user.id)
+      .single()
 
-    if (profileError && profileError.code !== 'PGRST116') {
-      console.error('Profile lookup error:', profileError)
-      return NextResponse.json(
-        { error: 'An internal error occurred. Please try again.' },
-        { status: 500 }
-      )
-    }
-
-    if (roleError && roleError.code !== 'PGRST116') {
-      console.error('Role lookup error:', roleError)
-      return NextResponse.json(
-        { error: 'An internal error occurred. Please try again.' },
-        { status: 500 }
-      )
-    }
+    const role = profile?.role || 'customer'
+    const business = profile?.businesses || null
 
     return NextResponse.json({
+      success: true,
       user: {
         id: user.id,
-        email: profileData?.email ?? user.email ?? null,
-        full_name: profileData?.full_name ?? user.user_metadata?.full_name ?? null,
-        phone: profileData?.phone ?? user.user_metadata?.phone ?? null,
+        email: user.email,
+        full_name: profile?.full_name || user.user_metadata?.full_name || null,
+        phone: profile?.phone || user.user_metadata?.phone || null,
       },
-      role: roleData?.role ?? 'customer',
+      role,
+      business_id: profile?.business_id || null,
+      business: business
+        ? {
+            id: business.id,
+            name: business.name,
+            slug: business.slug,
+            logo_url: business.logo_url,
+            primary_color: business.primary_color,
+            personality: business.personality,
+            whatsapp_number: business.whatsapp_number,
+            is_onboarded: business.is_onboarded,
+            is_published: business.is_published,
+            subscription_status: business.subscription_status,
+            subscription_plan: business.subscription_plan,
+            trial_ends_at: business.trial_ends_at,
+          }
+        : null,
     })
   } catch (error) {
     console.error('Current user lookup error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Something went wrong.' },
+      { status: 500 }
+    )
   }
 }
