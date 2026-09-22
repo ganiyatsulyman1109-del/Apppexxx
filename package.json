@@ -2,6 +2,10 @@
   "name": "apex-automart",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.29.3",
+  "engines": {
+    "node": ">=20.9.0 <23"
+  },
   "scripts": {
     "build": "next build",
     "dev": "next dev -p 3000 -H 0.0.0.0",
