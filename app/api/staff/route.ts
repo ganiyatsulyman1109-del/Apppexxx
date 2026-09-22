@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdminAuth } from '@/lib/auth'
-import { createAdminSupabaseClient } from '@/lib/utils/supabase'
+import { createAdminClient } from '@/lib/utils/supabase'
 import bcrypt from 'bcryptjs'
 
 export const dynamic = 'force-dynamic'
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: auth.error }, { status: auth.status })
     }
     
-    const supabase = createAdminSupabaseClient()
+    const supabase = createAdminClient()
 
     const { data, error } = await supabase
       .from('staff')
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
        return NextResponse.json({ error: auth.error }, { status: auth.status })
     }
     
-    const supabase = createAdminSupabaseClient()
+    const supabase = createAdminClient()
 
     const body = await request.json()
     const { full_name, email, phone, pin, role, staff_id: requested_staff_id } = body

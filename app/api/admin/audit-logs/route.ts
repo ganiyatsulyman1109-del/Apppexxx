@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdminAuth } from '@/lib/auth'
-import { createAdminSupabaseClient } from '@/lib/utils/supabase'
+import { createAdminClient } from '@/lib/utils/supabase'
 
 export async function GET(request: NextRequest) {
   try {
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     const endDate = searchParams.get('end_date')
     const offset = (page - 1) * limit
 
-    const supabase = createAdminSupabaseClient()
+    const supabase = createAdminClient()
 
     let query = supabase
       .from('audit_logs')

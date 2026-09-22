@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createServerSupabaseClient, createAdminSupabaseClient } from "@/lib/utils/supabase"
+import { createServerClient, createAdminClient } from "@/lib/utils/supabase"
 import { notifyNewOrder, notifyPayment } from "@/lib/notifications"
 import { createOrderTransaction } from "@/lib/order-utils"
 import { sendOrderConfirmationToCustomer, sendOrderAlertToAdmin } from "@/lib/email"
@@ -56,7 +56,7 @@ async function verifyPaymentReference(reference: string) {
     )
   }
 
-  const supabaseAdmin = createAdminSupabaseClient()
+  const supabaseAdmin = createAdminClient()
   const paymentData = paystackData.data
   const metadata = paymentData.metadata || {}
   const customerEmail = paymentData.customer?.email || metadata.customer_email || null
@@ -127,7 +127,7 @@ async function verifyPaymentReference(reference: string) {
   const shippingAddress = metadata.shipping_address || ""
   const cartItems = metadata.cart_items || []
 
-  const supabase = createServerSupabaseClient()
+  const supabase = createServerClient()
   let authUser: any;
   try {
 

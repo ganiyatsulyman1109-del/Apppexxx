@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { createBrowserSupabaseClient } from "@/lib/utils/supabase"
+import { createBrowserClient } from "@/lib/utils/supabase"
 import { BrandLogo } from "@/components/brand-logo"
 
 export default function ResetPasswordContent() {
@@ -52,7 +52,7 @@ export default function ResetPasswordContent() {
     setError("")
 
     try {
-      const supabase = createBrowserSupabaseClient()
+      const supabase = createBrowserClient()
       
       // Update the password
       const { error: updateError } = await supabase.auth.updateUser({

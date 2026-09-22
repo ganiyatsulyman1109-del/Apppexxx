@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Search, UserPlus, ArrowLeft, X } from "lucide-react"
 import type { EasyBuyCustomer } from "@/lib/easybuy-types"
 import { apiClient } from "@/lib/api-client"
-import { createBrowserSupabaseClient } from "@/lib/utils/supabase"
+import { createBrowserClient } from "@/lib/utils/supabase"
 
 type TabType = "customers" | "debt-overview" | "reports"
 
@@ -42,7 +42,7 @@ export function EasyBuyDashboard({ staffName, staffId, onBack, isAdmin = false }
   useEffect(() => {
     fetchEasyBuyData()
 
-    const supabase = createBrowserSupabaseClient()
+    const supabase = createBrowserClient()
     const channel = supabase
       .channel('eb-dashboard-updates')
       .on('postgres_changes', {

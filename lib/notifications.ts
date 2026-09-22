@@ -1,4 +1,4 @@
-import { createAdminSupabaseClient } from "@/lib/utils/supabase"
+import { createAdminClient } from "@/lib/utils/supabase"
 
 export type NotificationPayload = {
   title: string
@@ -12,7 +12,7 @@ export type NotificationPayload = {
 
 export const notifyUsers = async (userIds: string[], payload: NotificationPayload) => {
   if (!userIds.length) return { success: false, error: "No users provided" }
-  const supabase = createAdminSupabaseClient()
+  const supabase = createAdminClient()
 
   const { error } = await supabase
     .from("notifications")
@@ -36,7 +36,7 @@ export const notifyUsers = async (userIds: string[], payload: NotificationPayloa
 }
 
 export const notifyRole = async (role: "admin" | "staff", payload: NotificationPayload) => {
-  const supabase = createAdminSupabaseClient()
+  const supabase = createAdminClient()
   const { data, error } = await supabase
     .from("user_roles")
     .select("user_id")

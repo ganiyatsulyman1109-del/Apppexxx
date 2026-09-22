@@ -28,7 +28,7 @@
 
 - [ ] Task 5: Implement Login Button on Order Confirmation
   - [ ] Read `components/ecommerce/payment-callback-content.tsx`.
-  - [ ] Add session check using `createBrowserSupabaseClient`.
+  - [ ] Add session check using `createBrowserClient`.
   - [ ] Render Login and Signup buttons if user is not logged in.
 
 - [ ] Task 6: Verification & Build

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdminAuth } from '@/lib/auth'
-import { createAdminSupabaseClient } from '@/lib/utils/supabase'
+import { createAdminClient } from '@/lib/utils/supabase'
 import bcrypt from 'bcryptjs'
 
 export async function PUT(
@@ -21,7 +21,7 @@ export async function PUT(
     }
     
     const { id } = await params
-    const supabase = createAdminSupabaseClient()
+    const supabase = createAdminClient()
     
     const body = await request.json()
     const { full_name, email, phone, role, is_active, pin } = body
@@ -84,7 +84,7 @@ export async function DELETE(
     }
 
     const { id } = await params
-    const supabase = createAdminSupabaseClient()
+    const supabase = createAdminClient()
 
     const { error } = await supabase
       .from('staff')

@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Eye, Printer, Search, ChevronDown, Edit } from "lucide-react"
 import { apiClient } from "@/lib/api-client"
 import type { Order, OrderStatus } from "@/lib/admin-types"
-import { createBrowserSupabaseClient } from "@/lib/utils/supabase"
+import { createBrowserClient } from "@/lib/utils/supabase"
 import { formatNigerianDate } from "@/lib/utils/date"
 import {
   Dialog,
@@ -45,7 +45,7 @@ export function OrdersPage() {
   useEffect(() => {
     fetchOrders()
 
-    const supabase = createBrowserSupabaseClient()
+    const supabase = createBrowserClient()
     const channel = supabase
       .channel(channelNameRef.current)
       .on(

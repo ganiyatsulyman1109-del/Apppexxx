@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { requireStaffOrAdminAuth } from '@/lib/auth'
-import { createAdminSupabaseClient } from '@/lib/utils/supabase'
+import { createAdminClient } from '@/lib/utils/supabase'
 
 export const dynamic = 'force-dynamic'
 
@@ -77,7 +77,7 @@ export async function GET(request: Request) {
       }
     }
 
-    const supabase = createAdminSupabaseClient()
+    const supabase = createAdminClient()
 
     const [ordersResponse, easyBuyOrdersResponse, easyBuyPaymentsResponse] = await Promise.all([
       supabase

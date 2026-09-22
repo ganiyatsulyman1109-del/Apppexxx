@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/utils/supabase'
+import { createServerClient } from '@/lib/utils/supabase'
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = createServerSupabaseClient()
+    const supabase = createServerClient()
     const { id } = await params
 
     const { data: { session }, error: authError } = await supabase.auth.getSession()

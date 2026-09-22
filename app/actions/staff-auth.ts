@@ -1,6 +1,6 @@
 "use server"
 
-import { createAdminSupabaseClient } from "@/lib/utils/supabase"
+import { createAdminClient } from "@/lib/utils/supabase"
 import { cookies, headers } from "next/headers"
 import bcrypt from "bcryptjs"
 import { checkRateLimitDB, logFailedAttempt } from "@/lib/rate-limiter"
@@ -22,7 +22,7 @@ export async function authenticateStaff(staffId: string, pin: string): Promise<S
   const ip = headersList.get('x-forwarded-for')
     || headersList.get('x-real-ip')
     || 'unknown'
-  const supabase = createAdminSupabaseClient()
+  const supabase = createAdminClient()
 
   const rateCheck = await checkRateLimitDB(ip, supabase)
   if (!rateCheck.allowed) {

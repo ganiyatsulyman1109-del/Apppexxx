@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminSupabaseClient } from '@/lib/utils/supabase'
+import { createAdminClient } from '@/lib/utils/supabase'
 import { requireAuth, requireStaffOrAdminAuth } from '@/lib/auth'
 import { sendOrderStatusUpdate } from '@/lib/email'
 
@@ -21,7 +21,7 @@ export async function PUT(
       return NextResponse.json({ error: authResult.error }, { status: authResult.status })
     }
     
-    const supabase = createAdminSupabaseClient()
+    const supabase = createAdminClient()
     const { id } = await params
     
     const body = await request.json()

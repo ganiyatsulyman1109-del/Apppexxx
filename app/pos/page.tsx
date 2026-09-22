@@ -6,7 +6,7 @@ import { POSDashboard } from "@/components/pos/pos-dashboard"
 import { EasyBuyDashboard } from "@/components/easybuy/easybuy-dashboard"
 import { getStaffSession } from "@/app/actions/get-staff-session"
 import { logoutStaff } from "@/app/actions/staff-auth"
-import { createBrowserSupabaseClient } from "@/lib/utils/supabase"
+import { createBrowserClient } from "@/lib/utils/supabase"
 
 import { POSTransactionHistory } from "@/components/pos/pos-transaction-history"
 
@@ -50,7 +50,7 @@ export default function POSPage() {
 
   const handleLogout = async () => {
     try {
-      const supabase = createBrowserSupabaseClient()
+      const supabase = createBrowserClient()
       await supabase.auth.signOut()
       
       // Clear staff session cookie

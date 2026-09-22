@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
-import { createBrowserSupabaseClient } from '@/lib/utils/supabase'
+import { createBrowserClient } from '@/lib/utils/supabase'
 import { BrandLogo } from "@/components/brand-logo"
 
 export default function CustomerLoginPage() {
@@ -31,7 +31,7 @@ export default function CustomerLoginPage() {
     setError("")
 
     try {
-      const supabase = createBrowserSupabaseClient()
+      const supabase = createBrowserClient()
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -80,7 +80,7 @@ export default function CustomerLoginPage() {
     setError("")
 
     try {
-      const supabase = createBrowserSupabaseClient()
+      const supabase = createBrowserClient()
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
       })

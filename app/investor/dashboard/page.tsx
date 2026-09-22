@@ -1,7 +1,7 @@
 "use client"
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createBrowserSupabaseClient } from '@/lib/utils/supabase'
+import { createBrowserClient } from '@/lib/utils/supabase'
 import { BrandLogo } from "@/components/brand-logo"
 
 export default function InvestorDashboard() {
@@ -11,7 +11,7 @@ export default function InvestorDashboard() {
 
   useEffect(() => {
     const init = async () => {
-      const supabase = createBrowserSupabaseClient()
+      const supabase = createBrowserClient()
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) {
         router.push('/investor/login')
@@ -70,7 +70,7 @@ export default function InvestorDashboard() {
           </div>
           <button
             onClick={async () => {
-              const supabase = createBrowserSupabaseClient()
+              const supabase = createBrowserClient()
               await supabase.auth.signOut()
               router.push('/investor/login')
             }}

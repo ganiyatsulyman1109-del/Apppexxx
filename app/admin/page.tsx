@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { AdminLogin } from "@/components/admin/admin-login"
 import { AdminDashboard } from "@/components/admin/admin-dashboard"
-import { createBrowserSupabaseClient } from "@/lib/utils/supabase"
+import { createBrowserClient } from "@/lib/utils/supabase"
 import { EasyBuyDashboard } from "@/components/easybuy/easybuy-dashboard"
 import { BrandLogo } from "@/components/brand-logo"
 
@@ -23,7 +23,7 @@ export default function AdminPage() {
 
   const checkAuth = async () => {
     try {
-      const supabase = createBrowserSupabaseClient()
+      const supabase = createBrowserClient()
       const { data: { user }, error } = await supabase.auth.getUser()
       if (error || !user) {
         setIsLoggedIn(false)
@@ -56,7 +56,7 @@ export default function AdminPage() {
   const handleLogout = async () => {
     setIsLoggingOut(true)
     try {
-      const supabase = createBrowserSupabaseClient()
+      const supabase = createBrowserClient()
       await supabase.auth.signOut()
     } catch (error) {
       console.error("Logout failed:", error)

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminSupabaseClient, createServerSupabaseClient } from '@/lib/utils/supabase'
+import { createAdminClient, createServerClient } from '@/lib/utils/supabase'
 import { notifyInvestor } from '@/lib/notifications'
 import { requireAdminAuth } from '@/lib/auth'
 
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: authResult.error || 'Unauthorized' }, { status: authResult.status || 401 })
     }
 
-    const supabase = createAdminSupabaseClient()
+    const supabase = createAdminClient()
     
     const { searchParams } = new URL(request.url)
     const investor_id = searchParams.get('investor_id')
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: authResult.error || 'Admin access required' }, { status: authResult.status || 403 })
     }
 
-    const adminSupabase = createAdminSupabaseClient()
+    const adminSupabase = createAdminClient()
     
     const body = await request.json()
     const { investor_id, amount, payment_method, payment_date, notes } = body

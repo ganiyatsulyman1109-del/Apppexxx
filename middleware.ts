@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/utils/supabase'
+import { createServerClient } from '@/lib/utils/supabase'
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -45,7 +45,7 @@ export async function middleware(request: NextRequest) {
     }
 
     // Create Supabase client for proxy with cookie support
-    const supabase = createServerSupabaseClient(request, response)
+    const supabase = createServerClient(request, response)
     
     // Get current session
     const { data: { session } } = await supabase.auth.getSession()

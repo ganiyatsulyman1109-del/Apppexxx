@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient, createAdminSupabaseClient } from '@/lib/utils/supabase'
+import { createServerClient, createAdminClient } from '@/lib/utils/supabase'
 
 export async function GET(_request: NextRequest) {
   try {
-    const supabase = createServerSupabaseClient()
+    const supabase = createServerClient()
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const admin = createAdminSupabaseClient()
+    const admin = createAdminClient()
 
     // Try by user_id first
     let customer = null

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireStaffOrAdminAuth } from '@/lib/auth'
-import { createAdminSupabaseClient } from '@/lib/utils/supabase'
+import { createAdminClient } from '@/lib/utils/supabase'
 import { logAudit } from '@/lib/audit'
 import { toNigeriaDateTime } from '@/lib/utils/date'
 
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: authResult.error }, { status: authResult.status })
     }
     
-    const supabase = createAdminSupabaseClient()
+    const supabase = createAdminClient()
     
     const { searchParams } = new URL(request.url)
     const customer_id = searchParams.get('customer_id')
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: authResult.error }, { status: authResult.status })
     }
     
-    const supabase = createAdminSupabaseClient()
+    const supabase = createAdminClient()
     
     if (!customer_id || !amount || !payment_method) {
       return NextResponse.json({ error: 'Missing required fields: customer_id, amount, payment_method' }, { status: 400 })

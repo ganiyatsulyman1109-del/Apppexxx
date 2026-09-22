@@ -1,8 +1,8 @@
 
-const { createAdminSupabaseClient } = require('../lib/utils/supabase');
+const { createAdminClient } = require('../lib/utils/supabase');
 
 async function runVerification() {
-  const supabase = createAdminSupabaseClient();
+  const supabase = createAdminClient();
 
   console.log('--- CUSTOMERS CHECK ---');
   const { data: customers } = await supabase.from('customers').select('full_name, email, phone, total_orders, total_spent').order('created_at', { ascending: false }).limit(10);

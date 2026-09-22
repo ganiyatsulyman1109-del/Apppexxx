@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/utils/supabase'
+import { createServerClient } from '@/lib/utils/supabase'
 import { notifyRole, notifyUsers } from '@/lib/notifications'
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createServerSupabaseClient()
+    const supabase = createServerClient()
 
     const { data: { session }, error: authError } = await supabase.auth.getSession()
     if (authError || !session) {
@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createServerSupabaseClient()
+    const supabase = createServerClient()
 
     const { data: { session }, error: authError } = await supabase.auth.getSession()
     if (authError || !session) {
@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const supabase = createServerSupabaseClient()
+    const supabase = createServerClient()
     const { data: { session }, error: authError } = await supabase.auth.getSession()
     if (authError || !session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 

@@ -9,7 +9,7 @@
 
 ## Global implementation rule (applies to all write routes)
 1. Keep auth/role verification at the top using regular server client and existing auth helper.
-2. Instantiate `createAdminSupabaseClient` in each route that performs writes.
+2. Instantiate `createAdminClient` in each route that performs writes.
 3. Execute all write-side DB operations (`INSERT/UPDATE/DELETE`, including dependent writes) through admin client.
 4. Preserve existing response format and validation logic unless directly required to fix confirmed failure.
 

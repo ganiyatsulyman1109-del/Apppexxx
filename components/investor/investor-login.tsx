@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { sendPasswordResetEmail } from "@/lib/auth"
-import { createBrowserSupabaseClient } from "@/lib/utils/supabase"
+import { createBrowserClient } from "@/lib/utils/supabase"
 import type { Investor } from "@/lib/investor-types"
 import { BrandLogo } from "@/components/brand-logo"
 
@@ -38,7 +38,7 @@ export function InvestorLogin({ onLogin }: InvestorLoginProps) {
     setIsLoading(true)
 
     try {
-      const supabase = createBrowserSupabaseClient()
+      const supabase = createBrowserClient()
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password

@@ -15,15 +15,15 @@ files.forEach(f => {
   let c = fs.readFileSync(f, 'utf8');
   
   // Add import if not exists
-  if (!c.includes('createAdminSupabaseClient')) {
+  if (!c.includes('createAdminClient')) {
     c = c.replace(/import \{([^}]+)\} from ['"]@\/lib\/utils\/supabase['"]/g, (match, p1) => {
-      if (p1.includes('createAdminSupabaseClient')) return match;
-      return `import {${p1}, createAdminSupabaseClient} from '@/lib/utils/supabase'`;
+      if (p1.includes('createAdminClient')) return match;
+      return `import {${p1}, createAdminClient} from '@/lib/utils/supabase'`;
     });
   }
 
   // Replace usage
-  c = c.replace(/createServerSupabaseClient\(\)/g, 'createAdminSupabaseClient()');
+  c = c.replace(/createServerClient\(\)/g, 'createAdminClient()');
   
   fs.writeFileSync(f, c);
   console.log('Updated', f);

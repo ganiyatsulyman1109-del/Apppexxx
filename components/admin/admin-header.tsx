@@ -15,7 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import type { AdminPage } from "./admin-sidebar"
-import { createBrowserSupabaseClient } from "@/lib/utils/supabase"
+import { createBrowserClient } from "@/lib/utils/supabase"
 
 interface AdminHeaderProps {
   currentPage: AdminPage
@@ -58,7 +58,7 @@ export function AdminHeader({ currentPage, adminEmail, onLogout }: AdminHeaderPr
   useEffect(() => {
     fetchNotifications()
 
-    const supabase = createBrowserSupabaseClient()
+    const supabase = createBrowserClient()
     const channel = supabase
       .channel(channelNameRef.current)
       .on(

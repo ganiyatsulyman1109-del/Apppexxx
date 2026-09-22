@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createAdminSupabaseClient, createServerSupabaseClient } from "@/lib/utils/supabase"
+import { createAdminClient, createServerClient } from "@/lib/utils/supabase"
 import { requireAdminAuth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { ECOMMERCE_PRODUCTS } from "@/lib/ecommerce-mock-data"
@@ -20,7 +20,7 @@ export async function GET(
       return NextResponse.json({ error: 'Product not found' }, { status: 404 })
     }
 
-    const supabase = createServerSupabaseClient()
+    const supabase = createServerClient()
     
     const { data: product, error } = await supabase
       .from('products')
@@ -92,7 +92,7 @@ export async function PUT(
       return NextResponse.json({ error: auth.error }, { status: auth.status })
     }
 
-    const supabase = createAdminSupabaseClient()
+    const supabase = createAdminClient()
     const { id } = await params
     const body = await request.json()
 
@@ -194,7 +194,7 @@ export async function DELETE(
       return NextResponse.json({ error: auth.error }, { status: auth.status })
     }
 
-    const supabase = createAdminSupabaseClient()
+    const supabase = createAdminClient()
     const { id } = await params
 
     const { error } = await supabase

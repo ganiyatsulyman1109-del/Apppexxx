@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { AlertTriangle, TrendingUp, Users, DollarSign, Clock, Phone, Loader2 } from "lucide-react"
-import { createBrowserSupabaseClient } from "@/lib/utils/supabase"
+import { createBrowserClient } from "@/lib/utils/supabase"
 
 interface DebtOverviewStats {
   totalOutstandingDebt: number
@@ -56,7 +56,7 @@ export function EasyBuyDebtOverview() {
   }, [fetchDebtOverview])
 
   useEffect(() => {
-    const supabase = createBrowserSupabaseClient()
+    const supabase = createBrowserClient()
     const channel = supabase
       .channel("debt-overview-updates")
       .on(

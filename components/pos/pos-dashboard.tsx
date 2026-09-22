@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button"
 import { LogOut, CreditCard, History } from "lucide-react"
 import type { CartItem, Product, PaymentMethod, Sale } from "@/lib/pos-types"
 import { apiClient } from "@/lib/api-client"
-import { createBrowserSupabaseClient } from "@/lib/utils/supabase"
+import { createBrowserClient } from "@/lib/utils/supabase"
 
 function getNigerianToday(): string { 
   return new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' })
@@ -187,7 +187,7 @@ export function POSDashboard({ staffName, staffId, onLogout, onOpenEasyBuy, onOp
   }, [])
 
   useEffect(() => {
-    const supabase = createBrowserSupabaseClient()
+    const supabase = createBrowserClient()
     const channel = supabase
       .channel("pos-updates")
       .on(

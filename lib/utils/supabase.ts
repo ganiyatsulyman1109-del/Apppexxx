@@ -14,13 +14,13 @@ const getRequiredEnv = (key: string, value: string | undefined) => {
   return value
 }
 
-export const createBrowserSupabaseClient = () => {
+export const createBrowserClient = () => {
   const url = getRequiredEnv("NEXT_PUBLIC_SUPABASE_URL", process.env.NEXT_PUBLIC_SUPABASE_URL)
   const anonKey = getRequiredEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
   return createSupabaseBrowserClient(url, anonKey)
 }
 
-export const createAdminSupabaseClient = () => {
+export const createAdminClient = () => {
   const url = getRequiredEnv("NEXT_PUBLIC_SUPABASE_URL", process.env.NEXT_PUBLIC_SUPABASE_URL)
   const serviceKey = getRequiredEnv("SUPABASE_SERVICE_ROLE_KEY", process.env.SUPABASE_SERVICE_ROLE_KEY)
   return createClient(url, serviceKey, {
@@ -31,7 +31,7 @@ export const createAdminSupabaseClient = () => {
   })
 }
 
-export const createServerSupabaseClient = (request?: NextRequest, response?: NextResponse) => {
+export const createServerClient = (request?: NextRequest, response?: NextResponse) => {
   const url = getRequiredEnv("NEXT_PUBLIC_SUPABASE_URL", process.env.NEXT_PUBLIC_SUPABASE_URL)
   const anonKey = getRequiredEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
   
@@ -100,16 +100,8 @@ export const createServerSupabaseClient = (request?: NextRequest, response?: Nex
   })
 }
 
-export const createBrowserClient = createBrowserSupabaseClient
-
-export async function createServerClient() {
-  return createServerSupabaseClient()
-}
-
-export const createAdminClient = createAdminSupabaseClient
-
 export async function getBusinessId(
-  supabase: ReturnType<typeof createAdminSupabaseClient>
+  supabase: ReturnType<typeof createAdminClient>
 ): Promise<string | null> {
   const {
     data: { user },

@@ -1,8 +1,8 @@
 
-const { createAdminSupabaseClient } = require('../lib/utils/supabase');
+const { createAdminClient } = require('../lib/utils/supabase');
 
 async function runVerification() {
-  const supabase = createAdminSupabaseClient();
+  const supabase = createAdminClient();
 
   console.log('--- STAFF CHECK ---');
   const { data: staff } = await supabase.from('staff').select('staff_id, role, is_active').order('created_at');

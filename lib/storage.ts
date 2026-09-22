@@ -1,9 +1,9 @@
-import { createBrowserSupabaseClient } from "@/lib/utils/supabase"
+import { createBrowserClient } from "@/lib/utils/supabase"
 
 // Storage utility for file uploads
 export class StorageService {
   private getSupabase() {
-    return createBrowserSupabaseClient()
+    return createBrowserClient()
   }
 
   /**

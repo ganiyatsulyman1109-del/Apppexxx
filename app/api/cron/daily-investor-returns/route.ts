@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminSupabaseClient } from '@/lib/utils/supabase'
+import { createAdminClient } from '@/lib/utils/supabase'
 
 function toNigeriaDateString(utcTimestamp: string | Date): string {
   const date = new Date(utcTimestamp)
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const supabase = createAdminSupabaseClient()
+    const supabase = createAdminClient()
     const now = new Date()
     
     // 2. Get Today's Total Revenue

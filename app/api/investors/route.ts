@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient, createAdminSupabaseClient } from '@/lib/utils/supabase'
+import { createServerClient, createAdminClient } from '@/lib/utils/supabase'
 import { calculateDaysSinceInvestment, calculateTotalReturns } from '@/lib/investor-types'
 import { requireAdminAuth } from '@/lib/auth'
 
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: authResult.error || 'Unauthorized' }, { status: authResult.status || 401 })
     }
 
-    const supabase = createAdminSupabaseClient()
+    const supabase = createAdminClient()
     
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
     
     // Process investors and sync returns
     // This ensures that even if the cron job fails, returns are calculated correctly when viewed
-    const adminSupabase = createAdminSupabaseClient()
+    const adminSupabase = createAdminClient()
     const updatePromises: PromiseLike<any>[] = []
 
     // Pre-fetch all necessary data to avoid N+1 queries in the loop.
@@ -232,7 +232,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: authResult.error || 'Unauthorized' }, { status: authResult.status || 401 })
     }
 
-    const supabase = createAdminSupabaseClient()
+    const supabase = createAdminClient()
     
     const body = await request.json()
     const {
@@ -258,7 +258,7 @@ export async function POST(request: NextRequest) {
     const tempPassword = password
     
     // Use Admin client for user creation
-    const adminSupabase = createAdminSupabaseClient()
+    const adminSupabase = createAdminClient()
     
     // Check if investor with this email already exists
     const { data: existingInvestorRecord } = await adminSupabase

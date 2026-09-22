@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Bell, Building2, Printer, Shield, Users, Loader2 } from "lucide-react"
-import { createBrowserSupabaseClient } from "@/lib/utils/supabase"
+import { createBrowserClient } from "@/lib/utils/supabase"
 
 type StaffRecord = {
   id: string
@@ -317,7 +317,7 @@ export function SettingsPage({ initialTab = "business" }: SettingsPageProps) {
         setSecurityStatus("error")
         return
       }
-      const supabase = createBrowserSupabaseClient()
+      const supabase = createBrowserClient()
       const { error } = await supabase.auth.updateUser({ password: securityForm.newPassword })
       if (error) {
         setSecurityStatus("error")

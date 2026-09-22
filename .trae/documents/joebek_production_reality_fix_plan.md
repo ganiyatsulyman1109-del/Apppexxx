@@ -41,7 +41,7 @@
 ## 7. Fix Settings Persistence
 - [ ] **Audit Settings**: Read `components/admin/settings-page.tsx` and `app/api/settings/route.ts`.
 - [ ] **Fix Load**: Ensure frontend maps API response keys to form fields correctly.
-- [ ] **Fix Save**: Ensure API upserts settings correctly using `createAdminSupabaseClient`.
+- [ ] **Fix Save**: Ensure API upserts settings correctly using `createAdminClient`.
 - [ ] **Verify**: Change a setting, save, reload, and verify persistence.
 
 ## 8. Fix POS Sales Display

@@ -26,7 +26,7 @@
   - [ ] Read `app/api/auth/login/route.ts`.
   - [ ] Update POST handler to set `sb-access-token` and `sb-refresh-token` cookies on the response.
   - [ ] Read `app/login/page.tsx`.
-  - [ ] Update to use `createBrowserSupabaseClient` and `signInWithPassword` directly on the client side (preferred fix).
+  - [ ] Update to use `createBrowserClient` and `signInWithPassword` directly on the client side (preferred fix).
 
 - [ ] Task 5: Fix Customer Orders Not Showing After Signup
   - [ ] Read `app/api/account/orders/route.ts` (or where orders are fetched).

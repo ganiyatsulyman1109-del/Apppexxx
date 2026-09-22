@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminSupabaseClient, createServerSupabaseClient } from '@/lib/utils/supabase'
+import { createAdminClient, createServerClient } from '@/lib/utils/supabase'
 import { calculateDaysSinceInvestment, calculateTotalReturns } from '@/lib/investor-types'
 import { requireAdminAuth } from '@/lib/auth'
 
@@ -27,13 +27,13 @@ export async function GET(
     if (!authResult.authenticated) {
       // It might be an investor requesting their own data. The requireAdminAuth fails for investors.
       // We will verify their actual auth below
-      const { data: { session } } = await createServerSupabaseClient().auth.getSession()
+      const { data: { session } } = await createServerClient().auth.getSession()
       if (!session) {
         return NextResponse.json({ error: authResult.error || 'Unauthorized' }, { status: authResult.status || 401 })
       }
     }
 
-    const supabase = createAdminSupabaseClient()
+    const supabase = createAdminClient()
     const { id } = await params
     
     const { data, error } = await supabase
@@ -52,7 +52,7 @@ export async function GET(
 
     // Relax the check to allow the investor themselves to read their own data
     if (!authResult.authenticated) {
-        const { data: { session } } = await createServerSupabaseClient().auth.getSession()
+        const { data: { session } } = await createServerClient().auth.getSession()
         if (session?.user?.id !== data.user_id) {
              return NextResponse.json({ error: 'Access denied' }, { status: 403 })
         }
@@ -62,7 +62,7 @@ export async function GET(
     
     // Sync returns if active
     if (data.status === 'active' && data.investment_date && data.investment_amount && data.daily_return_rate) {
-        const adminSupabase = createAdminSupabaseClient()
+        const adminSupabase = createAdminClient()
         
         // Calculate earning days from actual paid orders and easybuy_payments
         const investmentDateStr = toNigeriaDateString(data.investment_date)
@@ -153,8 +153,8 @@ export async function PUT(
       return NextResponse.json({ error: authResult.error || 'Unauthorized' }, { status: authResult.status || 401 })
     }
 
-    const supabase = createAdminSupabaseClient()
-    const adminSupabase = createAdminSupabaseClient()
+    const supabase = createAdminClient()
+    const adminSupabase = createAdminClient()
     const { id } = await params
 
     const body = await request.json()
@@ -270,7 +270,7 @@ export async function DELETE(
       return NextResponse.json({ error: authResult.error || 'Unauthorized' }, { status: authResult.status || 401 })
     }
 
-    const supabase = createAdminSupabaseClient()
+    const supabase = createAdminClient()
     const { id } = await params
 
     const { error } = await supabase 
@@ -306,7 +306,7 @@ export async function PATCH(
       )
     }
 
-    const adminSupabase = createAdminSupabaseClient()
+    const adminSupabase = createAdminClient()
     const { id } = await params
 
     const body = await request.json()
