@@ -2,58 +2,39 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/utils/supabase'
 
 export async function POST(request: NextRequest) {
-  const ip = request.headers.get('x-forwarded-for')
-    || request.headers.get('x-real-ip')
-    || 'unknown'
-
   try {
-    const adminSupabase = createAdminClient()
-    type CustomerRecord = {
-      id?: string
-      user_id?: string
-      full_name?: string | null
-      phone?: string | null
-    } | null
-
-    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString()
-    const { count } = await adminSupabase
-      .from('rate_limits')
-      .select('*', { count: 'exact', head: true })
-      .eq('ip_address', ip)
-      .eq('action', 'register')
-      .gte('created_at', fifteenMinutesAgo)
-
-    if (count && count >= 5) {
-      return NextResponse.json(
-        { error: 'Too many attempts. Please try again in 15 minutes.' },
-        { status: 429 }
-      )
-    }
-
-    await adminSupabase
-      .from('rate_limits')
-      .insert({
-        ip_address: ip,
-        action: 'register',
-        created_at: new Date().toISOString(),
-      })
-      .catch(() => undefined)
-
     const body = await request.json()
-    const { email, password, full_name, phone } = body
-    const normalizedEmail = String(email ?? '').trim().toLowerCase()
+    const fullName = typeof body.full_name === 'string' ? body.full_name.trim() : ''
+    const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
+    const phone = typeof body.phone === 'string' ? body.phone.trim() : ''
+    const password = typeof body.password === 'string' ? body.password : ''
 
-    if (!normalizedEmail || !password) {
+    if (!fullName || fullName.length < 2) {
       return NextResponse.json(
-        { error: 'Email and password are required' },
+        { error: 'Full name must be at least 2 characters long' },
         { status: 400 }
       )
     }
 
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json(
+        { error: 'Please enter a valid email address' },
+        { status: 400 }
+      )
+    }
+
+    if (!password || password.length < 6) {
+      return NextResponse.json(
+        { error: 'Password must be at least 6 characters long' },
+        { status: 400 }
+      )
+    }
+
+    const adminSupabase = createAdminClient()
     const { data: existingProfile } = await adminSupabase
       .from('profiles')
       .select('id')
-      .eq('email', normalizedEmail)
+      .eq('email', email)
       .maybeSingle()
 
     if (existingProfile) {
@@ -64,121 +45,51 @@ export async function POST(request: NextRequest) {
     }
 
     const { data: authData, error: authError } = await adminSupabase.auth.admin.createUser({
-      email: normalizedEmail,
-      password: String(password),
+      email,
+      password,
       email_confirm: true,
       user_metadata: {
-        full_name: full_name || null,
+        full_name: fullName,
         phone: phone || null,
       },
     })
 
-    if (authError) {
-      const errorMessage = String(authError.message || '').toLowerCase()
-
+    if (authError || !authData.user) {
+      const message = authError?.message?.toLowerCase() ?? ''
       if (
-        errorMessage.includes('already registered') ||
-        errorMessage.includes('already been registered') ||
-        errorMessage.includes('duplicate') ||
-        authError.status === 422
+        message.includes('already registered') ||
+        message.includes('already been registered') ||
+        message.includes('duplicate') ||
+        authError?.status === 422
       ) {
         return NextResponse.json(
-          { error: 'An account with this email already exists. Please log in instead.' },
+          { error: 'Email already registered. Please login instead.' },
           { status: 400 }
         )
       }
 
-      console.error('Register auth error:', authError)
+      console.error('Auth user creation failed:', authError)
       return NextResponse.json(
         { error: 'Failed to create account. Please try again.' },
         { status: 400 }
       )
     }
 
-    if (!authData.user) {
-      return NextResponse.json(
-        { error: 'Failed to create user' },
-        { status: 400 }
-      )
-    }
-
-    const { error: profileError } = await adminSupabase
-      .from('profiles')
-      .insert({
-        id: authData.user.id,
-        email: normalizedEmail,
-        full_name: full_name || normalizedEmail.split('@')[0],
-        phone: phone || null,
-        created_at: new Date().toISOString(),
-      })
+    const { error: profileError } = await adminSupabase.from('profiles').insert({
+      id: authData.user.id,
+      email,
+      full_name: fullName,
+      phone: phone || null,
+      created_at: new Date().toISOString(),
+    })
 
     if (profileError) {
-      console.error('Profile creation error:', profileError)
+      console.error('Profile insert error:', profileError)
+      await adminSupabase.auth.admin.deleteUser(authData.user.id).catch(() => undefined)
       return NextResponse.json(
-        { error: 'An internal error occurred. Please try again.' },
+        { error: 'Failed to create account profile. Please try again.' },
         { status: 500 }
       )
-    }
-
-    const { data: existingCustomer, error: customerLookupError } = await adminSupabase
-      .from('customers')
-      .select('id, user_id, full_name')
-      .eq('email', normalizedEmail)
-      .maybeSingle()
-
-    if (customerLookupError && customerLookupError.code !== 'PGRST116') {
-      console.error('Customer lookup error:', customerLookupError)
-    }
-
-    let customerData: CustomerRecord = null
-
-    if (existingCustomer) {
-      const { data, error } = await adminSupabase
-        .from('customers')
-        .update({
-          user_id: authData.user.id,
-          full_name: full_name || existingCustomer.full_name,
-          phone: phone || existingCustomer.phone || null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('email', normalizedEmail)
-        .select()
-        .single()
-
-      customerData = data
-
-      if (error) {
-        console.error('Customer update error:', error)
-        return NextResponse.json(
-          { error: 'An internal error occurred. Please try again.' },
-          { status: 500 }
-        )
-      }
-    } else {
-      const { data, error } = await adminSupabase
-        .from('customers')
-        .insert({
-          user_id: authData.user.id,
-          full_name: full_name || normalizedEmail.split('@')[0],
-          email: normalizedEmail,
-          phone: phone || null,
-          total_orders: 0,
-          total_spent: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .select()
-        .single()
-
-      customerData = data
-
-      if (error) {
-        console.error('Customer insert error:', error)
-        return NextResponse.json(
-          { error: 'An internal error occurred. Please try again.' },
-          { status: 500 }
-        )
-      }
     }
 
     const { data: existingRole } = await adminSupabase
@@ -188,15 +99,13 @@ export async function POST(request: NextRequest) {
       .maybeSingle()
 
     if (!existingRole) {
-      const { error: roleError } = await adminSupabase
-        .from('user_roles')
-        .insert({
-          user_id: authData.user.id,
-          role: 'customer',
-        })
+      const { error: roleError } = await adminSupabase.from('user_roles').insert({
+        user_id: authData.user.id,
+        role: 'customer',
+      })
 
       if (roleError) {
-        console.error('Role creation error:', roleError)
+        console.error('Role insert error:', roleError)
       }
     }
 
@@ -204,24 +113,14 @@ export async function POST(request: NextRequest) {
       message: 'Account created successfully',
       user: {
         id: authData.user.id,
-        email: normalizedEmail,
-        full_name: full_name || customerData?.full_name || null,
+        email,
+        full_name: fullName,
+        phone: phone || null,
       },
-      customer: customerData,
+      role: 'customer',
     })
-  } catch (error: unknown) {
-    console.error('Registration catch block error:', error)
-
-    const message = error instanceof Error ? error.message : String(error)
-    const code = typeof error === 'object' && error !== null && 'code' in error ? (error as { code?: string }).code : undefined
-
-    if (message.toLowerCase().includes('duplicate') || code === '23505') {
-      return NextResponse.json(
-        { error: 'Email already registered. Please login instead.' },
-        { status: 400 }
-      )
-    }
-
+  } catch (error) {
+    console.error('Registration error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

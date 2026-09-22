@@ -13,7 +13,7 @@ export async function GET() {
     const [{ data: profileData, error: profileError }, { data: roleData, error: roleError }] = await Promise.all([
       supabase
         .from('profiles')
-        .select('id, email, full_name, phone, avatar_url')
+        .select('id, email, full_name, phone')
         .eq('id', user.id)
         .maybeSingle(),
       supabase
@@ -45,7 +45,6 @@ export async function GET() {
         email: profileData?.email ?? user.email ?? null,
         full_name: profileData?.full_name ?? user.user_metadata?.full_name ?? null,
         phone: profileData?.phone ?? user.user_metadata?.phone ?? null,
-        avatar_url: profileData?.avatar_url ?? user.user_metadata?.avatar_url ?? null,
       },
       role: roleData?.role ?? 'customer',
     })

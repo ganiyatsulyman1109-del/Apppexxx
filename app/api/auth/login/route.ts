@@ -1,26 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminClient, createServerClient } from '@/lib/utils/supabase'
-import { checkRateLimitDB, logFailedAttempt } from '@/lib/rate-limiter'
-import * as Sentry from '@sentry/nextjs'
+import { createServerClient } from '@/lib/utils/supabase'
 
 export async function POST(request: NextRequest) {
-  const ip = request.headers.get('x-forwarded-for')
-    || request.headers.get('x-real-ip')
-    || 'unknown'
-
   try {
-    const adminSupabase = createAdminClient()
-    const rateCheck = await checkRateLimitDB(ip, adminSupabase)
-
-    if (!rateCheck.allowed) {
-      return NextResponse.json(
-        { error: rateCheck.message },
-        { status: 429 }
-      )
-    }
-
     const body = await request.json()
-    const { email, password } = body
+    const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
+    const password = typeof body.password === 'string' ? body.password : ''
 
     if (!email || !password) {
       return NextResponse.json(
@@ -30,28 +15,11 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = await createServerClient()
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: String(email).trim().toLowerCase(),
-      password: String(password),
-    })
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
-    if (error) {
-      Sentry.captureMessage('Failed login attempt', {
-        level: 'warning',
-        extra: { ip, email: String(email).trim().toLowerCase(), timestamp: new Date().toISOString() },
-      })
-
-      await logFailedAttempt(ip, adminSupabase)
-
+    if (error || !data.user || !data.session) {
       return NextResponse.json(
         { error: 'Invalid email or password' },
-        { status: 401 }
-      )
-    }
-
-    if (!data.user || !data.session) {
-      return NextResponse.json(
-        { error: 'Login failed' },
         { status: 401 }
       )
     }
@@ -59,7 +27,7 @@ export async function POST(request: NextRequest) {
     const [{ data: profileData }, { data: roleData }] = await Promise.all([
       supabase
         .from('profiles')
-        .select('full_name, phone, email, avatar_url')
+        .select('email, full_name, phone, avatar_url')
         .eq('id', data.user.id)
         .maybeSingle(),
       supabase
@@ -71,16 +39,14 @@ export async function POST(request: NextRequest) {
 
     const user = {
       id: data.user.id,
-      email: profileData?.email ?? data.user.email ?? null,
+      email: profileData?.email ?? data.user.email ?? email,
       full_name: profileData?.full_name ?? data.user.user_metadata?.full_name ?? null,
       phone: profileData?.phone ?? data.user.user_metadata?.phone ?? null,
-      avatar_url: profileData?.avatar_url ?? data.user.user_metadata?.avatar_url ?? null,
     }
 
-    const role = roleData?.role ?? 'customer'
     const response = NextResponse.json({
       user,
-      role,
+      role: roleData?.role ?? 'customer',
       message: 'Login successful',
     })
 
