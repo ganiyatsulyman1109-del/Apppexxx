@@ -1,102 +1,77 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/utils/supabase'
-import { createAdminSupabaseClient } from '@/lib/utils/supabase'
-import { checkRateLimitDB, logFailedAttempt } from '@/lib/rate-limiter'
-import { cookies } from 'next/headers'
-import * as Sentry from '@sentry/nextjs'
+import { NextResponse } from 'next/server'
+import { createAdminClient, createServerClient } from '@/lib/utils/supabase'
 
-export async function POST(request: NextRequest) {
-  const ip = request.headers.get('x-forwarded-for')
-    || request.headers.get('x-real-ip')
-    || 'unknown'
-
+export async function POST(request: Request) {
   try {
-    const adminSupabase = createAdminSupabaseClient()
-
-    const rateCheck = await checkRateLimitDB(ip, adminSupabase)
-    if (!rateCheck.allowed) {
-      return NextResponse.json(
-        { error: rateCheck.message },
-        { status: 429 }
-      )
-    }
-
-    const body = await request.json()
-    const { email, password } = body
+    const { email, password } = await request.json()
 
     if (!email || !password) {
       return NextResponse.json(
-        { error: 'Email and password are required' },
+        { error: 'Email and password required' },
         { status: 400 }
       )
     }
-    
-    const supabase = createServerSupabaseClient()
 
+    const supabase = await createServerClient()
     const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password
+      email: email.toLowerCase().trim(),
+      password,
     })
 
-    if (error) {
-      Sentry.captureMessage('Failed login attempt', { 
-        level: 'warning', 
-        extra: { ip, timestamp: new Date().toISOString() } 
-      })
-      
-      await logFailedAttempt(ip, adminSupabase)
-      
+    if (error || !data.user) {
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
       )
     }
 
-    if (!data.user || !data.session) {
-      return NextResponse.json(
-        { error: 'Login failed' },
-        { status: 401 }
-      )
+    const adminClient = createAdminClient()
+    const { data: profile } = await adminClient
+      .from('profiles')
+      .select('*, businesses(*)')
+      .eq('id', data.user.id)
+      .single()
+
+    const role = profile?.role || 'customer'
+    const business = profile?.businesses || null
+    let redirect = '/'
+
+    if (role === 'business_owner' || role === 'staff') {
+      redirect = business?.is_onboarded ? '/admin' : '/onboarding'
+    } else if (role === 'customer') {
+      redirect = '/account'
+    } else if (role === 'investor') {
+      redirect = '/investor/dashboard'
+    } else if (role === 'platform_admin') {
+      redirect = '/platform-admin'
     }
 
-    // Get user role
-    const { data: roleData } = await adminSupabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', data.user.id)
-      .maybeSingle()
-
-    const role = roleData?.role || 'customer'
-
-    // Build response with session cookies
-    const response = NextResponse.json({
-      user: data.user,
+    return NextResponse.json({
+      success: true,
+      user: {
+        id: data.user.id,
+        email: data.user.email,
+        full_name: profile?.full_name || data.user.user_metadata?.full_name || null,
+      },
       role,
-      message: 'Login successful'
+      business_id: profile?.business_id || null,
+      business: business
+        ? {
+            id: business.id,
+            name: business.name,
+            slug: business.slug,
+            is_onboarded: business.is_onboarded,
+            is_published: business.is_published,
+            subscription_status: business.subscription_status,
+            subscription_plan: business.subscription_plan,
+          }
+        : null,
+      redirect,
     })
-
-    // Set session cookies so browser persists the session
-    response.cookies.set('sb-access-token', data.session.access_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: data.session.expires_in,
-      path: '/'
-    })
-
-    response.cookies.set('sb-refresh-token', data.session.refresh_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 30,
-      path: '/'
-    })
-
-    return response
   } catch (error) {
     console.error('Login error:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Something went wrong. Please try again.' },
       { status: 500 }
     )
   }
