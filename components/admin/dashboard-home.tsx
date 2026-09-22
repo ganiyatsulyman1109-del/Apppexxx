@@ -26,7 +26,7 @@ import { formatCurrency, formatNumber, getStatusColor, getSourceColor, type Time
 import { apiClient } from "@/lib/api-client"
 import { StockAdjustmentModal } from "./stock-adjustment-modal"
 import type { EcommerceProduct } from "@/lib/ecommerce-types"
-import { createBrowserSupabaseClient } from "@/lib/utils/supabase"
+import { createBrowserClient } from "@/lib/utils/supabase"
 import { formatNigerianDate } from "@/lib/utils/date"
 
 const STATUS_COLORS = {
@@ -203,7 +203,7 @@ export function DashboardHome({ onLogout, isLoggingOut }: DashboardHomeProps = {
   }
 
   useEffect(() => {
-    const supabase = createBrowserSupabaseClient()
+    const supabase = createBrowserClient()
     
     // Create a single channel for all dashboard updates
     const channel = supabase

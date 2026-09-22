@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireStaffOrAdminAuth } from '@/lib/auth'
 import { notifyPayment } from '@/lib/notifications'
-import { createServerSupabaseClient } from '@/lib/utils/supabase'
+import { createServerClient } from '@/lib/utils/supabase'
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: auth.error }, { status: auth.status })
     }
 
-    const supabase = createServerSupabaseClient()
+    const supabase = createServerClient()
     
     const body = await request.json()
     const { order_id, amount, payment_method, receipt_number, notes } = body

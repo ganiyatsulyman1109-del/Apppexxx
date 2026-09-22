@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminSupabaseClient, createServerSupabaseClient } from '@/lib/utils/supabase'
+import { createAdminClient, createServerClient } from '@/lib/utils/supabase'
 import { requireAdminAuth } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
@@ -21,8 +21,8 @@ export async function GET(
       return NextResponse.json({ error: authResult.error || 'Unauthorized' }, { status: authResult.status || 401 })
     }
 
-    const supabase = createAdminSupabaseClient()
-    const adminSupabase = createAdminSupabaseClient()
+    const supabase = createAdminClient()
+    const adminSupabase = createAdminClient()
     const { id } = await params
     
     // Get investor details

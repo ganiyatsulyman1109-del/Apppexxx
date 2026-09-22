@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/utils/supabase'
+import { createServerClient } from '@/lib/utils/supabase'
 import { revalidatePath } from 'next/cache'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createServerSupabaseClient()
+    const supabase = createServerClient()
     
     const body = await request.json()
     const { product_id, action, quantity_change, reason, reference_id } = body
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createServerSupabaseClient()
+    const supabase = createServerClient()
     
     const { searchParams } = new URL(request.url)
     const product_id = searchParams.get('product_id')

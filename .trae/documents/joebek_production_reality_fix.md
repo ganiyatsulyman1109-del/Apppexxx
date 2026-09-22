@@ -30,7 +30,7 @@ This plan outlines the steps to fix confirmed broken functionality and ensure re
 
 - [ ] **Implementation**
   - Modify `app/api/auth/register/route.ts`:
-    - Ensure it uses `createAdminSupabaseClient` for `customers` table insert (bypassing RLS).
+    - Ensure it uses `createAdminClient` for `customers` table insert (bypassing RLS).
     - Ensure `customers` insert includes `user_id` (fix confirmed breakage found in analysis).
     - Fix rollback logic to use admin client if user deletion is needed.
   - Modify `app/signup/page.tsx`: Ensure form submits correctly to the register route.
@@ -52,13 +52,13 @@ This plan outlines the steps to fix confirmed broken functionality and ensure re
 - [ ] **Step 3B: Fix POS Sales**
   - Modify `components/pos/pos-dashboard.tsx`: Add explicit error handling/display for sale submission.
   - Modify `app/api/orders/route.ts`:
-    - Use `createAdminSupabaseClient`.
+    - Use `createAdminClient`.
     - Fix status assignment (ensure 'completed' is valid or use 'delivered'/'confirmed' based on schema).
     - Log payload and errors.
 
 - [ ] **Step 3C: Fix Ecommerce Orders**
   - Modify `app/api/payments/verify/route.ts`:
-    - Ensure `createAdminSupabaseClient` is used.
+    - Ensure `createAdminClient` is used.
     - Ensure `customer_id` handling is robust (fix confirmed breakage regarding null `customer_id`).
   - Modify `lib/order-utils.ts`:
     - Add explicit error throws for table inserts/updates.
@@ -83,7 +83,7 @@ This plan outlines the steps to fix confirmed broken functionality and ensure re
   - `app/api/staff/[id]/route.ts`
 
 - [ ] **Implementation**
-  - Update API routes to use `createAdminSupabaseClient`.
+  - Update API routes to use `createAdminClient`.
   - Update `settings-page.tsx` to refresh list after Add/Edit success.
   - Verify Toggle Active/Inactive functionality.
 
@@ -95,7 +95,7 @@ This plan outlines the steps to fix confirmed broken functionality and ensure re
   - `app/api/settings/route.ts`
 
 - [ ] **Implementation**
-  - Update `app/api/settings/route.ts` (PUT) to use `createAdminSupabaseClient` and correct upsert logic.
+  - Update `app/api/settings/route.ts` (PUT) to use `createAdminClient` and correct upsert logic.
   - Update `settings-page.tsx` to load values on mount.
 
 ## Fix 6: Analytics Accuracy
@@ -108,7 +108,7 @@ This plan outlines the steps to fix confirmed broken functionality and ensure re
   - `components/admin/analytics-page.tsx`
 
 - [ ] **Implementation**
-  - Update all analytics routes to use `createAdminSupabaseClient`.
+  - Update all analytics routes to use `createAdminClient`.
   - Implement correct SQL/Supabase queries for:
     - Total Revenue (`payment_status = 'paid'`)
     - Total Orders, Customers, Low Stock.

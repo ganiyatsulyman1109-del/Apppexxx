@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireStaffOrAdminAuth } from '@/lib/auth'
-import { createAdminSupabaseClient } from '@/lib/utils/supabase'
+import { createAdminClient } from '@/lib/utils/supabase'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,7 +22,7 @@ export async function GET(
     }
     
     const { id } = await params
-    const supabase = createAdminSupabaseClient()
+    const supabase = createAdminClient()
 
     // Execute queries in parallel using Promise.all as requested
     const [customerResult, purchasesResult, paymentsResult] = await Promise.all([
@@ -95,7 +95,7 @@ export async function PATCH(
 
     const { id } = await params
     const body = await request.json()
-    const supabase = createAdminSupabaseClient()
+    const supabase = createAdminClient()
 
     // Filter allowed fields to update
     const allowedFields = [
@@ -157,7 +157,7 @@ export async function DELETE(
     }
 
     const { id } = await params
-    const supabase = createAdminSupabaseClient()
+    const supabase = createAdminClient()
 
     const { error } = await supabase
       .from('easybuy_customers')

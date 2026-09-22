@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { createServerSupabaseClient } from "@/lib/utils/supabase"
+import { createServerClient } from "@/lib/utils/supabase"
 import { BrandLogo } from "@/components/brand-logo"
 
 export default function ForgotPasswordPage() {
@@ -30,7 +30,7 @@ export default function ForgotPasswordPage() {
     setError("")
 
     try {
-      const supabase = createServerSupabaseClient()
+      const supabase = createServerClient()
       
       // Check if user exists and has admin or investor role
       const { data: userData, error: userError } = await supabase

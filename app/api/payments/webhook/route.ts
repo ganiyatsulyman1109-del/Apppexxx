@@ -1,6 +1,6 @@
 import crypto from "crypto"
 import { NextRequest, NextResponse } from "next/server"
-import { createAdminSupabaseClient } from "@/lib/utils/supabase"
+import { createAdminClient } from "@/lib/utils/supabase"
 import { notifyNewOrder, notifyPayment } from "@/lib/notifications"
 import { createOrderTransaction } from "@/lib/order-utils"
 import { sendOrderConfirmationToCustomer, sendOrderAlertToAdmin } from "@/lib/email"
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
       const reference = paymentData.reference
       
       // Create admin Supabase client
-      const supabase = createAdminSupabaseClient()
+      const supabase = createAdminClient()
       
       // Check if order already exists for this payment reference
       const { data: existingOrder, error: orderCheckError } = await supabase

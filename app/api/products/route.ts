@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createAdminSupabaseClient } from "@/lib/utils/supabase"
+import { createAdminClient } from "@/lib/utils/supabase"
 import { requireAdminAuth } from '@/lib/auth'
 import { revalidatePath } from "next/cache"
 import { ECOMMERCE_PRODUCTS } from "@/lib/ecommerce-mock-data"
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Use server client for public GET requests
-    const supabase = createAdminSupabaseClient()
+    const supabase = createAdminClient()
     
     // Get URL parameters
     const category = searchParams.get('category')
@@ -194,7 +194,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: authResult.error }, { status: authResult.status })
     }
     
-    const supabase = createAdminSupabaseClient()
+    const supabase = createAdminClient()
     
     const body = await request.json()
     const { name, sku, category, price, stock, description, brand, image_url, barcode, cost_price, threshold, featured } = body

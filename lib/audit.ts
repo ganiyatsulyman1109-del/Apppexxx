@@ -1,4 +1,4 @@
-import { createAdminSupabaseClient } from '@/lib/utils/supabase' 
+import { createAdminClient } from '@/lib/utils/supabase'
 export async function logAudit(params: { 
   action_type: string 
   entity_type: string 
@@ -11,7 +11,7 @@ export async function logAudit(params: {
   notes?: string 
 }) { 
   try { 
-    const supabase = createAdminSupabaseClient() 
+    const supabase = createAdminClient()
     await supabase.from('audit_logs').insert({ 
       ...params, 
       entity_id: params.entity_id || null, 

@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Download, Calendar, TrendingUp, TrendingDown, Percent, Loader2, AlertCircle } from "lucide-react"
 import { getRiskLevelColor } from "@/lib/easybuy-types"
-import { createBrowserSupabaseClient } from "@/lib/utils/supabase"
+import { createBrowserClient } from "@/lib/utils/supabase"
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("en-NG", {
@@ -85,7 +85,7 @@ export function EasyBuyReports() {
   }, [loadReportData])
 
   useEffect(() => {
-    const supabase = createBrowserSupabaseClient()
+    const supabase = createBrowserClient()
     const channel = supabase
       .channel("reports-updates")
       .on(

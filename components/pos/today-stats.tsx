@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Banknote, CreditCard, Clock, TrendingUp, Package } from "lucide-react"
 import type { DailyStats } from "@/lib/pos-types"
-import { createBrowserSupabaseClient } from "@/lib/utils/supabase"
+import { createBrowserClient } from "@/lib/utils/supabase"
 
 interface TodayStatsProps {
   stats: DailyStats,
@@ -48,7 +48,7 @@ export function TodayStats({ stats, refreshKey = 0 }: TodayStatsProps) {
   }, [refreshKey, loadStats])
 
   useEffect(() => {
-    const supabase = createBrowserSupabaseClient()
+    const supabase = createBrowserClient()
     const handleWindowFocus = () => {
       loadStats()
     }

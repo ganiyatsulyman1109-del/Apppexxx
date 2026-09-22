@@ -57,7 +57,7 @@ files.forEach(f => {
     const nextFunctionIndex = content.indexOf('export async function', startIndex);
     const functionBody = nextFunctionIndex === -1 ? content.substring(startIndex) : content.substring(startIndex, nextFunctionIndex);
 
-    if (functionBody.includes('createAdminSupabaseClient') && !functionBody.includes('SUPABASE_SERVICE_ROLE_KEY')) {
+    if (functionBody.includes('createAdminClient') && !functionBody.includes('SUPABASE_SERVICE_ROLE_KEY')) {
       const tryMatch = functionBody.match(/^\s*try\s*\{/);
       let insertIndex = startIndex + offset;
       if (tryMatch) {

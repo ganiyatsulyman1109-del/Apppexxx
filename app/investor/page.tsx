@@ -21,8 +21,8 @@ export default function InvestorPage() {
       const user = await getCurrentUser()
       if (user && user.role === 'investor') {
         // Fetch investor data from database
-        const { createBrowserSupabaseClient } = await import('@/lib/utils/supabase')
-        const supabase = createBrowserSupabaseClient()
+        const { createBrowserClient } = await import('@/lib/utils/supabase')
+        const supabase = createBrowserClient()
         
         const { data: investorData, error } = await supabase
           .from('investors')
@@ -62,8 +62,8 @@ export default function InvestorPage() {
 
   const handleLogout = async () => {
     try {
-      const { createBrowserSupabaseClient } = await import('@/lib/utils/supabase')
-      const supabase = createBrowserSupabaseClient()
+      const { createBrowserClient } = await import('@/lib/utils/supabase')
+      const supabase = createBrowserClient()
       await supabase.auth.signOut()
     } catch (error) {
       console.error("Logout failed:", error)

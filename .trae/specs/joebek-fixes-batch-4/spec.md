@@ -17,7 +17,7 @@ Address critical bugs and UI issues reported in "PROMPT BATCH 4", including paym
   - Return the password in the response (tempPassword).
 - **Modify** `app/api/investors/[id]/route.ts` (PUT):
   - Handle password updates when admin edits an investor.
-- **Verify**: `components/investor/investor-login.tsx` already uses `createBrowserSupabaseClient` (Confirmed).
+- **Verify**: `components/investor/investor-login.tsx` already uses `createBrowserClient` (Confirmed).
 
 ### 3. Staff ID Format
 - **Modify** `app/api/staff/route.ts`:

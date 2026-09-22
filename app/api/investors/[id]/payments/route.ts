@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdminAuth } from '@/lib/auth'
-import { createAdminSupabaseClient } from '@/lib/utils/supabase'
+import { createAdminClient } from '@/lib/utils/supabase'
 import { logAudit } from '@/lib/audit'
 
 export async function POST(
@@ -23,7 +23,7 @@ export async function POST(
       return NextResponse.json({ error: authResult.error }, { status: authResult.status })
     }
     
-    const supabase = createAdminSupabaseClient()
+    const supabase = createAdminClient()
     const user = authResult.user
     
     // 2. Parse and Validate Body

@@ -28,8 +28,8 @@ walk('app/api').forEach(f => {
   
   c = c.replace(checkBlockRegex, ''); // Remove existing ones completely
 
-  // Add back if the file uses createAdminSupabaseClient
-  if (c.includes('createAdminSupabaseClient')) {
+  // Add back if the file uses createAdminClient
+  if (c.includes('createAdminClient')) {
     // Only payment routes and admin routes (we consider everything in api/ except auth/account)
     const normalizedPath = f.replace(/\\/g, '/');
     if (!normalizedPath.includes('api/auth') && !normalizedPath.includes('api/account')) {

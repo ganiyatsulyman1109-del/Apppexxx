@@ -7,7 +7,7 @@ import { Eye, Pencil, ChevronDown } from "lucide-react"
 import type { EasyBuyCustomer } from "@/lib/easybuy-types"
 import { getDebtLevel, getDebtLevelColor } from "@/lib/easybuy-types"
 import { formatNigerianDate, formatDate } from "@/lib/utils/date"
-import { createBrowserSupabaseClient } from "@/lib/utils/supabase"
+import { createBrowserClient } from "@/lib/utils/supabase"
 
 interface CustomerListProps {
   customers: EasyBuyCustomer[]

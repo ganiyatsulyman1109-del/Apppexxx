@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminSupabaseClient } from '@/lib/utils/supabase'
+import { createAdminClient } from '@/lib/utils/supabase'
 import bcrypt from 'bcryptjs'
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createAdminSupabaseClient()
+    const supabase = createAdminClient()
     
     const body = await request.json()
     const { staff_id, pin } = body

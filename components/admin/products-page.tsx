@@ -12,7 +12,7 @@ import { apiClient } from "@/lib/api-client"
 import type { EcommerceProduct } from "@/lib/ecommerce-types"
 import { ProductModal } from "./product-modal"
 import { DeleteConfirmDialog } from "./delete-confirm-dialog"
-import { createBrowserSupabaseClient } from "@/lib/utils/supabase"
+import { createBrowserClient } from "@/lib/utils/supabase"
 
 export function ProductsPage() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -44,7 +44,7 @@ export function ProductsPage() {
   useEffect(() => {
     fetchProducts()
 
-    const supabase = createBrowserSupabaseClient()
+    const supabase = createBrowserClient()
     const channel = supabase
       .channel("products-realtime")
       .on(

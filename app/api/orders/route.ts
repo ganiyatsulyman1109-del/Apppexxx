@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireStaffOrAdminAuth } from '@/lib/auth'
 import { notifyNewOrder, notifyLowStock } from '@/lib/notifications'
 import { createOrderTransaction } from '@/lib/order-utils'
-import { createAdminSupabaseClient } from '@/lib/utils/supabase'
+import { createAdminClient } from '@/lib/utils/supabase'
 
 export const dynamic = 'force-dynamic'
 
@@ -156,7 +156,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: authResult.error }, { status: authResult.status })
     }
     
-    const supabase = createAdminSupabaseClient()
+    const supabase = createAdminClient()
     
     const body = await request.json()
     const {

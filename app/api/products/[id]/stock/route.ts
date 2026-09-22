@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createAdminSupabaseClient } from "@/lib/utils/supabase"
+import { createAdminClient } from "@/lib/utils/supabase"
 import { requireAdminAuth } from "@/lib/auth"
 import { notifyLowStock } from "@/lib/notifications"
 import { revalidatePath } from "next/cache"
@@ -21,7 +21,7 @@ export async function PATCH(
       return NextResponse.json({ error: authResult.error }, { status: authResult.status || 401 })
     }
     
-    const supabase = createAdminSupabaseClient()
+    const supabase = createAdminClient()
     const { id } = await params
     
     const body = await request.json()

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminSupabaseClient, createServerSupabaseClient } from '@/lib/utils/supabase'
+import { createAdminClient, createServerClient } from '@/lib/utils/supabase'
 import { requireAdminAuth, requireStaffOrAdminAuth } from '@/lib/auth'
 import { logAudit } from '@/lib/audit'
 
@@ -24,7 +24,7 @@ export async function GET(
     }
     
     const { id } = await params
-    const supabase = createAdminSupabaseClient()
+    const supabase = createAdminClient()
     
     const { data, error } = await supabase
       .from('orders')
@@ -65,7 +65,7 @@ export async function PUT(
     
     const { id } = await params
     const body = await request.json()
-    const supabase = createAdminSupabaseClient()
+    const supabase = createAdminClient()
     
     // Get order before update for audit
     const { data: before } = await supabase.from('orders')
@@ -122,7 +122,7 @@ export async function PATCH(request: NextRequest,
   const userId = authResult.user.id
   const { id } = await params 
   const body = await request.json() 
-  const supabase = createAdminSupabaseClient() 
+  const supabase = createAdminClient()
   const { data: before } = await supabase.from('orders') 
     .select('*').eq('id', id).single() 
   
@@ -224,7 +224,7 @@ export async function DELETE(request: NextRequest,
   }
   const userId = authResult.user.id
   const { id } = await params 
-  const supabase = createAdminSupabaseClient() 
+  const supabase = createAdminClient()
   const { data: order } = await supabase.from('orders') 
     .select('*').eq('id', id).single() 
   if (!order) return NextResponse.json({ error: 'Not found' }, { status: 404 }) 

@@ -1,4 +1,4 @@
-import { createServerSupabaseClient, createAdminSupabaseClient } from "@/lib/utils/supabase"
+import { createServerClient, createAdminClient } from "@/lib/utils/supabase"
 
 // Types
 export interface User {
@@ -18,7 +18,7 @@ export interface StaffUser {
 
 // Authentication helper functions
 export async function requireAdminAuth(request?: Request): Promise<AuthResult> {
-  const supabase = createServerSupabaseClient()
+  const supabase = createServerClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
 
   if (authError || !user) {
@@ -32,7 +32,7 @@ export async function requireAdminAuth(request?: Request): Promise<AuthResult> {
         if (staffSession) {
             const staffData = JSON.parse(staffSession.value)
             if (staffData?.staff_id) {
-                const adminSupabase = createAdminSupabaseClient()
+                const adminSupabase = createAdminClient()
                 // Verify role in DB
                 const { data: staff } = await adminSupabase
                     .from('staff')
@@ -83,7 +83,7 @@ export async function requireAdminAuth(request?: Request): Promise<AuthResult> {
 }
 
 export async function signInWithEmail(email: string, password: string) {
-  const supabase = createServerSupabaseClient()
+  const supabase = createServerClient()
   
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
@@ -121,7 +121,7 @@ export async function signInWithEmail(email: string, password: string) {
 }
 
 export async function signUpCustomer(email: string, password: string, fullName: string, phone: string) {
-  const supabase = createServerSupabaseClient()
+  const supabase = createServerClient()
   
   // Check if customer already exists
   const { data: existingCustomer } = await supabase
@@ -195,12 +195,12 @@ export async function signUpCustomer(email: string, password: string, fullName: 
 }
 
 export async function signOut() {
-  const supabase = createServerSupabaseClient()
+  const supabase = createServerClient()
   await supabase.auth.signOut()
 }
 
 export async function getCurrentUser(): Promise<User | null> {
-  const supabase = createServerSupabaseClient()
+  const supabase = createServerClient()
   
   const { data: { user }, error } = await supabase.auth.getUser()
   
@@ -232,7 +232,7 @@ export async function getCurrentUser(): Promise<User | null> {
 
 // Alternative function that returns a result object for API routes
 export async function getCurrentUserResult() {
-  const supabase = createServerSupabaseClient()
+  const supabase = createServerClient()
   
   const { data: { user }, error } = await supabase.auth.getUser()
   
@@ -265,7 +265,7 @@ export async function getCurrentUserResult() {
 }
 
 export async function requireAuth(_request?: any, allowedRoles: string[] = []) {
-  const supabase = createServerSupabaseClient()
+  const supabase = createServerClient()
   const { data: { user }, error } = await supabase.auth.getUser()
 
   if (error || !user) {
@@ -316,7 +316,7 @@ export interface AuthResultError {
 export type AuthResult = AuthResultSuccess | AuthResultError
 
 export async function requireStaffOrAdminAuth(request?: Request): Promise<AuthResult> {
-  const supabase = createServerSupabaseClient()
+  const supabase = createServerClient()
 
   // 1. Try Admin Auth (First Priority for Admin Panel)
   try {
@@ -337,7 +337,7 @@ export async function requireStaffOrAdminAuth(request?: Request): Promise<AuthRe
       try {
         const staffData = JSON.parse(staffSession.value)
         if (staffData?.staff_id) {
-          const adminSupabase = createAdminSupabaseClient()
+          const adminSupabase = createAdminClient()
           return {
             user: {
               id: staffData.id || staffData.staff_id,
@@ -368,7 +368,7 @@ export async function requireStaffOrAdminAuth(request?: Request): Promise<AuthRe
         try {
           const staffData = JSON.parse(decodeURIComponent(staffSessionCookie.split('=')[1]))
           if (staffData.staff_id && staffData.full_name) {
-            const adminSupabase = createAdminSupabaseClient()
+            const adminSupabase = createAdminClient()
             return {
               user: {
                 id: staffData.id || staffData.staff_id,
@@ -422,7 +422,7 @@ export async function getCurrentUserWithId(): Promise<{ id: string; role: string
 
 // Password reset functions
 export async function sendPasswordResetEmail(email: string) {
-  const supabase = createServerSupabaseClient()
+  const supabase = createServerClient()
   
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password`
@@ -436,7 +436,7 @@ export async function sendPasswordResetEmail(email: string) {
 }
 
 export async function updatePassword(newPassword: string) {
-  const supabase = createServerSupabaseClient()
+  const supabase = createServerClient()
   
   const { error } = await supabase.auth.updateUser({
     password: newPassword
@@ -451,7 +451,7 @@ export async function updatePassword(newPassword: string) {
 
 // Admin functions (for manual admin creation)
 export async function createAdminUser(email: string, password: string, fullName: string) {
-  const supabase = createAdminSupabaseClient()
+  const supabase = createAdminClient()
   
   // Create auth user
   const { data: authData, error: authError } = await supabase.auth.admin.createUser({

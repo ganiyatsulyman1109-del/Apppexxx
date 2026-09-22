@@ -1,7 +1,7 @@
-const { createAdminSupabaseClient } = require('./lib/utils/supabase');
+const { createAdminClient } = require('./lib/utils/supabase');
 
 async function fixStaffIds() {
-  const supabase = createAdminSupabaseClient();
+  const supabase = createAdminClient();
   
   // This is a direct SQL execution via RPC or raw query if available.
   // Since we might not have a direct SQL execution function exposed easily,

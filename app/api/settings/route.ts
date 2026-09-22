@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdminAuth } from '@/lib/auth'
-import { createAdminSupabaseClient } from '@/lib/utils/supabase'
+import { createAdminClient } from '@/lib/utils/supabase'
 
 const defaultSettings = [
   { key: "business_name", value: "My Business", data_type: "string", category: "business", description: "Business name", is_public: true },
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: authResult.error }, { status: authResult.status })
     }
     
-    const supabase = createAdminSupabaseClient()
+    const supabase = createAdminClient()
     
     const { data, error } = await supabase
       .from('settings')
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
     }
     
     if (data && data.length === 0) {
-      const adminSupabase = createAdminSupabaseClient()
+      const adminSupabase = createAdminClient()
       const { data: seeded, error: seedError } = await adminSupabase
         .from('settings')
         .insert(defaultSettings)
@@ -114,7 +114,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: authResult.error }, { status: authResult.status })
     }
     
-    const supabase = createAdminSupabaseClient()
+    const supabase = createAdminClient()
     
     const body = await request.json()
     

@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { DatePicker } from "@/components/ui/date-picker"
 import { format } from "date-fns"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { createBrowserSupabaseClient } from "@/lib/utils/supabase"
+import { createBrowserClient } from "@/lib/utils/supabase"
 import { formatCurrency } from "@/lib/admin-types"
 
 type TransactionRow = {
@@ -112,7 +112,7 @@ export function POSTransactionHistory() {
 
   // Realtime subscription
   useEffect(() => {
-    const supabase = createBrowserSupabaseClient()
+    const supabase = createBrowserClient()
     const handleWindowFocus = () => {
       fetchTransactions()
     }

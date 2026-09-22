@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import type { EasyBuyCustomer, CustomerStatus } from "@/lib/easybuy-types"
 import { RecordPaymentModal } from "./record-payment-modal"
-import { createBrowserSupabaseClient } from "@/lib/utils/supabase"
+import { createBrowserClient } from "@/lib/utils/supabase"
 import { formatDate, formatDateTime } from "@/lib/utils/date"
 
 interface CustomerDetailViewProps {
@@ -171,7 +171,7 @@ export function CustomerDetailView({ customer: initialCustomer, onBack, onUpdate
 
   // Realtime subscriptions
   useEffect(() => {
-    const supabase = createBrowserSupabaseClient()
+    const supabase = createBrowserClient()
     const channel = supabase
       .channel(`customer-detail-${customerId}`)
       .on('postgres_changes', {

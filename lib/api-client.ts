@@ -17,8 +17,8 @@ class ApiClient {
     // Global interceptor for 401 Unauthorized
     if (response.status === 401) {
       // Refresh the session using Supabase browser client
-      const { createBrowserSupabaseClient } = await import('@/lib/utils/supabase');
-      const supabase = createBrowserSupabaseClient();
+      const { createBrowserClient } = await import('@/lib/utils/supabase');
+      const supabase = createBrowserClient();
       const { data, error } = await supabase.auth.refreshSession();
       
       if (error || !data.session) {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient , createAdminSupabaseClient} from '@/lib/utils/supabase'
+import { createServerClient , createAdminClient} from '@/lib/utils/supabase'
 import { getCurrentUserResult } from '@/lib/auth'
 
 export async function GET(
@@ -23,7 +23,7 @@ export async function GET(
       return NextResponse.json({ error: 'Access denied. Customers only.' }, { status: 403 })
     }
     
-    const supabase = createAdminSupabaseClient()
+    const supabase = createAdminClient()
     const userId = userResult.user!.id
     
     // First resolve the customer record ID using the user_id (auth ID)
