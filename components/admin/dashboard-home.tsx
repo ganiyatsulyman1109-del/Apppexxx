@@ -260,7 +260,7 @@ export function DashboardHome({ onLogout, isLoggingOut }: DashboardHomeProps = {
 
   if (loading) {
     return (
-      <div className="space-y-6 p-6">
+      <div className="min-h-screen bg-[#f9fafb] p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">Dashboard Overview</h1>
@@ -269,13 +269,13 @@ export function DashboardHome({ onLogout, isLoggingOut }: DashboardHomeProps = {
         </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map(i => (
-            <Card key={i}>
+            <Card key={i} className="bg-white border-[#e5e7eb] rounded-xl shadow-sm">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+                <div className="h-4 w-24 bg-[#f3f4f6] rounded animate-pulse" />
               </CardHeader>
               <CardContent>
-                <div className="h-8 w-32 bg-gray-200 rounded animate-pulse mb-2" />
-                <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
+                <div className="h-8 w-32 bg-[#f3f4f6] rounded animate-pulse mb-2" />
+                <div className="h-4 w-20 bg-[#f3f4f6] rounded animate-pulse" />
               </CardContent>
             </Card>
           ))}
@@ -285,7 +285,7 @@ export function DashboardHome({ onLogout, isLoggingOut }: DashboardHomeProps = {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="min-h-screen bg-[#f9fafb] p-6 space-y-6">
       {/* Time Range Selector */}
       <div className="flex items-center justify-between">
         <div>
@@ -352,7 +352,7 @@ export function DashboardHome({ onLogout, isLoggingOut }: DashboardHomeProps = {
 
       {/* Top Row Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        <Card className="bg-white border-[#e5e7eb] rounded-xl shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               {timeRange === 'today' ? 'Today\'s Revenue' : 
@@ -389,7 +389,7 @@ export function DashboardHome({ onLogout, isLoggingOut }: DashboardHomeProps = {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white border-[#e5e7eb] rounded-xl shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
                {timeRange === 'today' ? 'Today\'s Orders' : 
@@ -411,7 +411,7 @@ export function DashboardHome({ onLogout, isLoggingOut }: DashboardHomeProps = {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white border-[#e5e7eb] rounded-xl shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Processing Orders</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
@@ -419,13 +419,13 @@ export function DashboardHome({ onLogout, isLoggingOut }: DashboardHomeProps = {
           <CardContent>
             <div className="flex items-center gap-2">
               <span className="text-2xl font-bold">{stats.processingOrders}</span>
-              <Badge className="bg-blue-500 text-white">{stats.processingOrders}</Badge>
+              <Badge className="bg-[#2563eb] text-white">{stats.processingOrders}</Badge>
             </div>
             <p className="text-sm text-muted-foreground">Ecommerce orders pending delivery</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white border-[#e5e7eb] rounded-xl shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Low Stock Alerts</CardTitle>
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
@@ -442,7 +442,7 @@ export function DashboardHome({ onLogout, isLoggingOut }: DashboardHomeProps = {
 
       {/* Second Row: Week Revenue & Month Orders */}
       <div className="grid gap-4 md:grid-cols-2">
-        <Card>
+        <Card className="bg-white border-[#e5e7eb] rounded-xl shadow-sm">
           <CardHeader>
             <CardTitle>Revenue (Period)</CardTitle>
             <CardDescription>Revenue for selected period</CardDescription>
@@ -455,7 +455,7 @@ export function DashboardHome({ onLogout, isLoggingOut }: DashboardHomeProps = {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white border-[#e5e7eb] rounded-xl shadow-sm">
           <CardHeader>
             <CardTitle>Orders (Period)</CardTitle>
             <CardDescription>Orders for selected period</CardDescription>
@@ -472,7 +472,7 @@ export function DashboardHome({ onLogout, isLoggingOut }: DashboardHomeProps = {
       {/* Charts Section */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {/* Revenue Trend Chart */}
-        <Card className="md:col-span-2">
+        <Card className="md:col-span-2 bg-white border-[#e5e7eb] rounded-xl shadow-sm">
           <CardHeader>
             <CardTitle>Revenue Trend</CardTitle>
             <CardDescription>Monthly revenue over the past year</CardDescription>
@@ -505,7 +505,7 @@ export function DashboardHome({ onLogout, isLoggingOut }: DashboardHomeProps = {
         </Card>
 
         {/* Order Status Donut Chart */}
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden bg-white border-[#e5e7eb] rounded-xl shadow-sm">
           <CardHeader>
             <CardTitle>Order Status</CardTitle>
             <CardDescription>Breakdown by status</CardDescription>
@@ -542,7 +542,7 @@ export function DashboardHome({ onLogout, isLoggingOut }: DashboardHomeProps = {
       </div>
 
       {/* Category Revenue Bar Chart */}
-      <Card>
+      <Card className="bg-white border-[#e5e7eb] rounded-xl shadow-sm">
         <CardHeader>
           <CardTitle>Revenue by Category</CardTitle>
           <CardDescription>Top performing product categories</CardDescription>
@@ -569,7 +569,7 @@ export function DashboardHome({ onLogout, isLoggingOut }: DashboardHomeProps = {
       </Card>
 
       {/* Recent Orders Table */}
-      <Card>
+      <Card className="bg-white border-[#e5e7eb] rounded-xl shadow-sm">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -622,7 +622,7 @@ export function DashboardHome({ onLogout, isLoggingOut }: DashboardHomeProps = {
       </Card>
 
       {/* Low Stock Products */}
-      <Card>
+      <Card className="bg-white border-[#e5e7eb] rounded-xl shadow-sm">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -656,7 +656,7 @@ export function DashboardHome({ onLogout, isLoggingOut }: DashboardHomeProps = {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className="text-orange-600 border-orange-600">
+                    <Badge variant="outline" className="text-[#d97706] border-[#d97706]">
                       Low Stock
                     </Badge>
                   </TableCell>

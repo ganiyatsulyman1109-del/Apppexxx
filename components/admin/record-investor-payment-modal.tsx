@@ -89,10 +89,10 @@ export function RecordInvestorPaymentModal({
 
   if (isRecorded) {
     return (
-      <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg p-6 w-full max-w-md text-center animate-in fade-in zoom-in duration-300">
-          <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
-            <Check className="w-8 h-8 text-green-600" />
+      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl p-6 w-full max-w-md text-center border border-[#e5e7eb] shadow-lg animate-in fade-in zoom-in duration-300">
+          <div className="w-16 h-16 rounded-full bg-[#f0fdf4] flex items-center justify-center mx-auto mb-4">
+            <Check className="w-8 h-8 text-[#16a34a]" />
           </div>
           <h2 className="text-xl font-bold text-foreground mb-2">Payment Recorded</h2>
           <p className="text-muted-foreground mb-4">
@@ -104,19 +104,19 @@ export function RecordInvestorPaymentModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md animate-in fade-in zoom-in duration-200">
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl p-6 w-full max-w-md border border-[#e5e7eb] shadow-lg animate-in fade-in zoom-in duration-200">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-bold">Record Investor Payment</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+          <h2 className="text-lg font-semibold text-[#111827]">Record Investor Payment</h2>
+          <button onClick={onClose} className="text-[#6b7280] hover:text-[#374151]">
             <X className="h-5 w-5" />
           </button>
         </div>
         
         <p className="text-sm text-muted-foreground mb-1">Paying to: <span className="font-medium text-foreground">{investorName}</span></p>
-        <div className="bg-orange-50 border border-orange-100 p-3 rounded-md mb-4">
-          <p className="text-xs text-orange-600 font-medium uppercase tracking-wider mb-1">Current Balance Owed</p>
-          <p className="text-xl font-bold text-orange-700">
+        <div className="bg-[#fffbeb] border border-[#fef3c7] p-3 rounded-md mb-4">
+          <p className="text-xs text-[#d97706] font-medium uppercase tracking-wider mb-1">Current Balance Owed</p>
+          <p className="text-xl font-bold text-[#b45309]">
             ₦{currentBalance.toLocaleString("en-NG")}
           </p>
         </div>
@@ -188,7 +188,7 @@ export function RecordInvestorPaymentModal({
           <Button
             onClick={handleSubmit}
             disabled={loading || !amount}
-            className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+            className="flex-1 bg-[#2563eb] hover:bg-[#1d4ed8] text-white"
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
             Confirm Payment

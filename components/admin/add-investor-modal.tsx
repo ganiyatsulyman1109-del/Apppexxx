@@ -111,9 +111,9 @@ export function AddInvestorModal({ open, onClose, onSave }: AddInvestorModalProp
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto bg-white border-[#e5e7eb] rounded-2xl p-6 shadow-lg">
         <DialogHeader>
-          <DialogTitle>Add New Investor</DialogTitle>
+          <DialogTitle className="text-lg font-semibold text-[#111827]">Add New Investor</DialogTitle>
           <DialogDescription>
             Enter investor details to create a new account
           </DialogDescription>
@@ -128,7 +128,7 @@ export function AddInvestorModal({ open, onClose, onSave }: AddInvestorModalProp
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="John Investor"
             />
-            {errors.name && <p className="text-xs text-red-500">{errors.name}</p>}
+            {errors.name && <p className="text-xs text-[#dc2626]">{errors.name}</p>}
           </div>
 
           <div className="space-y-2">
@@ -141,7 +141,7 @@ export function AddInvestorModal({ open, onClose, onSave }: AddInvestorModalProp
               placeholder="investor@email.com"
               autoComplete="off"
             />
-            {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
+            {errors.email && <p className="text-xs text-[#dc2626]">{errors.email}</p>}
           </div>
 
           <div className="space-y-2">
@@ -155,7 +155,7 @@ export function AddInvestorModal({ open, onClose, onSave }: AddInvestorModalProp
               min="1"
             />
             {errors.investmentAmount && (
-              <p className="text-xs text-red-500">{errors.investmentAmount}</p>
+              <p className="text-xs text-[#dc2626]">{errors.investmentAmount}</p>
             )}
           </div>
 
@@ -173,7 +173,7 @@ export function AddInvestorModal({ open, onClose, onSave }: AddInvestorModalProp
             />
             <p className="text-xs text-muted-foreground">Example: 0.5 for 0.5% daily</p>
             {errors.dailyReturnRate && (
-              <p className="text-xs text-red-500">{errors.dailyReturnRate}</p>
+              <p className="text-xs text-[#dc2626]">{errors.dailyReturnRate}</p>
             )}
           </div>
 
@@ -186,7 +186,7 @@ export function AddInvestorModal({ open, onClose, onSave }: AddInvestorModalProp
               onChange={(e) => setFormData({ ...formData, investmentDate: e.target.value })}
             />
             {errors.investmentDate && (
-              <p className="text-xs text-red-500">{errors.investmentDate}</p>
+              <p className="text-xs text-[#dc2626]">{errors.investmentDate}</p>
             )}
           </div>
 
@@ -205,12 +205,12 @@ export function AddInvestorModal({ open, onClose, onSave }: AddInvestorModalProp
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6b7280] hover:text-[#374151]"
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
-            {errors.password && <p className="text-xs text-red-500">{errors.password}</p>}
+            {errors.password && <p className="text-xs text-[#dc2626]">{errors.password}</p>}
           </div>
 
           <div className="space-y-2">
@@ -241,7 +241,7 @@ export function AddInvestorModal({ open, onClose, onSave }: AddInvestorModalProp
             <Button type="button" variant="outline" onClick={onClose} className="flex-1 bg-transparent">
               Cancel
             </Button>
-            <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700">
+            <Button type="submit" className="flex-1 bg-[#2563eb] hover:bg-[#1d4ed8]">
               Save Investor
             </Button>
           </div>

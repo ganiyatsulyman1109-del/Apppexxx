@@ -127,9 +127,9 @@ export function ProductModal({ open, onClose, product, onSuccess }: ProductModal
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white border-[#e5e7eb] rounded-2xl p-6 shadow-lg">
         <DialogHeader>
-          <DialogTitle>{product ? "Edit Product" : "Add New Product"}</DialogTitle>
+          <DialogTitle className="text-lg font-semibold text-[#111827]">{product ? "Edit Product" : "Add New Product"}</DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -292,7 +292,7 @@ export function ProductModal({ open, onClose, product, onSuccess }: ProductModal
               id="featured"
               checked={formData.featured}
               onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
-              className="rounded border-gray-300"
+              className="rounded border-[#e5e7eb]"
             />
             <Label htmlFor="featured">Featured Product</Label>
           </div>

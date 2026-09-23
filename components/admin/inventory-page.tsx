@@ -102,7 +102,7 @@ export function InventoryPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="min-h-screen bg-[#f9fafb] p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Inventory Management</h1>
@@ -121,7 +121,7 @@ export function InventoryPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
-        <Card>
+        <Card className="bg-white border-[#e5e7eb] rounded-xl shadow-sm">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
@@ -132,7 +132,7 @@ export function InventoryPage() {
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-white border-[#e5e7eb] rounded-xl shadow-sm">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
@@ -143,18 +143,18 @@ export function InventoryPage() {
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-white border-[#e5e7eb] rounded-xl shadow-sm">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-2xl font-bold text-green-600">{stats.outOfStock}</div>
+                <div className="text-2xl font-bold text-[#16a34a]">{stats.outOfStock}</div>
                 <p className="text-sm text-muted-foreground">Out of Stock</p>
               </div>
-              <TrendingDown className="h-8 w-8 text-green-600" />
+              <TrendingDown className="h-8 w-8 text-[#16a34a]" />
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-white border-[#e5e7eb] rounded-xl shadow-sm">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
@@ -178,7 +178,7 @@ export function InventoryPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
+        <Card className="bg-white border-[#e5e7eb] rounded-xl shadow-sm">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-red-600 flex items-center gap-2">
@@ -194,10 +194,10 @@ export function InventoryPage() {
                 {Array.from({ length: 5 }).map((_, i) => (
                   <div key={i} className="flex items-center justify-between border-b pb-4 last:border-0 last:pb-0">
                     <div className="flex items-center gap-3">
-                      <div className="h-12 w-12 rounded bg-gray-200 animate-pulse" />
-                      <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
+                      <div className="h-12 w-12 rounded bg-[#f3f4f6] animate-pulse" />
+                      <div className="h-4 w-32 bg-[#f3f4f6] rounded animate-pulse" />
                     </div>
-                    <div className="h-8 w-24 bg-gray-200 rounded animate-pulse" />
+                    <div className="h-8 w-24 bg-[#f3f4f6] rounded animate-pulse" />
                   </div>
                 ))}
               </div>
@@ -239,9 +239,9 @@ export function InventoryPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white border-[#e5e7eb] rounded-xl shadow-sm">
           <CardHeader>
-            <CardTitle className="text-green-600 flex items-center gap-2">
+            <CardTitle className="text-[#16a34a] flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
               Top Selling Items
             </CardTitle>
@@ -254,7 +254,7 @@ export function InventoryPage() {
                 {topSellingProducts.map((product, index) => (
                   <div key={product.id} className="flex items-center justify-between border-b pb-4 last:border-0 last:pb-0">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 text-green-700 font-bold text-sm">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f0fdf4] text-[#15803d] font-bold text-sm">
                         {index + 1}
                       </div>
                       <div className="relative h-12 w-12 rounded overflow-hidden bg-muted">
@@ -271,7 +271,7 @@ export function InventoryPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-green-600">₦{((product.units_sold || 0) * product.price).toLocaleString()}</p>
+                      <p className="font-bold text-[#16a34a]">₦{((product.units_sold || 0) * product.price).toLocaleString()}</p>
                       <Badge variant="secondary" className="mt-1">
                         {product.stock} left
                       </Badge>
@@ -284,7 +284,7 @@ export function InventoryPage() {
         </Card>
       </div>
 
-      <Card>
+      <Card className="bg-white border-[#e5e7eb] rounded-xl shadow-sm">
         <CardHeader>
           <CardTitle>Recent Inventory Logs</CardTitle>
         </CardHeader>

@@ -129,7 +129,7 @@ export function AuditLogPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="min-h-screen bg-[#f9fafb] p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Audit Log</h1>
@@ -197,7 +197,7 @@ export function AuditLogPage() {
         </div>
       </div>
 
-      <Card>
+      <Card className="bg-white border-[#e5e7eb] rounded-xl shadow-sm">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
@@ -217,7 +217,7 @@ export function AuditLogPage() {
                   <TableRow key={i}>
                     {Array.from({ length: 7 }).map((_, j) => (
                       <TableCell key={j}>
-                        <div className="h-4 bg-gray-200 rounded animate-pulse" />
+                        <div className="h-4 bg-[#f3f4f6] rounded animate-pulse" />
                       </TableCell>
                     ))}
                   </TableRow>
