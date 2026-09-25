@@ -18,6 +18,7 @@ export type CreateOrderParams = {
   customer_id?: string | null
   easybuy_customer_id?: string | null
   staff_id?: string | null
+  business_id?: string
   payment_method?: 'paystack' | 'cash' | 'pos_terminal' | 'transfer' | 'easybuy'
   payment_reference?: string | null
   shipping_address?: string | object | null
@@ -37,6 +38,7 @@ export async function createOrderTransaction(supabase: SupabaseClient, params: C
     customer_id,
     easybuy_customer_id,
     staff_id,
+    business_id,
     payment_method,
     payment_reference,
     shipping_address,
@@ -49,21 +51,26 @@ export async function createOrderTransaction(supabase: SupabaseClient, params: C
   const dateStr = `${today.getFullYear().toString().slice(2)}${(today.getMonth() + 1).toString().padStart(2, '0')}${today.getDate().toString().padStart(2, '0')}`
   const prefix = `JOE${dateStr}`
   
-  const { count } = await supabase
+  let orderNumberQuery = supabase
     .from('orders')
     .select('*', { count: 'exact', head: true })
     .ilike('order_number', `${prefix}%`)
+  if (business_id) orderNumberQuery = orderNumberQuery.eq('business_id', business_id)
+  const { count } = await orderNumberQuery
   
   const sequence = (count || 0) + 1
-  const order_number = `${prefix}${sequence.toString().padStart(4, '0')}`
+  const tenantOrderPrefix = business_id ? `${prefix}-${business_id}-` : prefix
+  const order_number = `${tenantOrderPrefix}${sequence.toString().padStart(4, '0')}`
   
   const receipt_number = source === 'pos' ? `REC-${order_number}` : null
 
   const productIds = items.map(i => i.product_id)
-  const { data: products, error: productsError } = await supabase
+  let productsQuery = supabase
     .from('products')
     .select('id, stock, name, price')
     .in('id', productIds)
+  if (business_id) productsQuery = productsQuery.eq('business_id', business_id)
+  const { data: products, error: productsError } = await productsQuery
 
   if (productsError) throw new Error(`Failed to fetch products: ${productsError.message}`)
   
@@ -75,6 +82,9 @@ export async function createOrderTransaction(supabase: SupabaseClient, params: C
     if (!product) throw new Error(`Product ${item.product_id} not found`)
     if (product.stock < item.quantity) {
       throw new Error(`Insufficient stock for ${product.name}. Requested: ${item.quantity}, Available: ${product.stock}`)
+    }
+    if (source === 'easybuy' && Number(product.price || 0) <= 0) {
+      throw new Error(`Product ${product.name} must have a price greater than zero for EasyBuy purchases`)
     }
     calculatedSubtotal += (product.price || 0) * item.quantity;
   }
@@ -156,7 +166,8 @@ export async function createOrderTransaction(supabase: SupabaseClient, params: C
       notes,
       receipt_number,
       status: resolvedStatus,
-      payment_status: resolvedPaymentStatus
+      payment_status: resolvedPaymentStatus,
+      ...(business_id ? { business_id } : {})
     })
     .select()
     .single()
@@ -173,13 +184,13 @@ export async function createOrderTransaction(supabase: SupabaseClient, params: C
 
       originalStockByProductId.set(item.product_id, product.stock)
 
-      const { data: updatedProduct, error: updateError } = await supabase
+      let updateProductQuery = supabase
         .from('products')
         .update({ stock: nextStock, updated_at: new Date().toISOString() })
         .eq('id', item.product_id)
         .eq('stock', product.stock)
-        .select()
-        .single()
+      if (business_id) updateProductQuery = updateProductQuery.eq('business_id', business_id)
+      const { data: updatedProduct, error: updateError } = await updateProductQuery.select().single()
 
       if (updateError || !updatedProduct) {
         throw new Error(`Failed to update stock for ${product.name}: Stock changed concurrently. Please try again.`)
@@ -193,6 +204,7 @@ export async function createOrderTransaction(supabase: SupabaseClient, params: C
         quantity_change: -item.quantity,
         previous_stock: product.stock,
         new_stock: nextStock,
+        ...(business_id ? { business_id } : {}),
         reference_id: order.id,
         reference_type: 'order',
         notes: `Order created: ${order_number}`
@@ -204,34 +216,44 @@ export async function createOrderTransaction(supabase: SupabaseClient, params: C
     }
   } catch (e) {
     console.error("Order transaction stock rollback triggered:", e)
-    await supabase
+    let deleteInventoryLogsQuery = supabase
       .from('inventory_logs')
       .delete()
       .eq('reference_id', order.id)
       .eq('reference_type', 'order')
+    if (business_id) deleteInventoryLogsQuery = deleteInventoryLogsQuery.eq('business_id', business_id)
+    await deleteInventoryLogsQuery
 
     for (const productId of updatedProductIds) {
       const originalStock = originalStockByProductId.get(productId)
       if (typeof originalStock === 'number') {
-        await supabase
+        let restoreProductQuery = supabase
           .from('products')
           .update({ stock: originalStock, updated_at: new Date().toISOString() })
           .eq('id', productId)
+        if (business_id) restoreProductQuery = restoreProductQuery.eq('business_id', business_id)
+        await restoreProductQuery
       }
     }
 
-    await supabase.from('orders').delete().eq('id', order.id)
+    let deleteOrderQuery = supabase.from('orders').delete().eq('id', order.id)
+    if (business_id) deleteOrderQuery = deleteOrderQuery.eq('business_id', business_id)
+    await deleteOrderQuery
     throw e
   }
 
   if (customer_id) {
-    const { data: c } = await supabase.from('customers').select('total_orders, total_spent').eq('id', customer_id).single()
+    let customerQuery = supabase.from('customers').select('total_orders, total_spent').eq('id', customer_id)
+    if (business_id) customerQuery = customerQuery.eq('business_id', business_id)
+    const { data: c } = await customerQuery.single()
     if (c) {
-      const { error: customerUpdateError } = await supabase.from('customers').update({
+      let updateCustomerQuery = supabase.from('customers').update({
         total_orders: (c.total_orders || 0) + 1,
         total_spent: (c.total_spent || 0) + total,
         updated_at: new Date().toISOString()
       }).eq('id', customer_id)
+      if (business_id) updateCustomerQuery = updateCustomerQuery.eq('business_id', business_id)
+      const { error: customerUpdateError } = await updateCustomerQuery
       if (customerUpdateError) {
         throw new Error(`Failed to update customer totals: ${customerUpdateError.message}`)
       }

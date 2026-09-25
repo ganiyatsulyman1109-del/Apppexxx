@@ -20,8 +20,6 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import {
@@ -32,14 +30,11 @@ import {
   CartesianGrid,
   Cell,
   Legend,
-  Line,
   Pie,
   PieChart,
   XAxis,
   YAxis,
 } from "recharts"
-import { DatePicker } from "@/components/ui/date-picker"
-import { format } from "date-fns"
 import {
   formatCurrency,
   formatNumber,
@@ -50,9 +45,7 @@ import {
   type Customer,
   type DebtAging,
 } from "@/lib/admin-types"
-type DatePreset = "7d" | "30d" | "90d" | "12m" | "custom"
-type RevenueFilter = "all" | "online" | "pos" | "easybuy"
-type Granularity = "daily" | "weekly" | "monthly"
+type DatePreset = "7d" | "30d" | "90d"
 
 const CATEGORY_COLORS = ["#3b82f6", "#f97316", "#22c55e", "#8b5cf6", "#f59e0b", "#ef4444", "#06b6d4"]
 
@@ -84,11 +77,6 @@ const emptyStats: AdminStats = {
 
 export function AnalyticsPage() {
   const [datePreset, setDatePreset] = useState<DatePreset>("30d")
-  const [customStartDate, setCustomStartDate] = useState<string>("")
-  const [customEndDate, setCustomEndDate] = useState<string>("")
-  const [compareEnabled, setCompareEnabled] = useState(false)
-  const [revenueFilter, setRevenueFilter] = useState<RevenueFilter>("all")
-  const [granularity, setGranularity] = useState<Granularity>("daily")
   const [stats, setStats] = useState<AdminStats>(emptyStats)
   const [revenueData, setRevenueData] = useState<RevenueDataPoint[]>([])
   const [topProducts, setTopProducts] = useState<Product[]>([])
@@ -110,37 +98,17 @@ export function AnalyticsPage() {
   }, [stats])
 
   useEffect(() => {
-    if (datePreset === "custom") {
-      if (customStartDate && customEndDate) {
-        fetchAnalyticsData()
-      }
-    } else {
-      fetchAnalyticsData()
-    }
-  }, [datePreset, granularity, customStartDate, customEndDate])
+    fetchAnalyticsData()
+  }, [datePreset])
 
   useEffect(() => {
     const interval = setInterval(fetchAnalyticsData, 60000)
     return () => clearInterval(interval)
-  }, [datePreset, granularity])
+  }, [datePreset])
 
-  const getRevenuePeriod = (preset: DatePreset) => {
-    if (preset === "7d") return "week"
-    if (preset === "30d") return "month"
-    if (preset === "90d") return "quarter"
-    if (preset === "12m") return "year"
-    if (preset === "custom") return "custom"
-    return "month"
-  }
+  const getRevenuePeriod = (preset: DatePreset) => preset
 
-  const getDashboardPeriod = (preset: DatePreset) => {
-    if (preset === "7d") return "last_7_days"
-    if (preset === "30d") return "last_30_days"
-    if (preset === "90d") return "last_90_days"
-    if (preset === "12m") return "all"
-    if (preset === "custom") return "custom"
-    return "last_30_days"
-  }
+  const getDashboardPeriod = (preset: DatePreset) => preset === "7d" ? "today" : "month"
 
   const fetchAnalyticsData = async () => {
     try {
@@ -150,13 +118,8 @@ export function AnalyticsPage() {
       const revenuePeriod = getRevenuePeriod(datePreset)
       const dashboardPeriod = getDashboardPeriod(datePreset)
 
-      let dashboardUrl = `/api/analytics/dashboard?period=${dashboardPeriod}`
-      let revenueUrl = `/api/analytics/revenue?period=${revenuePeriod}`
-
-      if (datePreset === "custom" && customStartDate && customEndDate) {
-        dashboardUrl += `&start_date=${customStartDate}&end_date=${customEndDate}`
-        revenueUrl += `&start_date=${customStartDate}&end_date=${customEndDate}`
-      }
+      const dashboardUrl = `/api/analytics/dashboard?period=${dashboardPeriod}`
+      const revenueUrl = `/api/analytics/revenue?period=${revenuePeriod}`
 
       const [dashboardResponse, revenueResponse, customersResponse, debtResponse] = await Promise.all([
         fetch(dashboardUrl, { credentials: "include" }),
@@ -166,80 +129,31 @@ export function AnalyticsPage() {
       ])
 
       const dashboardData = dashboardResponse.ok ? await dashboardResponse.json() : {}
-      const revenueData = revenueResponse.ok ? await revenueResponse.json() : {}
+      const revenueData: { date: string; revenue: number; order_count: number }[] =
+        revenueResponse.ok ? await revenueResponse.json() : []
       const customersData = customersResponse.ok ? await customersResponse.json() : {}
       const debtData = debtResponse.ok ? await debtResponse.json() : {}
 
-      const mappedRevenueData: RevenueDataPoint[] = (revenueData.revenueTrends || []).map((entry: any) => ({
-        date: entry.period,
-        online: entry.ecommerce || 0,
-        pos: entry.pos || 0,
-        easyBuy: entry.easybuy || 0,
-        total: entry.total || 0,
+      const mappedRevenueData: RevenueDataPoint[] = revenueData.map((entry) => ({
+        date: entry.date,
+        online: 0,
+        pos: 0,
+        easyBuy: 0,
+        total: Number(entry.revenue || 0),
       }))
 
-      const mappedTopProducts: Product[] = (revenueData.topProducts || []).map((product: any) => ({
-        id: product.id,
-        name: product.name,
-        sku: product.sku || "",
-        image: product.imageUrl || product.image_url || "/placeholder.svg",
-        category: product.category || "uncategorized",
-        price: product.price || 0,
-        stock: product.stockQuantity || product.stock || 0,
-        threshold: product.threshold || 0,
-        unitsSold: product.unitsSold || 0,
-        revenue: product.revenue || 0,
-      }))
-
-      const mappedBottomProducts: Product[] = (revenueData.bottomProducts || []).map((product: any) => ({
-        id: product.id,
-        name: product.name,
-        sku: product.sku || "",
-        image: product.imageUrl || product.image_url || "/placeholder.svg",
-        category: product.category || "uncategorized",
-        price: product.price || 0,
-        stock: product.stockQuantity || product.stock || 0,
-        threshold: product.threshold || 0,
-        unitsSold: product.unitsSold || 0,
-        revenue: product.revenue || 0,
-      }))
-
-      const categoryTotalRevenue = (revenueData.categoryPerformance || []).reduce(
-        (sum: number, category: any) => sum + (category.revenue || 0),
-        0,
-      )
-
-      const mappedCategorySales: CategorySales[] = (revenueData.categoryPerformance || []).map((category: any) => {
-        let catName = category.category || "uncategorized"
-        if (catName.toLowerCase().includes("bricants")) {
-          catName = "Lubricants"
-        } else {
-          // Capitalize first letter for display
-          catName = catName.charAt(0).toUpperCase() + catName.slice(1)
-        }
-        
-        return {
-          category: catName,
-          revenue: category.revenue || 0,
-          percentage: categoryTotalRevenue > 0 ? Number(((category.revenue / categoryTotalRevenue) * 100).toFixed(1)) : 0,
-        }
-      })
-
-      const mappedTopCustomers: Customer[] = (customersData.topCustomers || []).map((customer: any) => ({
+      const mappedTopCustomers: Customer[] = (customersData.top_customers || []).map((customer: any) => ({
         id: customer.id,
         name: customer.name,
         email: customer.email || "",
-        totalSpent: customer.totalSpent || 0,
-        orderCount: customer.orderCount || 0,
-        isReturning: (customer.orderCount || 0) > 1,
+        totalSpent: customer.total_spent || 0,
+        orderCount: customer.order_count || 0,
+        isReturning: (customer.order_count || 0) > 1,
         location: customer.location || "Unknown",
       }))
 
-      const mappedCustomersByLocation = (customersData.customerLocations || []).map((loc: any) => ({
-        location: loc.location,
-        customers: loc.customers || 0,
-        revenue: loc.revenue || 0,
-      }))
+      const totalRevenue = revenueData.reduce((sum, entry) => sum + Number(entry.revenue || 0), 0)
+      const totalOrders = revenueData.reduce((sum, entry) => sum + Number(entry.order_count || 0), 0)
 
       const debtAgingData = debtData.debtOverview?.debtAging || {}
       const mappedDebtAging: DebtAging[] = [
@@ -254,38 +168,38 @@ export function AnalyticsPage() {
       const collectionRate = totalOutstandingDebt > 0 ? (collectionsThisMonth / totalOutstandingDebt) * 100 : 0
 
       setStats({
-        todayRevenue: dashboardData.totalRevenue !== undefined ? dashboardData.totalRevenue : (dashboardData.stats?.totalRevenue || 0),
-        todayRevenueChange: dashboardData.stats?.revenueGrowth || 0,
-        totalOrders: dashboardData.totalOrders !== undefined ? dashboardData.totalOrders : (dashboardData.stats?.totalOrders || 0),
-        ordersChange: dashboardData.stats?.orderGrowth || 0,
-        pendingOrders: dashboardData.pendingOrders !== undefined ? dashboardData.pendingOrders : (dashboardData.recentOrders || []).filter((order: any) => order.status === 'pending').length,
+        todayRevenue: totalRevenue,
+        todayRevenueChange: 0,
+        totalOrders,
+        ordersChange: 0,
+        pendingOrders: dashboardData.stats?.pendingOrders || 0,
         lowStockAlerts: dashboardData.stats?.lowStockCount || 0,
-        weekRevenue: dashboardData.totalRevenue !== undefined ? dashboardData.totalRevenue : (dashboardData.stats?.totalRevenue || 0),
-        monthOrders: dashboardData.totalOrders !== undefined ? dashboardData.totalOrders : (dashboardData.stats?.totalOrders || 0),
+        weekRevenue: totalRevenue,
+        monthOrders: totalOrders,
         totalOutstandingDebt: totalOutstandingDebt || 0,
         collectionRate: collectionRate || 0,
         collectionRateChange: debtData.debtOverview?.collectionRateChange || 0,
         atRiskCustomers: debtData.debtOverview?.overdueCustomers || 0,
-        averageOrderValue: dashboardData.stats?.averageOrderValue || 0,
-        averageOrderValueChange: dashboardData.stats?.averageOrderValueGrowth || 0,
-        conversionRate: customersData.metrics?.customerRetentionRate || 0,
-        conversionRateChange: customersData.metrics?.repeatPurchaseRateChange || 0,
-        returningCustomers: customersData.metrics?.returningCustomers || 0,
-        returningCustomersChange: customersData.metrics?.returningCustomersChange || 0,
-        newCustomers: customersData.metrics?.newCustomers || 0,
-        newCustomersChange: customersData.metrics?.newCustomersChange || 0,
-        posRevenue: dashboardData.posRevenue || 0,
-        ecommerceRevenue: dashboardData.ecommerceRevenue || 0,
-        easyBuyRevenue: dashboardData.easyBuyRevenue || 0,
+        averageOrderValue: totalOrders ? totalRevenue / totalOrders : 0,
+        averageOrderValueChange: 0,
+        conversionRate: 0,
+        conversionRateChange: 0,
+        returningCustomers: 0,
+        returningCustomersChange: 0,
+        newCustomers: customersData.new_this_month || 0,
+        newCustomersChange: 0,
+        posRevenue: 0,
+        ecommerceRevenue: 0,
+        easyBuyRevenue: 0,
       })
 
       setRevenueData(mappedRevenueData)
-      setTopProducts(mappedTopProducts)
-      setBottomProducts(mappedBottomProducts)
-      setCategorySales(mappedCategorySales)
-      setNewVsReturning(customersData.newVsReturning || [])
+      setTopProducts([])
+      setBottomProducts([])
+      setCategorySales([])
+      setNewVsReturning([])
       setTopCustomers(mappedTopCustomers)
-      setCustomersByLocation(mappedCustomersByLocation)
+      setCustomersByLocation([])
       setDebtAging(mappedDebtAging)
     } catch (err) {
       console.error(err)
@@ -298,12 +212,7 @@ export function AnalyticsPage() {
     }
   }
 
-  const filteredRevenueData = revenueData.map((d) => {
-    if (revenueFilter === "online") return { ...d, value: d.online }
-    if (revenueFilter === "pos") return { ...d, value: d.pos }
-    if (revenueFilter === "easybuy") return { ...d, value: d.easyBuy }
-    return { ...d, value: d.total }
-  })
+  const filteredRevenueData = revenueData.map((d) => ({ ...d, value: d.total }))
 
   if (loading) {
     return (
@@ -348,33 +257,8 @@ export function AnalyticsPage() {
               <SelectItem value="7d">Last 7 days</SelectItem>
               <SelectItem value="30d">Last 30 days</SelectItem>
               <SelectItem value="90d">Last 90 days</SelectItem>
-              <SelectItem value="12m">Last 12 months</SelectItem>
-              <SelectItem value="custom">Custom Range</SelectItem>
             </SelectContent>
           </Select>
-          {datePreset === "custom" && (
-            <div className="flex items-center gap-2">
-              <DatePicker
-                date={customStartDate ? new Date(customStartDate) : undefined}
-                setDate={(date) => setCustomStartDate(date ? format(date, "yyyy-MM-dd") : "")}
-                className="w-[140px] h-9 text-sm"
-                placeholder="Start date"
-              />
-              <span className="text-muted-foreground">to</span>
-              <DatePicker
-                date={customEndDate ? new Date(customEndDate) : undefined}
-                setDate={(date) => setCustomEndDate(date ? format(date, "yyyy-MM-dd") : "")}
-                className="w-[140px] h-9 text-sm"
-                placeholder="End date"
-              />
-            </div>
-          )}
-          <div className="flex items-center gap-2">
-            <Switch id="compare" checked={compareEnabled} onCheckedChange={setCompareEnabled} />
-            <Label htmlFor="compare" className="text-sm">
-              Compare with previous period
-            </Label>
-          </div>
         </div>
       </div>
 
@@ -485,38 +369,7 @@ export function AnalyticsPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <CardTitle>Revenue Over Time</CardTitle>
-              <CardDescription>
-                {compareEnabled ? "With previous period comparison" : "Filtered by selected range"}
-              </CardDescription>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="flex border rounded-lg overflow-hidden">
-                {(["all", "online", "pos", "easybuy"] as RevenueFilter[]).map((filter) => (
-                  <button
-                    key={filter}
-                    onClick={() => setRevenueFilter(filter)}
-                    className={`px-3 py-1.5 text-sm ${
-                      revenueFilter === filter ? "bg-blue-600 text-white" : "bg-background hover:bg-muted"
-                    }`}
-                  >
-                    {filter === "all"
-                      ? "Both"
-                      : filter === "easybuy"
-                        ? "Easy Buy"
-                        : filter.charAt(0).toUpperCase() + filter.slice(1)}
-                  </button>
-                ))}
-              </div>
-              <Select value={granularity} onValueChange={(v) => setGranularity(v as Granularity)}>
-                <SelectTrigger className="w-[100px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="daily">Daily</SelectItem>
-                  <SelectItem value="weekly">Weekly</SelectItem>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                </SelectContent>
-              </Select>
+              <CardDescription>Confirmed order revenue by day</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -539,17 +392,6 @@ export function AnalyticsPage() {
               <XAxis dataKey="date" fontSize={12} tickLine={false} />
               <YAxis fontSize={12} tickLine={false} tickFormatter={(v) => formatCurrency(v)} />
               <ChartTooltip content={<ChartTooltipContent />} formatter={(value) => formatCurrency(value as number)} />
-              {compareEnabled && (
-                <Line
-                  type="monotone"
-                  dataKey="value"
-                  stroke="#94a3b8"
-                  strokeWidth={2}
-                  strokeDasharray="5 5"
-                  dot={false}
-                  data={filteredRevenueData.map((d) => ({ ...d, value: d.value * 0.85 }))}
-                />
-              )}
               <Area
                 type="monotone"
                 dataKey="value"

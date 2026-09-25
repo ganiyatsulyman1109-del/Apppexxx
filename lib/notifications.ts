@@ -10,7 +10,7 @@ export type NotificationPayload = {
   expires_at?: string | null
 }
 
-export const notifyUsers = async (userIds: string[], payload: NotificationPayload) => {
+export const notifyUsers = async (userIds: string[], payload: NotificationPayload, businessId?: string) => {
   if (!userIds.length) return { success: false, error: "No users provided" }
   const supabase = createAdminClient()
 
@@ -18,6 +18,7 @@ export const notifyUsers = async (userIds: string[], payload: NotificationPayloa
     .from("notifications")
     .insert(userIds.map(userId => ({
       user_id: userId,
+      ...(businessId ? { business_id: businessId } : {}),
       title: payload.title,
       message: payload.message,
       type: payload.type,
@@ -35,12 +36,14 @@ export const notifyUsers = async (userIds: string[], payload: NotificationPayloa
   return { success: true }
 }
 
-export const notifyRole = async (role: "admin" | "staff", payload: NotificationPayload) => {
+export const notifyRole = async (role: "admin" | "staff", payload: NotificationPayload, businessId?: string) => {
   const supabase = createAdminClient()
-  const { data, error } = await supabase
+  let query = supabase
     .from("user_roles")
     .select("user_id")
-    .eq("role", role)
+    .in("role", role === "admin" ? ["admin", "business_owner"] : ["staff"])
+  if (businessId) query = query.eq("business_id", businessId)
+  const { data, error } = await query
 
   if (error) {
     return { success: false, error: error.message }
@@ -51,14 +54,14 @@ export const notifyRole = async (role: "admin" | "staff", payload: NotificationP
     return { success: false, error: "No users for role" }
   }
 
-  return notifyUsers(userIds, payload)
+  return notifyUsers(userIds, payload, businessId)
 }
 
-export const notifyAdmins = async (payload: NotificationPayload) => {
-  return notifyRole("admin", payload)
+export const notifyAdmins = async (payload: NotificationPayload, businessId?: string) => {
+  return notifyRole("admin", payload, businessId)
 }
 
-export const notifyLowStock = async (product: { id: string; name: string; stock: number }) => {
+export const notifyLowStock = async (product: { id: string; name: string; stock: number }, businessId?: string) => {
   return notifyAdmins({
     title: "Low stock alert",
     message: `${product.name} is low on stock (${product.stock} remaining).`,
@@ -66,10 +69,10 @@ export const notifyLowStock = async (product: { id: string; name: string; stock:
     category: "inventory",
     action_url: `/admin?tab=inventory`,
     action_text: "Review stock"
-  })
+  }, businessId)
 }
 
-export const notifyNewOrder = async (order: { id: string; order_number?: string; source?: string; total_amount?: number }) => {
+export const notifyNewOrder = async (order: { id: string; order_number?: string; source?: string; total_amount?: number }, businessId?: string) => {
   const orderNumber = order.order_number ? `#${order.order_number}` : "New order"
   const sourceLabel = order.source ? order.source.toUpperCase() : "Order"
   return notifyAdmins({
@@ -79,7 +82,7 @@ export const notifyNewOrder = async (order: { id: string; order_number?: string;
     category: "order",
     action_url: `/admin?tab=orders`,
     action_text: "View order"
-  })
+  }, businessId)
 }
 
 export const notifyPayment = async (payment: { amount: number; reference?: string }) => {

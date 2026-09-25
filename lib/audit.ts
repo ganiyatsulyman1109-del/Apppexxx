@@ -3,6 +3,7 @@ export async function logAudit(params: {
   action_type: string 
   entity_type: string 
   entity_id?: string 
+  business_id?: string
   performed_by?: string 
   performed_by_role?: string 
   before_data?: any 
@@ -16,6 +17,7 @@ export async function logAudit(params: {
       ...params, 
       entity_id: params.entity_id || null, 
       performed_by: params.performed_by || null, 
+      business_id: params.business_id,
     }) 
   } catch (e) { 
     console.error('Audit log failed silently:', e) 

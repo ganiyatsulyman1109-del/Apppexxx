@@ -103,8 +103,12 @@ export function InvestorsPage() {
           email: newInvestor.email,
           phone: newInvestor.phone,
           investment_amount: newInvestor.investmentAmount,
+          principal_amount: newInvestor.investmentAmount,
           daily_return_rate: newInvestor.dailyReturnRate,
+          return_rate: newInvestor.dailyReturnRate,
+          tenure_months: newInvestor.tenureMonths,
           investment_date: newInvestor.investmentDate,
+          start_date: newInvestor.investmentDate,
           password: newInvestor.password,
           notes: newInvestor.notes
         }),

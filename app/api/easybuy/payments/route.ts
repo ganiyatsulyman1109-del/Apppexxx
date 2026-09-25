@@ -1,487 +1,220 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireStaffOrAdminAuth } from '@/lib/auth'
+import { requireAdminAuth } from '@/lib/auth'
 import { createAdminClient } from '@/lib/utils/supabase'
 import { logAudit } from '@/lib/audit'
-import { toNigeriaDateTime } from '@/lib/utils/date'
+import { assertBelongsToBusiness, getAuthBusinessId } from '@/lib/tenant'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return NextResponse.json(
-      { error: 'Database service not configured' },
-      { status: 500 }
-    )
-  }
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json({ error: 'Database service not configured' }, { status: 500 })
+    }
 
-    const authResult = await requireStaffOrAdminAuth(request)
+    const authResult = await requireAdminAuth(request)
     if (!authResult.authenticated) {
       return NextResponse.json({ error: authResult.error }, { status: authResult.status })
     }
-    
-    const supabase = createAdminClient()
-    
+    const businessId = await getAuthBusinessId(authResult)
+    if (!businessId) {
+      return NextResponse.json({ error: 'Business context not found' }, { status: 403 })
+    }
+
     const { searchParams } = new URL(request.url)
-    const customer_id = searchParams.get('customer_id')
-    const limit = searchParams.get('limit') || '10000'
+    const customerId = searchParams.get('customer_id')
+    const requestedLimit = Number(searchParams.get('limit') || 10000)
     const date = searchParams.get('date')
-    
+    if (!Number.isInteger(requestedLimit) || requestedLimit < 1) {
+      return NextResponse.json({ error: 'Invalid limit' }, { status: 400 })
+    }
+    if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return NextResponse.json({ error: 'Invalid date' }, { status: 400 })
+    }
+
+    const supabase = createAdminClient()
     let query = supabase
       .from('easybuy_payments')
       .select(`
         *,
         easybuy_customers!easybuy_customer_id_fkey (
-          full_name, 
-          phone, 
+          full_name,
+          phone,
           easybuy_id,
           current_debt
         ),
         staff:processed_by(full_name)
       `)
+      .eq('business_id', businessId)
+      .eq('easybuy_customers.business_id', businessId)
+      .eq('staff.business_id', businessId)
       .order('created_at', { ascending: false })
-      .limit(parseInt(limit))
-    
-    if (customer_id) {
-      query = query.eq('easybuy_customer_id', customer_id)
+      .limit(Math.min(requestedLimit, 10000))
+
+    if (customerId) query = query.eq('easybuy_customer_id', customerId)
+    if (date) {
+      query = query
+        .gte('created_at', new Date(`${date}T00:00:00+01:00`).toISOString())
+        .lte('created_at', new Date(`${date}T23:59:59.999+01:00`).toISOString())
     }
 
-    if (date) { 
-      // Treat the input date as the start of the day in Nigerian time, convert to ISO UTC for the DB
-      // Assuming 'date' is YYYY-MM-DD
-      const startOfDay = new Date(`${date}T00:00:00+01:00`).toISOString()
-      const endOfDay = new Date(`${date}T23:59:59.999+01:00`).toISOString()
-      
-      query = query 
-        .gte('created_at', startOfDay) 
-        .lte('created_at', endOfDay) 
-    }
-    
     const { data, error } = await query
-    
     if (error) {
-      console.error(error);
-    return NextResponse.json(
-      { error: 'An internal error occurred. Please try again.' },
-      { status: 500 }
-    )
+      console.error('EasyBuy payment query failed:', error)
+      return NextResponse.json({ error: 'Failed to load payments' }, { status: 500 })
     }
-    
+
     return NextResponse.json({ payments: data }, {
-      headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate'
-      }
+      headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' }
     })
-  } catch (error: any) {
-    console.error('[Payment POST] error:', error)
+  } catch (error) {
+    console.error('EasyBuy payment list failed:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return NextResponse.json(
-      { error: 'Database service not configured' },
-      { status: 500 }
-    )
-  }
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json({ error: 'Database service not configured' }, { status: 500 })
+    }
 
-    const body = await request.json()
-    const { 
-      customer_id, 
-      order_id,
-      amount, 
-      payment_method, 
-      payment_reference, 
-      notes, 
-      processed_by 
-    } = body
-
-    const authResult = await requireStaffOrAdminAuth(request)
+    const authResult = await requireAdminAuth(request)
     if (!authResult.authenticated) {
-      console.warn('[Payment] Auth failed')
       return NextResponse.json({ error: authResult.error }, { status: authResult.status })
     }
-    
+    const businessId = await getAuthBusinessId(authResult)
+    if (!businessId) {
+      return NextResponse.json({ error: 'Business context not found' }, { status: 403 })
+    }
+
+    let body: Record<string, unknown>
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    }
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json({ error: 'Request body must be an object' }, { status: 400 })
+    }
+
+    const customerId = body.customer_id
+    const orderId = body.order_id
+    const amount = Number(body.amount)
+    const requestedMethod = typeof body.payment_method === 'string'
+      ? body.payment_method.toLowerCase().trim()
+      : ''
+    const paymentMethod = requestedMethod === 'pos_terminal' ? 'pos'
+      : requestedMethod === 'bank_transfer' ? 'transfer'
+      : requestedMethod
+    const processedBy = body.processed_by
+
+    if (typeof customerId !== 'string' || !customerId ||
+        !Number.isFinite(amount) || amount <= 0 ||
+        !['cash', 'card', 'transfer', 'pos'].includes(paymentMethod)) {
+      return NextResponse.json({
+        error: 'Valid customer_id, positive amount, and payment_method are required'
+      }, { status: 400 })
+    }
+    if (orderId !== undefined && orderId !== null && typeof orderId !== 'string') {
+      return NextResponse.json({ error: 'Invalid order_id' }, { status: 400 })
+    }
+    if (processedBy !== undefined && processedBy !== null && typeof processedBy !== 'string') {
+      return NextResponse.json({ error: 'Invalid staff identifier' }, { status: 400 })
+    }
+    if (body.payment_reference !== undefined && body.payment_reference !== null &&
+        typeof body.payment_reference !== 'string') {
+      return NextResponse.json({ error: 'Invalid payment reference' }, { status: 400 })
+    }
+    if (body.notes !== undefined && body.notes !== null && typeof body.notes !== 'string') {
+      return NextResponse.json({ error: 'Invalid notes' }, { status: 400 })
+    }
+
     const supabase = createAdminClient()
-    
-    if (!customer_id || !amount || !payment_method) {
-      return NextResponse.json({ error: 'Missing required fields: customer_id, amount, payment_method' }, { status: 400 })
-    }
-    
-    if (amount <= 0) {
-      return NextResponse.json({ error: 'Payment amount must be greater than 0' }, { status: 400 })
-    }
-    
-    // Get customer details
     const { data: customer, error: customerError } = await supabase
       .from('easybuy_customers')
-      .select('*')
-      .eq('id', customer_id)
-      .single()
-      
-    if (customerError || !customer) {
-      console.error(`[Payment] Customer not found: ${customer_id}`)
+      .select('id, current_debt')
+      .eq('id', customerId)
+      .eq('business_id', businessId)
+      .maybeSingle()
+    if (customerError) {
+      console.error('Failed to load EasyBuy customer:', customerError)
+      return NextResponse.json({ error: 'Failed to validate customer' }, { status: 500 })
+    }
+    if (!customer || !(await assertBelongsToBusiness(supabase, 'easybuy_customers', customerId, businessId))) {
       return NextResponse.json({ error: 'Customer not found' }, { status: 404 })
     }
-
-    if (Number(amount) > Number(customer.current_debt || 0)) {
+    if (amount > Number(customer.current_debt || 0)) {
       return NextResponse.json({ error: 'Payment amount exceeds current balance' }, { status: 400 })
     }
-    
-    // Resolve processed_by logic
-    let resolvedProcessedBy = null
 
-    // 1. Try to resolve provided processed_by
-    if (processed_by) {
-      resolvedProcessedBy = await resolveStaffUuid(supabase, processed_by)
+    let staffId: string | null = null
+    const staffIdentifier = typeof processedBy === 'string'
+      ? processedBy
+      : authResult.authSource === 'staff-session'
+        ? authResult.user.id
+        : null
+    if (staffIdentifier) {
+      staffId = await resolveStaffUuid(supabase, staffIdentifier, businessId)
+      if (!staffId && typeof processedBy === 'string') {
+        return NextResponse.json({ error: 'Invalid staff identifier' }, { status: 400 })
+      }
     }
 
-    // 2. If not resolved/provided, try to resolve from authenticated user
-    if (!resolvedProcessedBy && authResult.authSource === 'staff-session') {
-      resolvedProcessedBy = await resolveStaffUuid(supabase, authResult.user.id)
-    }
-    
-    // Remove payment_date overrides, always use the current server time for accurate tracking
-    const normalizedPaymentDate = new Date().toISOString()
-
-    // Normalize payment method to match DB CHECK constraint
-    const methodInput = String(payment_method || '').toLowerCase().trim()
-    const normalizedPaymentMethod = methodInput === 'pos_terminal' ? 'pos'
-      : methodInput === 'bank_transfer' ? 'transfer'
-      : methodInput === 'transfer' ? 'transfer'
-      : methodInput === 'pos' ? 'pos'
-      : methodInput === 'card' ? 'card'
-      : 'cash'
-
-    const paymentData = {
-      easybuy_customer_id: customer_id,
-      // The purchase ID will be determined by the distribution logic below
-      amount: Number(amount),
-      payment_method: normalizedPaymentMethod,
-      payment_reference: payment_reference || null,
-      processed_by: resolvedProcessedBy,
-      notes,
-      created_at: new Date().toISOString()
+    const { data: payment, error: paymentError } = await supabase.rpc('apply_easybuy_payment', {
+      p_business_id: businessId,
+      p_customer_id: customerId,
+      p_amount: amount,
+      p_payment_method: paymentMethod,
+      p_order_id: typeof orderId === 'string' ? orderId : null,
+      p_payment_reference: typeof body.payment_reference === 'string' ? body.payment_reference.trim() : null,
+      p_notes: typeof body.notes === 'string' ? body.notes.trim() : null,
+      p_processed_by: staffId
+    })
+    if (paymentError || !payment) {
+      console.error('Failed to apply EasyBuy payment:', paymentError)
+      const message = paymentError?.message || 'Payment could not be applied'
+      const isValidationError = /exceeds|not found|greater than zero|active purchase/i.test(message)
+      return NextResponse.json(
+        { error: isValidationError ? message : 'Failed to apply payment' },
+        { status: isValidationError ? 400 : 500 }
+      )
     }
 
-    // FIND OR CREATE PURCHASE RECORD (Waterfall Logic - Oldest First)
-    // We prioritize paying off the oldest debts first.
-    // If order_id is provided, we still respect it, but if not, we find pending purchases.
-    
-    let pendingPurchases: any[] = []
-    
-    if (order_id) {
-        // Specific order targeted
-        const { data: specificPurchase } = await supabase
-            .from('easybuy_purchases')
-            .select('id, remaining_balance, total_amount, status, order_id')
-            .eq('easybuy_customer_id', customer_id)
-            .eq('order_id', order_id)
-            .single()
-            
-        if (specificPurchase) {
-            pendingPurchases = [specificPurchase]
-        } else {
-            // Check if order exists but no purchase record (create it)
-            const { data: order } = await supabase
-                .from('orders')
-                .select('*')
-                .eq('id', order_id)
-                .single()
-                
-            if (order) {
-                const items = Array.isArray(order.items) ? order.items : 
-                              typeof order.items === 'string' ? JSON.parse(order.items) : []
-                const firstItem = items[0] || {}
-                const orderTotal = Number(order.total_amount || 0)
-                
-                const { data: newPurchase, error: createError } = await supabase
-                  .from('easybuy_purchases')
-                  .insert({
-                    easybuy_customer_id: customer_id,
-                    order_id: order.id,
-                    product_id: firstItem.product_id || firstItem.productId || null, // Fix: Allow null product_id
-                    quantity: Number(firstItem.quantity || 1),
-                    unit_price: Number(firstItem.price || firstItem.unitPrice || orderTotal),
-                    total_amount: orderTotal,
-                    down_payment: 0,
-                    remaining_balance: orderTotal,
-                    payment_plan_months: 12,
-                    monthly_payment: orderTotal / 12,
-                    status: 'pending',
-                    purchase_date: order.created_at,
-                    expected_completion_date: new Date(new Date(order.created_at).getTime() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
-                  })
-                  .select('id, remaining_balance, total_amount, status, order_id')
-                  .single()
-                  
-                if (createError) { 
-                  console.error('PURCHASE CREATE ERROR:', createError) 
-                  console.error(createError);
-    return NextResponse.json(
-      { error: 'An internal error occurred. Please try again.' },
-      { status: 500 }
-    ) 
-                } 
-                if (newPurchase) pendingPurchases = [newPurchase]
-            }
-        }
-    } else {
-        // Waterfall: Get all pending/partial/overdue purchases ordered by date
-        const { data: purchases } = await supabase
-            .from('easybuy_purchases')
-            .select('id, remaining_balance, total_amount, status, order_id')
-            .eq('easybuy_customer_id', customer_id)
-            .in('status', ['pending', 'partial', 'overdue'])
-            .order('purchase_date', { ascending: true })
-            
-        pendingPurchases = purchases || []
-    }
-    
-    if (pendingPurchases.length === 0) {
-        // Check for any pending orders that haven't been converted to purchases yet
-        // This is a safety net for legacy data or failed creations
-        const { data: pendingOrders } = await supabase
-            .from('orders')
-            .select('*')
-            .eq('easybuy_customer_id', customer_id)
-            .in('payment_status', ['pending', 'partial'])
-            .order('created_at', { ascending: true })
-            
-        if (pendingOrders && pendingOrders.length > 0) {
-            // Convert first one and use it
-            const order = pendingOrders[0]
-            const items = Array.isArray(order.items) ? order.items : 
-                          typeof order.items === 'string' ? JSON.parse(order.items) : []
-            const firstItem = items[0] || {}
-            const orderTotal = Number(order.total_amount || 0)
-            
-            const { data: newPurchase, error: purchaseError } = await supabase
-              .from('easybuy_purchases')
-              .insert({
-                easybuy_customer_id: customer_id,
-                order_id: order.id,
-                product_id: firstItem.product_id || firstItem.productId || null, // Fix: Allow null product_id
-                quantity: Number(firstItem.quantity || 1),
-                unit_price: Number(firstItem.price || firstItem.unitPrice || orderTotal),
-                total_amount: orderTotal,
-                down_payment: 0,
-                remaining_balance: orderTotal,
-                payment_plan_months: 12,
-                monthly_payment: orderTotal / 12,
-                status: 'pending',
-                purchase_date: order.created_at,
-                expected_completion_date: new Date(new Date(order.created_at).getTime() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              })
-              .select('id, remaining_balance, total_amount, status, order_id')
-              .single()
-              
-            if (purchaseError) { 
-              console.error('PURCHASE CREATE ERROR:', purchaseError) 
-              console.error(purchaseError);
-    return NextResponse.json(
-      { error: 'An internal error occurred. Please try again.' },
-      { status: 500 }
-    ) 
-            } 
-            if (newPurchase) pendingPurchases = [newPurchase]
-        }
-    }
-
-    if (pendingPurchases.length === 0) {
-        // Last resort: customer has debt but no purchase records. Create a synthetic purchase from debt.
-        const currentDebt = Number(customer.current_debt || 0)
-        if (currentDebt > 0) {
-            const { data: syntheticPurchase, error: synthError } = await supabase
-              .from('easybuy_purchases')
-              .insert({
-                easybuy_customer_id: customer_id,
-                order_id: null,
-                product_id: null,
-                quantity: 1,
-                unit_price: currentDebt,
-                total_amount: currentDebt,
-                down_payment: 0,
-                remaining_balance: currentDebt,
-                payment_plan_months: 12,
-                monthly_payment: currentDebt / 12,
-                status: 'pending',
-                purchase_date: new Date().toISOString(),
-                expected_completion_date: new Date(Date.now() + 365*24*60*60*1000).toISOString(),
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              })
-              .select('id, remaining_balance, total_amount, status, order_id')
-              .single()
-
-            if (!synthError && syntheticPurchase) {
-                pendingPurchases = [syntheticPurchase]
-            }
-        }
-    }
-
-    if (pendingPurchases.length === 0) {
-        console.warn(`[Payment] No active debts found for customer ${customer_id}`)
-        return NextResponse.json({ error: 'No active debts found for this customer' }, { status: 400 })
-    }
-
-    // Distribute payment across purchases
-    let remainingPayment = Number(amount)
-    let lastPurchaseId: string | undefined = undefined
-    
-    for (const purchase of pendingPurchases) {
-        if (remainingPayment <= 0) break
-        
-        lastPurchaseId = purchase.id // Track this as the purchase we are currently paying
-        const currentBalance = Number(purchase.remaining_balance)
-        let payAmount = 0
-        let newStatus = purchase.status
-        let newBalance = currentBalance
-        
-        if (remainingPayment >= currentBalance) {
-            // Pay off this purchase completely
-            payAmount = currentBalance
-            remainingPayment -= currentBalance
-            newBalance = 0
-            newStatus = 'paid'
-            
-            // Update purchase
-            await supabase.from('easybuy_purchases').update({
-                remaining_balance: 0,
-                status: 'paid',
-                actual_completion_date: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            }).eq('id', purchase.id)
-            
-            // Update linked order
-            if (purchase.order_id) {
-                await supabase.from('orders').update({
-                    payment_status: 'paid',
-                    status: 'confirmed',
-                    updated_at: new Date().toISOString()
-                }).eq('id', purchase.order_id)
-            }
-        } else {
-            // Partial payment on this purchase
-            payAmount = remainingPayment
-            newBalance = currentBalance - remainingPayment
-            remainingPayment = 0
-            newStatus = 'partial'
-            
-            // Update purchase
-            await supabase.from('easybuy_purchases').update({
-                remaining_balance: newBalance,
-                status: 'partial',
-                updated_at: new Date().toISOString()
-            }).eq('id', purchase.id)
-        }
-    }
-    
-    if (!lastPurchaseId) { 
-      console.error('PAYMENT ERROR: No purchase was processed for customer:', customer_id) 
-      return NextResponse.json({ error: 'No active purchase found to apply payment to' }, { status: 400 }) 
-    } 
-
-    // Create Payment Record (linked to the last purchase affected, or the first one if mainly tracking customer)
-    
-    const { data: payment, error: paymentError } = await supabase
-      .from('easybuy_payments')
-      .insert({
-        easybuy_customer_id: customer_id,
-        easybuy_purchase_id: lastPurchaseId,
-        amount: Number(amount),
-        payment_method: normalizedPaymentMethod,
-        payment_reference: payment_reference || null,
-        notes: notes || null,
-        processed_by: resolvedProcessedBy,
-        payment_date: normalizedPaymentDate, // Keep this for DB constraint/legacy if it exists
-        balance_after: Math.max(0, Number(customer.current_debt||0) - Number(amount)), // Track customer total debt after payment
-        created_at: new Date().toISOString()
-      })
-      .select()
-      .single()
-      
-    if (paymentError) { 
-      console.error('PAYMENT INSERT ERROR:', { 
-        message: paymentError.message, 
-        details: paymentError.details, 
-        hint: paymentError.hint, 
-        lastPurchaseId, 
-        customer_id, 
-        amount, 
-        payment_method, 
-        resolvedProcessedBy 
-      }) 
-      console.error(paymentError);
-    return NextResponse.json(
-      { error: 'An internal error occurred. Please try again.' },
-      { status: 500 }
-    ) 
-    } 
-    
-    // Update Customer Totals
-    const newCustomerDebt = Math.max(0, Number(customer.current_debt || 0) - Number(amount))
-    const newTotalPayments = Number(customer.total_payments || 0) + Number(amount)
-    
-    await supabase.from('easybuy_customers').update({ 
-        current_debt: newCustomerDebt,
-        total_payments: newTotalPayments,
-        last_payment: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-    }).eq('id', customer_id)
-    
-    await logAudit({ 
-      action_type: 'easybuy_payment', 
-      entity_type: 'easybuy_customer', 
-      entity_id: customer_id, 
-      performed_by: resolvedProcessedBy || undefined, 
-      before_data: { debt: customer.current_debt }, 
-      after_data: { debt: newCustomerDebt }, 
-      metadata: { 
-        amount, 
-        payment_method, 
-        payment_reference
-      }, 
+    await logAudit({
+      action_type: 'easybuy_payment',
+      entity_type: 'easybuy_customer',
+      entity_id: customerId,
+      business_id: businessId,
+      performed_by: staffId || undefined,
+      before_data: { debt: customer.current_debt },
+      after_data: { debt: Math.max(0, Number(customer.current_debt) - amount) },
+      metadata: {
+        amount,
+        payment_method: paymentMethod,
+        payment_reference: body.payment_reference || null
+      }
     })
 
     return NextResponse.json({ payment })
-  } catch (error: any) {
-    console.error('[Payment] Internal server error:', error)
-    console.error(error);
-    return NextResponse.json(
-      { error: 'An internal error occurred. Please try again.' },
-      { status: 500 }
-    )
+  } catch (error) {
+    console.error('EasyBuy payment failed:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
-async function resolveStaffUuid(supabase: any, id?: string | null): Promise<string | null> {
-  if (!id) return null
-
+async function resolveStaffUuid(
+  supabase: ReturnType<typeof createAdminClient>,
+  staffIdentifier: string,
+  businessId: string
+): Promise<string | null> {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  let query = supabase.from('staff').select('id').eq('business_id', businessId)
+  query = uuidRegex.test(staffIdentifier)
+    ? query.eq('id', staffIdentifier)
+    : query.eq('staff_id', staffIdentifier.toUpperCase().trim())
 
-  if (uuidRegex.test(id)) {
-    // It's a UUID — check if it exists in staff table
-    const { data } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('id', id)
-      .maybeSingle()
-    if (data) return data.id  // Valid staff UUID
-    return null  // UUID not in staff table — admin UUID, return null
-  }
-
-  // It's a staff_id text like STAFF001
-  const { data } = await supabase
-    .from('staff')
-    .select('id')
-    .eq('staff_id', id.toUpperCase().trim())
-    .maybeSingle()
+  const { data, error } = await query.maybeSingle()
+  if (error) throw new Error(`Failed to resolve staff identifier: ${error.message}`)
   return data?.id || null
 }

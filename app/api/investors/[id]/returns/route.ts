@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminClient, createServerClient } from '@/lib/utils/supabase'
+import { createAdminClient } from '@/lib/utils/supabase'
 import { requireAdminAuth } from '@/lib/auth'
+import { assertBelongsToBusiness, getAuthBusinessId } from '@/lib/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,25 +21,32 @@ export async function GET(
     if (!authResult.authenticated) {
       return NextResponse.json({ error: authResult.error || 'Unauthorized' }, { status: authResult.status || 401 })
     }
+    const businessId = await getAuthBusinessId(authResult)
+    if (!businessId) {
+      return NextResponse.json({ error: 'Business context not found' }, { status: 403 })
+    }
 
     const supabase = createAdminClient()
     const adminSupabase = createAdminClient()
     const { id } = await params
+    if (!(await assertBelongsToBusiness(supabase, 'investors', id, businessId))) {
+      return NextResponse.json({ error: 'Investor not found' }, { status: 404 })
+    }
     
     // Get investor details
     const { data: investor, error: investorError } = await adminSupabase
       .from('investors')
       .select('*')
       .or(`id.eq.${id},user_id.eq.${id}`)
+      .eq('business_id', businessId)
       .maybeSingle()
     
-    if (investorError || !investor) {
+    if (investorError?.code === 'PGRST116' || !investor) {
       return NextResponse.json({ error: 'Investor not found' }, { status: 404 })
     }
-
-    // Check if user is the investor or admin
-    if (authResult.user?.role !== 'admin' && investor.user_id !== authResult.user?.id) {
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    if (investorError) {
+      console.error('Failed to load investor returns:', investorError)
+      return NextResponse.json({ error: 'Failed to load investor returns' }, { status: 500 })
     }
 
     // Calculate Returns
@@ -61,11 +69,11 @@ export async function GET(
     
     const totalReturnsEarned = dailyEarnings * effectiveDays
     const totalReturnsPaid = Number(investor.total_returns_paid || 0)
-    const currentBalance = totalReturnsEarned - totalReturnsPaid
+    const currentBalance = Math.max(0, totalReturnsEarned - totalReturnsPaid)
 
     // Update investor record with latest calculations
     // We update this on every fetch to keep it sync, though a scheduled job is better
-    await adminSupabase
+    const { error: investorUpdateError } = await adminSupabase
       .from('investors')
       .update({
         total_returns_earned: totalReturnsEarned,
@@ -73,20 +81,30 @@ export async function GET(
         updated_at: new Date().toISOString()
       })
       .eq('id', investor.id)
+      .eq('business_id', businessId)
+    if (investorUpdateError) {
+      console.error('Failed to update investor returns:', investorUpdateError)
+      return NextResponse.json({ error: 'Failed to update investor returns' }, { status: 500 })
+    }
 
     // Get payment history
     // Check if table exists, handle gracefully
-    const { data: payments } = await adminSupabase
+    const { data: payments, error: paymentsError } = await adminSupabase
       .from('investor_payments')
       .select('*')
       .eq('investor_id', investor.id)
+      .eq('business_id', businessId)
       .order('payment_date', { ascending: false })
+    if (paymentsError) {
+      console.error('Failed to load investor payment history:', paymentsError)
+      return NextResponse.json({ error: 'Failed to load investor payment history' }, { status: 500 })
+    }
 
     // Fetch business revenue for the last 35 days (to cover a full month + week)
     const thirtyDaysAgo = new Date()
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 35)
     
-    const { data: orders } = await adminSupabase
+    const { data: orders, error: ordersError } = await adminSupabase
       .from('orders')
       .select('total_amount, created_at')
       .gte('created_at', thirtyDaysAgo.toISOString())
@@ -94,11 +112,17 @@ export async function GET(
       .not('status', 'eq', 'cancelled')
       .not('status', 'eq', 'refunded')
       .neq('source', 'easybuy')
+      .eq('business_id', businessId)
       
-    const { data: ebPayments } = await adminSupabase
+    const { data: ebPayments, error: ebPaymentsError } = await adminSupabase
       .from('easybuy_payments')
       .select('amount, created_at')
       .gte('created_at', thirtyDaysAgo.toISOString())
+      .eq('business_id', businessId)
+    if (ordersError || ebPaymentsError) {
+      console.error('Failed to load revenue history:', ordersError || ebPaymentsError)
+      return NextResponse.json({ error: 'Failed to load revenue history' }, { status: 500 })
+    }
 
     const revenueMap: { [key: string]: number } = {}
     

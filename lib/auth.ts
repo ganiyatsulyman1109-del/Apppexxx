@@ -34,11 +34,15 @@ export async function requireAdminAuth(request?: Request): Promise<AuthResult> {
             if (staffData?.staff_id) {
                 const adminSupabase = createAdminClient()
                 // Verify role in DB
-                const { data: staff } = await adminSupabase
+                const staffIdentifier = staffData.id || staffData.staff_id
+                const staffQuery = adminSupabase
                     .from('staff')
                     .select('role')
-                    .eq('id', staffData.id || staffData.staff_id)
-                    .single()
+                const { data: staff } = await (
+                    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(staffIdentifier)
+                      ? staffQuery.eq('id', staffIdentifier)
+                      : staffQuery.eq('staff_id', staffIdentifier)
+                ).maybeSingle()
                 
                 if (staff && (staff.role === 'manager' || staff.role === 'admin')) {
                     return {
@@ -64,13 +68,15 @@ export async function requireAdminAuth(request?: Request): Promise<AuthResult> {
     .from('user_roles')
     .select('role')
     .eq('user_id', user.id)
-    .single()
+    .in('role', ['admin', 'business_owner'])
+    .limit(1)
+    .maybeSingle()
 
   if (roleError || !roleData) {
     return { error: "User role not found", status: 403, authenticated: false }
   }
 
-  if (roleData.role === 'admin') {
+  if (roleData.role === 'admin' || roleData.role === 'business_owner') {
     return {
         user: { id: user.id, email: user.email!, role: roleData.role },
         supabase,

@@ -9,6 +9,7 @@ export interface Investor {
   dailyReturnRate: number // percentage, e.g., 0.5 for 0.5%
   dailyRate?: number // alias for dailyReturnRate
   investmentDate: string // ISO date string
+  tenureMonths?: number
   status: "active" | "inactive"
   password?: string
   notes?: string
