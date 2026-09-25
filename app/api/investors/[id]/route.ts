@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient, createServerClient } from '@/lib/utils/supabase'
 import { calculateDaysSinceInvestment, calculateTotalReturns } from '@/lib/investor-types'
-import { requireAdminAuth } from '@/lib/auth'
+import { requireAdminAuthResult as requireAdminAuth } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 

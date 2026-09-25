@@ -5,7 +5,9 @@ export interface User {
   id: string
   email: string
   role: string
-  full_name?: string
+  full_name: string | null
+  business_id: string | null
+  business: Record<string, unknown> | null
 }
 
 export interface StaffUser {
@@ -16,70 +18,85 @@ export interface StaffUser {
   role: 'staff'
 }
 
+export interface AdminAuthUser {
+  userId: string
+  businessId: string | null
+  role: string
+  email: string
+  full_name: string | null
+}
+
+function authResponse(status: 401 | 403, error: string): Response {
+  return new Response(JSON.stringify({ error }), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  })
+}
+
 // Authentication helper functions
-export async function requireAdminAuth(request?: Request): Promise<AuthResult> {
-  const supabase = createServerClient()
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
+export async function requireAdminAuth(): Promise<AdminAuthUser> {
+  const user = await getCurrentUser()
 
-  if (authError || !user) {
-      // If Supabase auth fails, check for Staff Session with manager/admin role
-      // This allows staff with high privileges to access admin routes if needed
-      try {
-        const { cookies } = await import("next/headers")
-        const cookieStore = await cookies()
-        const staffSession = cookieStore.get('staff-session')
-        
-        if (staffSession) {
-            const staffData = JSON.parse(staffSession.value)
-            if (staffData?.staff_id) {
-                const adminSupabase = createAdminClient()
-                // Verify role in DB
-                const { data: staff } = await adminSupabase
-                    .from('staff')
-                    .select('role')
-                    .eq('id', staffData.id || staffData.staff_id)
-                    .single()
-                
-                if (staff && (staff.role === 'manager' || staff.role === 'admin')) {
-                    return {
-                        user: {
-                            id: staffData.id || staffData.staff_id,
-                            email: staffData.email || staffData.staff_id,
-                            role: staff.role
-                        },
-                        supabase: adminSupabase,
-                        authenticated: true,
-                        authSource: 'staff-session'
-                    }
-                }
-            }
-        }
-      } catch (e) {
-          // ignore
-      }
-      return { error: "Session expired. Please log in again.", status: 401, authenticated: false }
+  if (!user) {
+    throw authResponse(401, "Unauthorized")
   }
 
-  const { data: roleData, error: roleError } = await supabase
-    .from('user_roles')
-    .select('role')
-    .eq('user_id', user.id)
-    .single()
-
-  if (roleError || !roleData) {
-    return { error: "User role not found", status: 403, authenticated: false }
+  if (!["business_owner", "staff", "platform_admin"].includes(user.role)) {
+    throw authResponse(403, "Forbidden")
   }
 
-  if (roleData.role === 'admin') {
+  if (!user.business_id && user.role !== "platform_admin") {
+    throw authResponse(403, "No business associated with account")
+  }
+
+  return {
+    userId: user.id,
+    businessId: user.business_id,
+    role: user.role,
+    email: user.email,
+    full_name: user.full_name,
+  }
+}
+
+export async function requireAdminAuthResult(_request?: Request): Promise<AuthResult> {
+  void _request
+
+  try {
+    const user = await requireAdminAuth()
     return {
-        user: { id: user.id, email: user.email!, role: roleData.role },
-        supabase,
-        authenticated: true,
-        authSource: 'supabase'
+      user: { id: user.userId, email: user.email, role: user.role },
+      supabase: createServerClient(),
+      authenticated: true,
+      authSource: "supabase",
+    }
+  } catch (error) {
+    if (!(error instanceof Response)) {
+      throw error
+    }
+
+    return {
+      error: error.status === 401 ? "Session expired. Please log in again." : "Forbidden.",
+      status: error.status,
+      authenticated: false,
     }
   }
-  
-  return { error: "Forbidden. Admin access required.", status: 403, authenticated: false }
+}
+
+export async function getAuthBusinessId(): Promise<string | null> {
+  const user = await getCurrentUser()
+  return user?.business_id ?? null
+}
+
+export function assertBelongsToBusiness(
+  resourceBusinessId: string,
+  currentBusinessId: string
+): void {
+  if (resourceBusinessId !== currentBusinessId) {
+    throw new Response(JSON.stringify({ error: "Not found" }), {
+      status: 404,
+      headers: { "Content-Type": "application/json" },
+    })
+  }
 }
 
 export async function signInWithEmail(email: string, password: string) {
@@ -200,68 +217,49 @@ export async function signOut() {
 }
 
 export async function getCurrentUser(): Promise<User | null> {
-  const supabase = createServerClient()
-  
-  const { data: { user }, error } = await supabase.auth.getUser()
-  
-  if (error || !user) {
+  try {
+    const supabase = createServerClient()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return null
+    }
+
+    const adminClient = createAdminClient()
+    const { data: profile, error: profileError } = await adminClient
+      .from("profiles")
+      .select("*, businesses(*)")
+      .eq("id", user.id)
+      .single()
+
+    if (profileError || !profile) {
+      return null
+    }
+
+    return {
+      id: user.id,
+      email: user.email!,
+      full_name: profile.full_name,
+      role: profile.role,
+      business_id: profile.business_id,
+      business: profile.businesses || null,
+    }
+  } catch {
     return null
-  }
-
-  // Get user role
-  const { data: roleData } = await supabase
-    .from('user_roles')
-    .select('role')
-    .eq('user_id', user.id)
-    .single()
-
-  // Get profile data
-  const { data: profileData } = await supabase
-    .from('profiles')
-    .select('full_name')
-    .eq('id', user.id)
-    .single()
-
-  return {
-    id: user.id,
-    email: user.email!,
-    role: roleData?.role || 'customer',
-    full_name: profileData?.full_name
   }
 }
 
 // Alternative function that returns a result object for API routes
 export async function getCurrentUserResult() {
-  const supabase = createServerClient()
-  
-  const { data: { user }, error } = await supabase.auth.getUser()
-  
-  if (error || !user) {
-    return { error: error?.message || 'Not authenticated', status: 401, user: null }
+  const user = await getCurrentUser()
+  if (!user) {
+    return { error: "Not authenticated", status: 401, user: null }
   }
 
-  // Get user role
-  const { data: roleData } = await supabase
-    .from('user_roles')
-    .select('role')
-    .eq('user_id', user.id)
-    .single()
-
-  // Get profile data
-  const { data: profileData } = await supabase
-    .from('profiles')
-    .select('full_name')
-    .eq('id', user.id)
-    .single()
-
-  const userWithRole = {
-    id: user.id,
-    email: user.email!,
-    role: roleData?.role || 'customer',
-    full_name: profileData?.full_name
-  }
-
-  return { user: userWithRole, error: null, status: 200 }
+  return { user, error: null, status: 200 }
 }
 
 export async function requireAuth(_request?: any, allowedRoles: string[] = []) {
@@ -318,14 +316,23 @@ export type AuthResult = AuthResultSuccess | AuthResultError
 export async function requireStaffOrAdminAuth(request?: Request): Promise<AuthResult> {
   const supabase = createServerClient()
 
-  // 1. Try Admin Auth (First Priority for Admin Panel)
+  // Accept tenant-aware business users before checking legacy staff sessions.
   try {
-    const adminResult = await requireAdminAuth(request)
-    if (adminResult.authenticated) {
-        return adminResult
+    const adminUser = await requireAdminAuth()
+    return {
+      user: {
+        id: adminUser.userId,
+        email: adminUser.email,
+        role: adminUser.role,
+      },
+      supabase,
+      authenticated: true,
+      authSource: "supabase",
     }
-  } catch {
-    // Ignore, try next method
+  } catch (error) {
+    if (!(error instanceof Response)) {
+      throw error
+    }
   }
 
   // 2. Try Staff Session Cookie (POS staff)

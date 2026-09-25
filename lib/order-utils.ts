@@ -12,6 +12,8 @@ export type CreateOrderParams = {
   source: 'pos' | 'ecommerce' | 'easybuy'
   items: OrderItem[]
   total: number
+  business_id?: string
+  order_number?: string
   subtotal?: number
   discount?: number
   tax?: number
@@ -42,28 +44,39 @@ export async function createOrderTransaction(supabase: SupabaseClient, params: C
     shipping_address,
     notes,
     status,
-    payment_status
+    payment_status,
+    business_id,
+    order_number: suppliedOrderNumber
   } = params
 
   const today = new Date()
   const dateStr = `${today.getFullYear().toString().slice(2)}${(today.getMonth() + 1).toString().padStart(2, '0')}${today.getDate().toString().padStart(2, '0')}`
   const prefix = `JOE${dateStr}`
-  
-  const { count } = await supabase
-    .from('orders')
-    .select('*', { count: 'exact', head: true })
-    .ilike('order_number', `${prefix}%`)
-  
-  const sequence = (count || 0) + 1
-  const order_number = `${prefix}${sequence.toString().padStart(4, '0')}`
+  let order_number: string
+  if (suppliedOrderNumber) {
+    order_number = suppliedOrderNumber
+  } else if (business_id) {
+    order_number = `${prefix}${crypto.randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase()}`
+  } else {
+    const { count } = await supabase
+      .from('orders')
+      .select('*', { count: 'exact', head: true })
+      .ilike('order_number', `${prefix}%`)
+    const sequence = (count || 0) + 1
+    order_number = `${prefix}${sequence.toString().padStart(4, '0')}`
+  }
   
   const receipt_number = source === 'pos' ? `REC-${order_number}` : null
 
   const productIds = items.map(i => i.product_id)
-  const { data: products, error: productsError } = await supabase
+  let productsQuery = supabase
     .from('products')
     .select('id, stock, name, price')
     .in('id', productIds)
+  if (business_id) {
+    productsQuery = productsQuery.eq('business_id', business_id)
+  }
+  const { data: products, error: productsError } = await productsQuery
 
   if (productsError) throw new Error(`Failed to fetch products: ${productsError.message}`)
   
@@ -140,6 +153,7 @@ export async function createOrderTransaction(supabase: SupabaseClient, params: C
   const { data: order, error: orderError } = await supabase
     .from('orders')
     .insert({
+      ...(business_id ? { business_id } : {}),
       order_number,
       source,
       customer_id,
@@ -173,11 +187,15 @@ export async function createOrderTransaction(supabase: SupabaseClient, params: C
 
       originalStockByProductId.set(item.product_id, product.stock)
 
-      const { data: updatedProduct, error: updateError } = await supabase
+      let stockUpdate = supabase
         .from('products')
         .update({ stock: nextStock, updated_at: new Date().toISOString() })
         .eq('id', item.product_id)
         .eq('stock', product.stock)
+      if (business_id) {
+        stockUpdate = stockUpdate.eq('business_id', business_id)
+      }
+      const { data: updatedProduct, error: updateError } = await stockUpdate
         .select()
         .single()
 
@@ -188,14 +206,14 @@ export async function createOrderTransaction(supabase: SupabaseClient, params: C
       updatedProductIds.add(item.product_id)
 
       const { error: logError } = await supabase.from('inventory_logs').insert({
+        ...(business_id ? { business_id } : {}),
         product_id: item.product_id,
-        change_type: 'sale',
+        type: 'sale',
         quantity_change: -item.quantity,
-        previous_stock: product.stock,
-        new_stock: nextStock,
-        reference_id: order.id,
-        reference_type: 'order',
-        notes: `Order created: ${order_number}`
+        quantity_before: product.stock,
+        quantity_after: nextStock,
+        reference: order.id,
+        reason: `Order created: ${order_number}`
       })
 
       if (logError) throw new Error(`Failed to create inventory log: ${logError.message}`)
@@ -207,20 +225,27 @@ export async function createOrderTransaction(supabase: SupabaseClient, params: C
     await supabase
       .from('inventory_logs')
       .delete()
-      .eq('reference_id', order.id)
-      .eq('reference_type', 'order')
+      .eq('reference', order.id)
 
     for (const productId of updatedProductIds) {
       const originalStock = originalStockByProductId.get(productId)
       if (typeof originalStock === 'number') {
-        await supabase
+        let stockRollback = supabase
           .from('products')
           .update({ stock: originalStock, updated_at: new Date().toISOString() })
           .eq('id', productId)
+        if (business_id) {
+          stockRollback = stockRollback.eq('business_id', business_id)
+        }
+        await stockRollback
       }
     }
 
-    await supabase.from('orders').delete().eq('id', order.id)
+    let orderRollback = supabase.from('orders').delete().eq('id', order.id)
+    if (business_id) {
+      orderRollback = orderRollback.eq('business_id', business_id)
+    }
+    await orderRollback
     throw e
   }
 

@@ -1,80 +1,77 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient , createAdminClient} from '@/lib/utils/supabase'
-import { getCurrentUserResult } from '@/lib/auth'
+import { NextRequest, NextResponse } from "next/server"
+import { createAdminClient } from "@/lib/utils/supabase"
+import { getCurrentUser } from "@/lib/auth"
 
-export async function GET(
-  request: NextRequest
-) {
-  try {
+function boundedInteger(value: string | null, fallback: number, minimum: number): number {
+  const parsed = Number.parseInt(value ?? "", 10)
+  return Number.isInteger(parsed) && parsed >= minimum ? parsed : fallback
+}
+
+export async function GET(request: NextRequest) {
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return NextResponse.json(
-      { error: 'Database service not configured' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Database service not configured" }, { status: 500 })
   }
-    // Get current user
-    const userResult = await getCurrentUserResult()
-    if (userResult.error) {
-      return NextResponse.json({ error: userResult.error }, { status: userResult.status })
-    }
-    
-    // Only customers can access their own orders
-    if (userResult.user?.role !== 'customer') {
-      return NextResponse.json({ error: 'Access denied. Customers only.' }, { status: 403 })
-    }
-    
+
+  const user = await getCurrentUser()
+  if (!user) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
+  }
+  if (user.role !== "customer") {
+    return NextResponse.json({ error: "Access denied. Customers only." }, { status: 403 })
+  }
+
+  try {
     const supabase = createAdminClient()
-    const userId = userResult.user!.id
-    
-    // First resolve the customer record ID using the user_id (auth ID)
-    const { data: customer, error: customerError } = await supabase
-      .from('customers')
-      .select('id')
-      .eq('user_id', userId)
-      .maybeSingle()
-      
-    if (customerError || !customer) {
-      console.error('Customer record not found for user:', userId)
+    const { data: customers, error: customerError } = await supabase
+      .from("customers")
+      .select("id, business_id")
+      .eq("user_id", user.id)
+
+    if (customerError) {
+      console.error("Failed to find customer records for authenticated user:", customerError)
+      return NextResponse.json({ error: "Failed to find customer orders" }, { status: 500 })
+    }
+    if (!customers?.length) {
       return NextResponse.json({ orders: [], total: 0 })
     }
-    
-    const customerId = customer.id
 
-    // Get query parameters
-    const { searchParams } = new URL(request.url)
-    const status = searchParams.get('status')
-    const limit = parseInt(searchParams.get('limit') || '50')
-    const offset = parseInt(searchParams.get('offset') || '0')
+    const { searchParams } = request.nextUrl
+    const status = searchParams.get("status")
+    const limit = Math.min(boundedInteger(searchParams.get("limit"), 50, 1), 200)
+    const offset = boundedInteger(searchParams.get("offset"), 0, 0)
 
-    // Build query
-    let query = supabase
-      .from('orders')
-      .select('*')
-      .eq('customer_id', customerId)
-      .order('created_at', { ascending: false })
+    const orderResults = await Promise.all(customers.map(async (customer) => {
+      const matchingBusinessId = customer.business_id || user.business_id
+      if (!matchingBusinessId) {
+        return { data: [], error: null }
+      }
 
-    // Apply status filter if provided
-    if (status && status !== 'all') {
-      query = query.eq('status', status)
+      let query = supabase
+        .from("orders")
+        .select("*")
+        .eq("customer_id", customer.id)
+        .order("created_at", { ascending: false })
+      query = query.eq("business_id", matchingBusinessId)
+      if (status && status !== "all") query = query.eq("status", status)
+      return query
+    }))
+
+    const failedResult = orderResults.find(({ error }) => error)
+    if (failedResult?.error) {
+      console.error("Failed to fetch customer orders:", failedResult.error)
+      return NextResponse.json({ error: "Failed to fetch orders" }, { status: 500 })
     }
 
-    // Apply pagination
-    query = query.range(offset, offset + limit - 1)
+    const orders = orderResults
+      .flatMap(({ data }) => data || [])
+      .sort((left, right) => Date.parse(right.created_at) - Date.parse(left.created_at))
 
-    const { data: orders, error } = await query
-
-    if (error) {
-      console.error('Error fetching customer orders:', error)
-      return NextResponse.json({ error: 'Failed to fetch orders' }, { status: 500 })
-    }
-
-    return NextResponse.json({ 
-      orders: orders || [],
-      total: orders?.length || 0
+    return NextResponse.json({
+      orders: orders.slice(offset, offset + limit),
+      total: orders.length,
     })
-
   } catch (error) {
-    console.error('Error in GET /api/orders/my-orders:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error("GET /api/orders/my-orders failed:", error)
+    return NextResponse.json({ error: "Failed to fetch orders" }, { status: 500 })
   }
 }

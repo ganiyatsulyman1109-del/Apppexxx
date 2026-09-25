@@ -1,358 +1,360 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { requireStaffOrAdminAuth } from '@/lib/auth'
-import { notifyNewOrder, notifyLowStock } from '@/lib/notifications'
-import { createOrderTransaction } from '@/lib/order-utils'
-import { createAdminClient } from '@/lib/utils/supabase'
+import { NextRequest, NextResponse } from "next/server"
+import { createAdminClient } from "@/lib/utils/supabase"
+import { requireAdminAuth } from "@/lib/auth"
+import { logAudit } from "@/lib/audit"
+import { notifyLowStock, notifyNewOrder } from "@/lib/notifications"
+import { createOrderTransaction } from "@/lib/order-utils"
 
-export const dynamic = 'force-dynamic'
+export const dynamic = "force-dynamic"
+
+function authErrorResponse(error: unknown): Response | null {
+  return error instanceof Response ? error : null
+}
+
+function boundedInteger(value: string | null, fallback: number, minimum: number): number {
+  const parsed = Number.parseInt(value ?? "", 10)
+  return Number.isInteger(parsed) && parsed >= minimum ? parsed : fallback
+}
 
 export async function GET(request: NextRequest) {
   try {
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return NextResponse.json(
-      { error: 'Database service not configured' },
-      { status: 500 }
-    )
-  }
-    // Require staff or admin authentication
-    const authResult = await requireStaffOrAdminAuth(request)
-    if (!authResult.authenticated) {
-      return NextResponse.json({ error: authResult.error }, { status: authResult.status })
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json({ error: "Database service not configured" }, { status: 500 })
     }
-    
-    const supabase = authResult.supabase
-    
-    const { searchParams } = new URL(request.url)
-    const customer_id = searchParams.get('customer_id')
-    const easybuy_customer_id = searchParams.get('easybuy_customer_id')
-    const source = searchParams.get('source')
-    const status = searchParams.get('status')
-    const payment_status = searchParams.get('payment_status')
-    const search = searchParams.get('search')
-    const date_from = searchParams.get('date_from')
-    const date_to = searchParams.get('date_to')
-    const limit = searchParams.get('limit') || '50'
-    const offset = searchParams.get('offset') || '0'
-    const countOnly = searchParams.get('countOnly') === 'true'
 
-    if (countOnly) {
-      const [
-        { count: totalCount },
-        { count: pendingCount },
-        { count: processingCount },
-        { count: deliveredCount }
-      ] = await Promise.all([
-        supabase.from('orders').select('*', { count: 'exact', head: true }),
-        supabase.from('orders').select('*', { count: 'exact', head: true }).eq('source', 'easybuy').eq('payment_status', 'pending'),
-        supabase.from('orders').select('*', { count: 'exact', head: true }).eq('source', 'ecommerce').not('status', 'in', '("delivered","cancelled")'),
-        supabase.from('orders').select('*', { count: 'exact', head: true }).eq('source', 'ecommerce').eq('status', 'delivered')
+    const auth = await requireAdminAuth()
+    if (!auth.businessId) {
+      return NextResponse.json({ error: "No business associated with account" }, { status: 403 })
+    }
+
+    const supabase = createAdminClient()
+    const { searchParams } = request.nextUrl
+    const customerId = searchParams.get("customer_id")
+    const easybuyCustomerId = searchParams.get("easybuy_customer_id")
+    const source = searchParams.get("source")
+    const status = searchParams.get("status")
+    const paymentStatus = searchParams.get("payment_status")
+    const staffId = searchParams.get("staff_id")
+    const search = searchParams.get("search")
+    const dateFrom = searchParams.get("date_from")
+    const dateTo = searchParams.get("date_to")
+    const limit = Math.min(boundedInteger(searchParams.get("limit"), 50, 1), 500)
+    const offset = boundedInteger(searchParams.get("offset"), 0, 0)
+
+    if (searchParams.get("countOnly") === "true") {
+      const tenantOrders = () =>
+        supabase.from("orders").select("*", { count: "exact", head: true })
+          .eq("business_id", auth.businessId)
+      const results = await Promise.all([
+        tenantOrders(),
+        tenantOrders().eq("source", "easybuy").eq("payment_status", "pending"),
+        tenantOrders().eq("source", "ecommerce").not("status", "in", '("delivered","cancelled")'),
+        tenantOrders().eq("source", "ecommerce").eq("status", "delivered"),
       ])
+      const failed = results.find(({ error }) => error)
+      if (failed?.error) {
+        console.error("Failed to count business orders:", failed.error)
+        return NextResponse.json({ error: "Failed to load order counts" }, { status: 500 })
+      }
 
       return NextResponse.json({
         counts: {
-          total: totalCount || 0,
-          pending: pendingCount || 0,
-          processing: processingCount || 0,
-          delivered: deliveredCount || 0
-        }
+          total: results[0].count || 0,
+          pending: results[1].count || 0,
+          processing: results[2].count || 0,
+          delivered: results[3].count || 0,
+        },
       })
     }
-    
+
     let query = supabase
-      .from('orders')
-      .select(`*, customers(full_name, email), easybuy_customers(full_name, phone), staff(full_name)`)
-      .order('created_at', { ascending: false })
-      .range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1)
-    
-    const staff_id = searchParams.get('staff_id')
-    if (customer_id) {
-      query = query.eq('customer_id', customer_id)
-    }
-    
-    if (easybuy_customer_id) {
-      query = query.eq('easybuy_customer_id', easybuy_customer_id)
-    }
+      .from("orders")
+      .select("*, customers(full_name, email), easybuy_customers(full_name, phone), staff(full_name)")
+      .eq("business_id", auth.businessId)
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1)
 
-    if (staff_id) {
-      query = query.eq('staff_id', staff_id)
-    }
-    
-    if (source && source !== 'all') {
-      const sourceArray = source.split(',').map(s => s.trim()).filter(s => s && s !== 'all')
-      if (sourceArray.length > 0) {
-        query = query.in('source', sourceArray)
-      }
-    }
-    
-    if (status && status !== 'all') {
-      const statusArray = status.split(',').map(s => s.trim()).filter(s => s && s !== 'all')
-      if (statusArray.length > 0) {
-        query = query.in('status', statusArray)
-      }
-    }
-    
-    if (payment_status && payment_status !== 'all') {
-      const paymentStatusArray = payment_status.split(',').map(s => s.trim()).filter(s => s && s !== 'all')
-      if (paymentStatusArray.length > 0) {
-        query = query.in('payment_status', paymentStatusArray)
-      }
-    }
+    if (customerId) query = query.eq("customer_id", customerId)
+    if (easybuyCustomerId) query = query.eq("easybuy_customer_id", easybuyCustomerId)
+    if (staffId) query = query.eq("staff_id", staffId)
 
-    const payment_method = searchParams.get('payment_method')
-    if (payment_method && payment_method !== 'all') {
-      const paymentMethodArray = payment_method.split(',').map(s => s.trim()).filter(s => s && s !== 'all')
-      if (paymentMethodArray.length > 0) {
-        query = query.in('payment_method', paymentMethodArray)
-      }
-    }
-    
-    if (date_from) {
-      query = query.gte('created_at', `${date_from}T00:00:00.000Z`)
-    }
-    
-    if (date_to) {
-      query = query.lte('created_at', `${date_to}T23:59:59.999Z`)
-    }
-    
+    const sources = source?.split(",").map((value) => value.trim()).filter((value) => value && value !== "all")
+    if (sources?.length) query = query.in("source", sources)
+    const statuses = status?.split(",").map((value) => value.trim()).filter((value) => value && value !== "all")
+    if (statuses?.length) query = query.in("status", statuses)
+    const paymentStatuses = paymentStatus?.split(",").map((value) => value.trim()).filter((value) => value && value !== "all")
+    if (paymentStatuses?.length) query = query.in("payment_status", paymentStatuses)
+
+    const paymentMethod = searchParams.get("payment_method")
+    const paymentMethods = paymentMethod?.split(",").map((value) => value.trim()).filter((value) => value && value !== "all")
+    if (paymentMethods?.length) query = query.in("payment_method", paymentMethods)
+    if (dateFrom) query = query.gte("created_at", `${dateFrom}T00:00:00.000Z`)
+    if (dateTo) query = query.lte("created_at", `${dateTo}T23:59:59.999Z`)
     if (search) {
-      // Use SQL-style % wildcard for .or() filter in Supabase
-      // Note: Cross-resource filtering in .or() requires the related table names as defined in the select
-      const searchFilter = `order_number.ilike.%${search}%,payment_reference.ilike.%${search}%,receipt_number.ilike.%${search}%,customers(full_name).ilike.%${search}%,customers(email).ilike.%${search}%,easybuy_customers(full_name).ilike.%${search}%,easybuy_customers(phone).ilike.%${search}%,staff(full_name).ilike.%${search}%`
-      query = query.or(searchFilter)
+      query = query.or(
+        `order_number.ilike.%${search}%,payment_reference.ilike.%${search}%,receipt_number.ilike.%${search}%,customers(full_name).ilike.%${search}%,customers(email).ilike.%${search}%,easybuy_customers(full_name).ilike.%${search}%,easybuy_customers(phone).ilike.%${search}%,staff(full_name).ilike.%${search}%`
+      )
     }
-    
+
     const { data, error } = await query
-    
     if (error) {
-      console.error(error);
-    return NextResponse.json(
-      { error: 'An internal error occurred. Please try again.' },
-      { status: 500 }
-    )
+      console.error("Failed to load business orders:", error)
+      return NextResponse.json({ error: "Failed to load orders" }, { status: 500 })
     }
-    
-    return NextResponse.json({ orders: data }, {
-      headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate'
-      }
-    })
+
+    return NextResponse.json(
+      { orders: data },
+      { headers: { "Cache-Control": "no-store, no-cache, must-revalidate" } }
+    )
   } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const authResponse = authErrorResponse(error)
+    if (authResponse) return authResponse
+    console.error("GET /api/orders failed:", error)
+    return NextResponse.json({ error: "Failed to load orders" }, { status: 500 })
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return NextResponse.json(
-      { error: 'Database service not configured' },
-      { status: 500 }
-    )
-  }
-
-    // Require staff or admin authentication
-    const authResult = await requireStaffOrAdminAuth(request)
-    if (!authResult.authenticated) {
-      return NextResponse.json({ error: authResult.error }, { status: authResult.status })
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json({ error: "Database service not configured" }, { status: 500 })
     }
-    
-    const supabase = createAdminClient()
-    
+
+    const auth = await requireAdminAuth()
+    if (!auth.businessId) {
+      return NextResponse.json({ error: "No business associated with account" }, { status: 403 })
+    }
+
     const body = await request.json()
     const {
       source,
-      customer_id,
-      easybuy_customer_id,
-      staff_id,
-      items,
+      customer_id: customerId,
+      easybuy_customer_id: easybuyCustomerId,
+      staff_id: requestedStaffId,
+      items: rawItems,
       subtotal,
       discount,
       tax,
       total,
-      payment_method,
-      shipping_address,
-      notes
+      payment_method: paymentMethod,
+      payment_reference: paymentReference,
+      shipping_address: shippingAddress,
+      notes,
     } = body
-    console.error('Orders POST payload received for source:', body?.source)
-    
-    if (!source || !items || !total) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    const items = typeof rawItems === "string" ? JSON.parse(rawItems) : rawItems
+
+    if (!["pos", "ecommerce", "easybuy"].includes(source)) {
+      return NextResponse.json({ error: "Invalid order source" }, { status: 400 })
     }
-    
-    if (!items.length) {
-      return NextResponse.json({ error: 'Order must contain at least one item' }, { status: 400 })
+    if (!Array.isArray(items) || items.length === 0) {
+      return NextResponse.json({ error: "Order must contain at least one item" }, { status: 400 })
     }
-    
-    // Validate source and required fields based on source
-    if (source === 'ecommerce' && !customer_id) {
-      return NextResponse.json({ error: 'Ecommerce orders require customer_id' }, { status: 400 })
+    if (!Number.isFinite(Number(total)) || Number(total) < 0) {
+      return NextResponse.json({ error: "A valid order total is required" }, { status: 400 })
     }
-    
-    const requestStaffId = staff_id || (authResult.user.role === 'staff' ? authResult.user.id : null)
-    if (source === 'pos' && !requestStaffId) {
-      return NextResponse.json({ error: 'POS orders require staff_id' }, { status: 400 })
+    if (source === "ecommerce" && !customerId) {
+      return NextResponse.json({ error: "Ecommerce orders require customer_id" }, { status: 400 })
     }
-    
-    if (source === 'easybuy' && !easybuy_customer_id) {
-      return NextResponse.json({ error: 'EasyBuy orders require easybuy_customer_id' }, { status: 400 })
-    }
-    
-    const resolvedStaffId = await resolveStaffUuid(supabase, requestStaffId)
-    if (source === 'pos' && !resolvedStaffId) {
-      return NextResponse.json({ error: 'Invalid staff identifier for POS order' }, { status: 400 })
+    if (source === "easybuy" && !easybuyCustomerId) {
+      return NextResponse.json({ error: "EasyBuy orders require easybuy_customer_id" }, { status: 400 })
     }
 
-    // Use transaction function for all orders
-    let orderData;
-    let orderError;
-    
-    try {
-      orderData = await createOrderTransaction(supabase, {
-        source,
-        customer_id,
-        easybuy_customer_id,
-        staff_id: resolvedStaffId,
-        items: typeof items === 'string' ? JSON.parse(items) : items,
-        subtotal: subtotal || 0,
-        discount: discount || 0,
-        tax: tax || 0,
-        total,
-        payment_method: payment_method || (source === 'ecommerce' ? 'paystack' : source === 'easybuy' ? 'easybuy' : 'cash'),
-        shipping_address,
-        notes,
-        status: source === 'easybuy' ? 'pending' : 'confirmed',
-        payment_status: source === 'easybuy' ? 'pending' : 'paid'
-      })
-      console.error('Orders POST created order with ID:', orderData?.id)
-    } catch (e: any) {
-      orderError = e
+    const supabase = createAdminClient()
+    if (source === "ecommerce") {
+      const { data: customer, error } = await supabase
+        .from("customers")
+        .select("id")
+        .eq("id", customerId)
+        .eq("business_id", auth.businessId)
+        .maybeSingle()
+      if (error) {
+        console.error("Failed to validate order customer:", error)
+        return NextResponse.json({ error: "Failed to validate customer" }, { status: 500 })
+      }
+      if (!customer) return NextResponse.json({ error: "Customer not found" }, { status: 404 })
     }
-    
-    if (orderError) {
-      console.error('Order creation error:', orderError)
-      console.error(orderError);
-    return NextResponse.json(
-      { error: 'An internal error occurred. Please try again.' },
-      { status: 500 }
+    if (source === "easybuy") {
+      const { data: customer, error } = await supabase
+        .from("easybuy_customers")
+        .select("id, status, current_debt, credit_limit")
+        .eq("id", easybuyCustomerId)
+        .eq("business_id", auth.businessId)
+        .maybeSingle()
+      if (error) {
+        console.error("Failed to validate EasyBuy customer:", error)
+        return NextResponse.json({ error: "Failed to validate EasyBuy customer" }, { status: 500 })
+      }
+      if (!customer) return NextResponse.json({ error: "Customer not found" }, { status: 404 })
+      if (customer.status !== "active") {
+        return NextResponse.json({ error: "Customer account is not active" }, { status: 400 })
+      }
+      if (Number(customer.current_debt) + Number(total) > Number(customer.credit_limit)) {
+        return NextResponse.json({ error: "Purchase exceeds credit limit" }, { status: 400 })
+      }
+    }
+
+    const requestedStaff = requestedStaffId || (auth.role === "staff" ? auth.userId : null)
+    if (source === "pos" && !requestedStaff) {
+      return NextResponse.json({ error: "POS orders require staff_id" }, { status: 400 })
+    }
+    const staffId = await resolveStaffUuid(supabase, auth.businessId, requestedStaff)
+    if (source === "pos" && !staffId) {
+      return NextResponse.json({ error: "Invalid staff identifier for POS order" }, { status: 400 })
+    }
+
+    const { data: generatedOrderNumber, error: orderNumberError } = await supabase.rpc(
+      "generate_order_number",
+      { p_business_id: auth.businessId }
     )
-    }
-    
-    if (!orderData) {
-      return NextResponse.json({ error: 'Failed to create order' }, { status: 400 })
+    if (orderNumberError || typeof generatedOrderNumber !== "string" || !generatedOrderNumber) {
+      console.error("Failed to generate business order number:", orderNumberError)
+      return NextResponse.json({ error: "Failed to generate order number" }, { status: 500 })
     }
 
-    // EasyBuy: Create purchase records and update customer debt
-    if (source === 'easybuy' && orderData.id) {
-        const orderItems = typeof items === 'string' ? JSON.parse(items) : items
-        const orderTotal = Number(total)
-        
-        // 1. Create easybuy_purchase records for each item
-        const purchasePromises = orderItems.map((item: any) => {
-            const itemTotal = Number(item.price || item.unit_price || 0) * Number(item.quantity || 1)
-            
-            return supabase.from('easybuy_purchases').insert({
-                easybuy_customer_id: easybuy_customer_id,
-                order_id: orderData.id,
-                product_id: item.product_id || item.productId,
-                quantity: Number(item.quantity || 1),
-                unit_price: Number(item.price || item.unit_price || 0),
-                total_amount: itemTotal,
-                down_payment: 0,
-                remaining_balance: itemTotal,
-                payment_plan_months: 12,
-                monthly_payment: itemTotal / 12,
-                status: 'pending',
-                purchase_date: new Date().toISOString(),
-                expected_completion_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
-            })
+    let order
+    try {
+      order = await createOrderTransaction(supabase, {
+        source,
+        business_id: auth.businessId,
+        order_number: generatedOrderNumber,
+        customer_id: customerId,
+        easybuy_customer_id: easybuyCustomerId,
+        staff_id: staffId,
+        items,
+        subtotal: Number(subtotal) || 0,
+        discount: Number(discount) || 0,
+        tax: Number(tax) || 0,
+        total: Number(total),
+        payment_method: paymentMethod,
+        payment_reference: paymentReference,
+        shipping_address: shippingAddress,
+        notes,
+        status: source === "easybuy" ? "pending" : "confirmed",
+        payment_status: source === "easybuy" ? "pending" : "paid",
+      })
+    } catch (error) {
+      console.error("Order creation failed:", error)
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : "Failed to create order" },
+        { status: 400 }
+      )
+    }
+
+    if (source === "easybuy") {
+      const purchases = await Promise.all(items.map((item: Record<string, unknown>) => {
+        const quantity = Number(item.quantity || 1)
+        const unitPrice = Number(item.price || item.unit_price || 0)
+        const itemTotal = unitPrice * quantity
+        return supabase.from("easybuy_purchases").insert({
+          business_id: auth.businessId,
+          easybuy_customer_id: easybuyCustomerId,
+          order_id: order.id,
+          product_id: item.product_id || item.productId,
+          quantity,
+          unit_price: unitPrice,
+          total_amount: itemTotal,
+          down_payment: 0,
+          remaining_balance: itemTotal,
+          payment_plan_months: 12,
+          monthly_payment: itemTotal / 12,
+          status: "pending",
+          purchase_date: new Date().toISOString(),
+          expected_completion_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
         })
-
-        await Promise.all(purchasePromises)
-        
-        // 2. Update Customer Debt
-        const { data: customer } = await supabase
-            .from('easybuy_customers')
-            .select('current_debt, total_purchases')
-            .eq('id', easybuy_customer_id)
-            .single()
-            
-        if (customer) {
-            const newDebt = Number(customer.current_debt || 0) + Number(orderTotal)
-            const newTotalPurchases = Number(customer.total_purchases || 0) + Number(orderTotal)
-
-            await supabase.from('easybuy_customers').update({
-                current_debt: newDebt,
-                total_purchases: newTotalPurchases,
-                last_purchase: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            }).eq('id', easybuy_customer_id)
-        }
-    }
-    
-    const finalOrderItems = typeof items === 'string' ? JSON.parse(items) : items
-    
-    const productIds = finalOrderItems.map((item: { product_id: string }) => item.product_id).filter(Boolean)
-    if (productIds.length) {
-      const { data: products } = await supabase
-        .from('products')
-        .select('id, name, stock, threshold')
-        .in('id', productIds)
-
-      const lowStockProducts = (products || []).filter(
-        (product: any) => product.stock <= product.threshold
-      )
-
-      await Promise.all(
-        lowStockProducts.map((product: any) =>
-          notifyLowStock({
-            id: product.id,
-            name: product.name,
-            stock: product.stock
-          })
+      }))
+      const failedPurchase = purchases.find(({ error }) => error)
+      if (failedPurchase?.error) {
+        console.error("Order created but EasyBuy purchase recording failed:", failedPurchase.error)
+        return NextResponse.json(
+          { error: "Order was created, but its EasyBuy purchases could not be recorded" },
+          { status: 500 }
         )
-      )
+      }
+
+      const { data: customer, error: customerError } = await supabase
+        .from("easybuy_customers")
+        .select("current_debt, total_purchases")
+        .eq("id", easybuyCustomerId)
+        .eq("business_id", auth.businessId)
+        .maybeSingle()
+      if (customerError) {
+        console.error("Failed to load EasyBuy customer after order creation:", customerError)
+        return NextResponse.json({ error: "Order created but customer balance could not be updated" }, { status: 500 })
+      }
+      if (customer) {
+        const amount = Number(total)
+        const { error } = await supabase.from("easybuy_customers").update({
+          current_debt: Number(customer.current_debt || 0) + amount,
+          total_purchases: Number(customer.total_purchases || 0) + amount,
+          last_purchase: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }).eq("id", easybuyCustomerId).eq("business_id", auth.businessId)
+        if (error) {
+          console.error("Failed to update EasyBuy customer balance:", error)
+          return NextResponse.json({ error: "Order created but customer balance could not be updated" }, { status: 500 })
+        }
+      }
+    }
+
+    const productIds = items
+      .map((item: Record<string, unknown>) => item.product_id || item.productId)
+      .filter((id: unknown): id is string => typeof id === "string")
+    if (productIds.length) {
+      const { data: products, error } = await supabase
+        .from("products")
+        .select("id, name, stock, threshold")
+        .eq("business_id", auth.businessId)
+        .in("id", productIds)
+      if (error) {
+        console.error("Order created but low-stock products could not be checked:", error)
+        return NextResponse.json({ error: "Order created but stock notifications could not be checked" }, { status: 500 })
+      }
+      await Promise.all((products || [])
+        .filter((product) => product.stock <= product.threshold)
+        .map((product) => notifyLowStock({ id: product.id, name: product.name, stock: product.stock })))
     }
 
     await notifyNewOrder({
-      id: orderData.id,
-      order_number: orderData.order_number,
-      source: orderData.source,
-      total_amount: orderData.total_amount || total
+      id: order.id,
+      order_number: order.order_number,
+      source: order.source,
+      total_amount: order.total_amount || total,
+    })
+    await logAudit({
+      action_type: "order_created",
+      entity_type: "order",
+      entity_id: order.id,
+      performed_by: auth.userId,
+      performed_by_role: auth.role,
+      after_data: order,
     })
 
-    return NextResponse.json({ order: orderData })
+    return NextResponse.json({ order }, { status: 201 })
   } catch (error) {
-    console.error('API Orders POST error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const authResponse = authErrorResponse(error)
+    if (authResponse) return authResponse
+    console.error("POST /api/orders failed:", error)
+    return NextResponse.json({ error: "Failed to create order" }, { status: 500 })
   }
 }
 
-async function resolveStaffUuid(supabase: any, staffId?: string | null) {
+async function resolveStaffUuid(
+  supabase: ReturnType<typeof createAdminClient>,
+  businessId: string,
+  staffId?: string | null
+): Promise<string | null> {
   if (!staffId) return null
-
-  // likely already a UUID
-  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(staffId)) {
-    return staffId
-  }
-
-  const { data } = await supabase
-    .from('staff')
-    .select('id')
-    .eq('staff_id', staffId)
+  const { data, error } = await supabase
+    .from("staff")
+    .select("id")
+    .eq(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(staffId)
+        ? "id"
+        : "staff_id",
+      staffId
+    )
+    .eq("business_id", businessId)
     .maybeSingle()
-
+  if (error) throw error
   return data?.id || null
-}
-
-async function generateOrderNumber(supabase: any): Promise<string> {
-  const today = new Date()
-  const prefix = `JOE${today.getFullYear().toString().slice(2)}${(today.getMonth() + 1).toString().padStart(2, '0')}${today.getDate().toString().padStart(2, '0')}`
-  
-  const { count } = await supabase
-    .from('orders')
-    .select('*', { count: 'exact', head: true })
-    .like('order_number', `${prefix}%`)
-  
-  const sequence = (count || 0) + 1
-  return `${prefix}${sequence.toString().padStart(4, '0')}`
 }

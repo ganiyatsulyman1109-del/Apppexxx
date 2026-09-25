@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient, createServerClient } from '@/lib/utils/supabase'
-import { requireAdminAuth } from '@/lib/auth'
+import { requireAdminAuthResult as requireAdminAuth } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
