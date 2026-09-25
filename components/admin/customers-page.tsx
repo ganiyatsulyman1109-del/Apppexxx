@@ -79,7 +79,7 @@ export function CustomersPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="min-h-screen bg-[#f9fafb] p-6 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Customers</h1>
@@ -100,7 +100,7 @@ export function CustomersPage() {
         />
       </div>
 
-      <Card>
+      <Card className="bg-white border-[#e5e7eb] rounded-xl shadow-sm">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
@@ -119,7 +119,7 @@ export function CustomersPage() {
                   <TableRow key={i}>
                     {Array.from({ length: 6 }).map((_, j) => (
                       <TableCell key={j}>
-                        <div className="h-4 bg-gray-200 rounded animate-pulse" />
+                        <div className="h-4 bg-[#f3f4f6] rounded animate-pulse" />
                       </TableCell>
                     ))}
                   </TableRow>
@@ -162,9 +162,9 @@ export function CustomersPage() {
       </Card>
 
       <Dialog open={showOrdersModal} onOpenChange={setShowOrdersModal}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-3xl bg-white border-[#e5e7eb] rounded-2xl p-6 shadow-lg">
           <DialogHeader>
-            <DialogTitle>Order History</DialogTitle>
+            <DialogTitle className="text-lg font-semibold text-[#111827]">Order History</DialogTitle>
             <DialogDescription>
               Orders for {selectedCustomer?.full_name}
             </DialogDescription>
@@ -189,7 +189,7 @@ export function CustomersPage() {
                         <div className="text-sm">{formatNigerianDate(recent.created_at, 'datetime')}</div>
                       </div>
                       <div className="flex justify-between">
-                        <Badge variant={recent.payment_status === 'paid' ? 'default' : 'secondary'} className={recent.payment_status === 'paid' ? 'bg-green-100 text-green-800' : ''}>
+                        <Badge variant={recent.payment_status === 'paid' ? 'default' : 'secondary'} className={recent.payment_status === 'paid' ? 'bg-[#f0fdf4] text-[#166534]' : ''}>
                           {recent.payment_status}
                         </Badge>
                         <Badge className={getStatusColor(recent.status as any)}>
@@ -274,7 +274,7 @@ export function CustomersPage() {
                       <TableCell>{formatNigerianDate(order.created_at, 'date')}</TableCell>
                       <TableCell>{formatCurrency(order.total_amount)}</TableCell>
                       <TableCell>
-                        <Badge variant={order.payment_status === 'paid' ? 'default' : 'secondary'} className={order.payment_status === 'paid' ? 'bg-green-100 text-green-800' : ''}>
+                        <Badge variant={order.payment_status === 'paid' ? 'default' : 'secondary'} className={order.payment_status === 'paid' ? 'bg-[#f0fdf4] text-[#166534]' : ''}>
                           {order.payment_status}
                         </Badge>
                       </TableCell>

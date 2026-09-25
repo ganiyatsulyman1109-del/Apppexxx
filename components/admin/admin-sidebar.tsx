@@ -52,7 +52,7 @@ const menuItems = [
 
 export function AdminSidebar({ currentPage, onPageChange, onLogout }: AdminSidebarProps) {
   return (
-    <Sidebar collapsible="icon" className="bg-white text-[#374151] border-r border-[#e5e7eb]">
+    <Sidebar collapsible="icon" className="bg-white text-[#111827] border-r border-[#e5e7eb]">
       <SidebarHeader className="p-4 bg-white">
         <div className="flex items-center gap-3">
           <BrandLogo size={36} className="rounded-lg" />

@@ -228,23 +228,23 @@ export function OrdersPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "pending":
-        return "bg-yellow-100 text-yellow-800"
+        return "badge-warning"
       case "processing":
-        return "bg-blue-100 text-blue-800"
+        return "badge-info"
       case "ready":
-        return "bg-green-100 text-green-800"
+        return "badge-positive"
       case "delivered":
-        return "bg-gray-100 text-gray-800"
+        return "bg-[#f3f4f6] text-[#374151]"
       case "cancelled":
-        return "bg-red-100 text-red-800"
+        return "badge-negative"
       default:
-        return "bg-gray-100 text-gray-800"
+        return "bg-[#f3f4f6] text-[#374151]"
     }
   }
 
   const getSourceBadge = (source: string) => {
     if (source === "online") {
-      return <Badge className="bg-blue-600">Online</Badge>
+      return <Badge className="bg-[#2563eb]">Online</Badge>
     }
     if (source === "easybuy") {
       return <Badge className="bg-purple-600">EasyBuy</Badge>
@@ -253,7 +253,7 @@ export function OrdersPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="min-h-screen bg-[#f9fafb] p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Orders</h1>
@@ -262,13 +262,13 @@ export function OrdersPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
-        <Card>
+        <Card className="bg-white border-[#e5e7eb] rounded-xl shadow-sm">
           <CardContent className="pt-6">
             <div className="text-2xl font-bold">{counts.total}</div>
             <p className="text-sm text-muted-foreground">Total Orders</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-white border-[#e5e7eb] rounded-xl shadow-sm">
           <CardContent className="pt-6">
             <div className="text-2xl font-bold text-yellow-600">
               {counts.pending}
@@ -277,18 +277,18 @@ export function OrdersPage() {
             <p className="text-xs text-muted-foreground mt-1">EasyBuy sales awaiting payment</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-white border-[#e5e7eb] rounded-xl shadow-sm">
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-blue-600">
+            <div className="text-2xl font-bold text-[#2563eb]">
               {counts.processing}
             </div>
             <p className="text-sm font-medium text-muted-foreground">Ecommerce Processing</p>
             <p className="text-xs text-muted-foreground mt-1">Ecommerce orders pending delivery</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-white border-[#e5e7eb] rounded-xl shadow-sm">
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-2xl font-bold text-[#16a34a]">
               {counts.delivered}
             </div>
             <p className="text-sm font-medium text-muted-foreground">Ecommerce Delivered</p>
@@ -322,7 +322,7 @@ export function OrdersPage() {
         </Select>
       </div>
 
-      <Card>
+      <Card className="bg-white border-[#e5e7eb] rounded-xl shadow-sm">
         <CardHeader>
           <CardTitle>All Orders ({filteredOrders.length})</CardTitle>
         </CardHeader>
@@ -347,7 +347,7 @@ export function OrdersPage() {
                     <tr key={i} className="border-b">
                       {Array.from({ length: 8 }).map((_, j) => (
                         <td key={j} className="py-3 px-4">
-                          <div className="h-4 bg-gray-200 rounded animate-pulse" />
+                          <div className="h-4 bg-[#f3f4f6] rounded animate-pulse" />
                         </td>
                       ))}
                     </tr>
@@ -408,9 +408,9 @@ export function OrdersPage() {
       </Card>
 
       <Dialog open={!!selectedOrder} onOpenChange={(open) => !open && setSelectedOrder(null)}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white border-[#e5e7eb] rounded-2xl p-6 shadow-lg">
           <DialogHeader>
-            <DialogTitle>Order Details - {selectedOrder?.orderNumber}</DialogTitle>
+            <DialogTitle className="text-lg font-semibold text-[#111827]">Order Details - {selectedOrder?.orderNumber}</DialogTitle>
           </DialogHeader>
           
           {selectedOrder && (
@@ -498,9 +498,9 @@ export function OrdersPage() {
       </Dialog>
 
       <Dialog open={!!editingOrder} onOpenChange={(open) => !open && setEditingOrder(null)}>
-        <DialogContent>
+        <DialogContent className="bg-white border-[#e5e7eb] rounded-2xl p-6 shadow-lg">
           <DialogHeader>
-            <DialogTitle>Edit Order - {editingOrder?.orderNumber}</DialogTitle>
+            <DialogTitle className="text-lg font-semibold text-[#111827]">Edit Order - {editingOrder?.orderNumber}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">

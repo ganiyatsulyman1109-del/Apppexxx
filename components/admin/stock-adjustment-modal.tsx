@@ -90,9 +90,9 @@ export function StockAdjustmentModal({ open, onClose, product, products = [], on
         setError("")
       }
     }}>
-      <DialogContent>
+      <DialogContent className="bg-white border-[#e5e7eb] rounded-2xl p-6 shadow-lg">
         <DialogHeader>
-          <DialogTitle>Adjust Stock {activeProduct ? `- ${activeProduct.name}` : ''}</DialogTitle>
+          <DialogTitle className="text-lg font-semibold text-[#111827]">Adjust Stock {activeProduct ? `- ${activeProduct.name}` : ''}</DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
