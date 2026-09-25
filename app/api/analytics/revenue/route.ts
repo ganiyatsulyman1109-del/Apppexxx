@@ -1,8 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAdminAuthResult as requireAdminAuth } from '@/lib/auth'
+import { requireAdminAuth } from '@/lib/auth'
 import { createAdminClient } from '@/lib/utils/supabase'
 
 export const dynamic = 'force-dynamic'
+
+function authErrorResponse(error: unknown): Response | null {
+  return error instanceof Response ? error : null
+}
+
+type RevenueSource = 'ecommerce' | 'pos' | 'easybuy'
+type SaleItem = {
+  product_id?: unknown
+  productId?: unknown
+  quantity?: unknown
+  price?: unknown
+  unit_price?: unknown
+  unitPrice?: unknown
+}
+
+function isRevenueSource(source: unknown): source is RevenueSource {
+  return source === 'ecommerce' || source === 'pos' || source === 'easybuy'
+}
+
+function isSaleItem(item: unknown): item is SaleItem {
+  return typeof item === 'object' && item !== null && !Array.isArray(item)
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,9 +36,9 @@ export async function GET(request: NextRequest) {
   }
   
 
-    const authResult = await requireAdminAuth(request)
-    if (!authResult.authenticated) {
-      return NextResponse.json({ error: authResult.error }, { status: authResult.status })
+    const auth = await requireAdminAuth()
+    if (!auth.businessId) {
+      return NextResponse.json({ error: 'No business associated with account' }, { status: 403 })
     }
     const supabase = createAdminClient()
 
@@ -24,6 +46,12 @@ export async function GET(request: NextRequest) {
     const period = searchParams.get('period') || 'month' // week, month, quarter, year, custom
     const customStart = searchParams.get('start_date')
     const customEnd = searchParams.get('end_date')
+    if (!['week', 'month', 'quarter', 'year', 'custom'].includes(period)) {
+      return NextResponse.json({ error: 'Invalid revenue period' }, { status: 400 })
+    }
+    if (period === 'custom' && (!customStart || !customEnd)) {
+      return NextResponse.json({ error: 'Custom period requires start_date and end_date' }, { status: 400 })
+    }
 
     // Calculate date range
     const now = new Date()
@@ -32,8 +60,17 @@ export async function GET(request: NextRequest) {
 
     if (period === 'custom' && customStart && customEnd) {
       // Custom date range
-      startDate = new Date(customStart + 'T00:00:00')
-      endDate = new Date(customEnd + 'T23:59:59')
+      if (
+        !/^\d{4}-\d{2}-\d{2}$/.test(customStart) ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(customEnd) ||
+        !Number.isFinite(Date.parse(customStart)) ||
+        !Number.isFinite(Date.parse(customEnd)) ||
+        customStart > customEnd
+      ) {
+        return NextResponse.json({ error: 'Invalid custom date range' }, { status: 400 })
+      }
+      startDate = new Date(`${customStart}T00:00:00`)
+      endDate = new Date(`${customEnd}T23:59:59.999`)
     } else {
       switch (period) {
         case 'week':
@@ -52,6 +89,9 @@ export async function GET(request: NextRequest) {
           startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
       }
     }
+    if (!Number.isFinite(startDate.getTime()) || !Number.isFinite(endDate.getTime()) || startDate > endDate) {
+      return NextResponse.json({ error: 'Invalid date range' }, { status: 400 })
+    }
 
     // Execute independent queries concurrently
     const [
@@ -66,6 +106,7 @@ export async function GET(request: NextRequest) {
         .lte('created_at', endDate.toISOString())
         .neq('status', 'cancelled')
         .eq('payment_status', 'paid')
+        .eq('business_id', auth.businessId)
         .order('created_at', { ascending: true }),
       supabase
         .from('orders')
@@ -73,21 +114,24 @@ export async function GET(request: NextRequest) {
         .gte('created_at', startDate.toISOString())
         .lte('created_at', now.toISOString())
         .neq('status', 'cancelled')
-        .eq('payment_status', 'paid'),
+        .eq('payment_status', 'paid')
+        .eq('business_id', auth.businessId),
       supabase
         .from('easybuy_payments')
         .select('created_at, amount')
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString())
+        .eq('business_id', auth.businessId)
         .order('created_at', { ascending: true })
     ])
 
-    if (trendsError || easyBuyPaymentsError) {
-      console.error(trendsError);
-    return NextResponse.json(
-      { error: 'An internal error occurred. Please try again.' },
-      { status: 500 }
-    )
+    if (trendsError || itemOrdersError || easyBuyPaymentsError) {
+      console.error('Revenue analytics query failed:', {
+        trendsError,
+        itemOrdersError,
+        easyBuyPaymentsError,
+      })
+      return NextResponse.json({ error: 'Failed to load revenue analytics' }, { status: 500 })
     }
 
     // Group revenue by period and source
@@ -120,10 +164,11 @@ export async function GET(request: NextRequest) {
         revenueByPeriod[periodKey] = { ecommerce: 0, pos: 0, easybuy: 0, total: 0 }
       }
 
-      const amount = order.total_amount || 0
-      const source = order.source || 'ecommerce'
-      
-      revenueByPeriod[periodKey][source as keyof typeof revenueByPeriod[string]] += amount
+      const amount = Number(order.total_amount || 0)
+      const source: unknown = order.source || 'ecommerce'
+      if (isRevenueSource(source)) {
+        revenueByPeriod[periodKey][source] += amount
+      }
       revenueByPeriod[periodKey].total += amount
     })
 
@@ -155,7 +200,7 @@ export async function GET(request: NextRequest) {
         revenueByPeriod[periodKey] = { ecommerce: 0, pos: 0, easybuy: 0, total: 0 }
       }
 
-      const amount = payment.amount || 0
+      const amount = Number(payment.amount || 0)
       
       revenueByPeriod[periodKey].easybuy += amount
       revenueByPeriod[periodKey].total += amount
@@ -168,9 +213,11 @@ export async function GET(request: NextRequest) {
     // Get revenue breakdown by source
     const sourceRevenue = { ecommerce: 0, pos: 0, easybuy: 0 }
     revenueTrends?.forEach(order => {
-      const amount = order.total_amount || 0
-      const source = order.source || 'ecommerce'
-      sourceRevenue[source as keyof typeof sourceRevenue] += amount
+      const amount = Number(order.total_amount || 0)
+      const source: unknown = order.source || 'ecommerce'
+      if (isRevenueSource(source)) {
+        sourceRevenue[source] += amount
+      }
     })
     easyBuyPayments?.forEach(payment => {
       const amount = payment.amount || 0
@@ -184,20 +231,25 @@ export async function GET(request: NextRequest) {
       percentage: totalRevenue > 0 ? (revenue / totalRevenue) * 100 : 0
     }))
 
-    const normalizeItems = (items: any): any[] => {
+    const normalizeItems = (items: unknown): SaleItem[] => {
       if (!items) return []
-      if (Array.isArray(items)) return items
+      if (Array.isArray(items)) return items.filter(isSaleItem)
       if (typeof items === 'string') {
         try {
 
           const parsed = JSON.parse(items)
-          return Array.isArray(parsed) ? parsed : []
+          return Array.isArray(parsed) ? parsed.filter(isSaleItem) : []
         } catch {
           return []
         }
       }
-      if (typeof items === 'object' && Array.isArray(items.items)) {
-        return items.items
+      if (
+        typeof items === 'object' &&
+        items !== null &&
+        'items' in items &&
+        Array.isArray(items.items)
+      ) {
+        return items.items.filter(isSaleItem)
       }
       return []
     }
@@ -206,9 +258,10 @@ export async function GET(request: NextRequest) {
 
     itemOrders?.forEach(order => {
       const items = normalizeItems(order.items)
-      items.forEach((item: any) => {
-        const productId = item.product_id || item.productId
-        if (!productId) return
+      items.forEach((item) => {
+        const productIdValue = item.product_id || item.productId
+        if (typeof productIdValue !== 'string' || !productIdValue) return
+        const productId = productIdValue
         const quantity = Number(item.quantity || 0)
         const price = Number(item.price ?? item.unit_price ?? item.unitPrice ?? 0)
         const revenue = quantity * price
@@ -224,6 +277,7 @@ export async function GET(request: NextRequest) {
       ? await supabase
           .from('products')
           .select('id, name, category, price, cost_price, stock, threshold, sku, image_url')
+          .eq('business_id', auth.businessId)
           .in('id', productIds)
       : { data: [], error: null }
 
@@ -291,6 +345,9 @@ export async function GET(request: NextRequest) {
       categoryPerformance: categoryData
     })
   } catch (error) {
+    const authResponse = authErrorResponse(error)
+    if (authResponse) return authResponse
+    console.error('GET /api/analytics/revenue failed:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

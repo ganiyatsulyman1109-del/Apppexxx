@@ -1,151 +1,326 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { requireAdminAuthResult as requireAdminAuth } from '@/lib/auth'
-import { createAdminClient } from '@/lib/utils/supabase'
+import { NextRequest, NextResponse } from "next/server"
+import { requireAdminAuth } from "@/lib/auth"
+import { createAdminClient } from "@/lib/utils/supabase"
 
-const defaultSettings = [
-  { key: "business_name", value: "My Business", data_type: "string", category: "business", description: "Business name", is_public: true },
-  { key: "business_email", value: "hello@mybusiness.com", data_type: "string", category: "business", description: "Business email", is_public: true },
-  { key: "business_phone", value: "+234 803 456 7890", data_type: "string", category: "business", description: "Business phone", is_public: true },
-  { key: "business_website", value: "www.mybusiness.com", data_type: "string", category: "business", description: "Business website", is_public: true },
-  { key: "business_address", value: "HQ: No. 1a Amule Road, Amule Bus stop, Ayobo, Lagos State | Branch: No. 608 Lagos-Abeokuta Express way, Ijaye Bus stop, Lagos State", data_type: "string", category: "business", description: "Business address", is_public: true },
-  { key: "tax_id", value: "RC-1234567", data_type: "string", category: "business", description: "Tax ID", is_public: false },
-  { key: "currency", value: "NGN", data_type: "string", category: "business", description: "Currency code", is_public: true },
-  { key: "tax_rate", value: "0", data_type: "number", category: "business", description: "Tax rate percentage", is_public: false },
-  { key: "notifications_email", value: "true", data_type: "boolean", category: "notifications", description: "Email notifications", is_public: false },
-  { key: "notifications_sms", value: "false", data_type: "boolean", category: "notifications", description: "SMS notifications", is_public: false },
-  { key: "low_stock_alerts", value: "true", data_type: "boolean", category: "notifications", description: "Low stock alerts", is_public: false },
-  { key: "order_alerts", value: "true", data_type: "boolean", category: "notifications", description: "New order alerts", is_public: false },
-  { key: "auto_reorder", value: "false", data_type: "boolean", category: "notifications", description: "Auto reorder", is_public: false },
-  { key: "receipt_header", value: "My Business", data_type: "string", category: "receipt", description: "Receipt header text", is_public: false },
-  { key: "receipt_footer", value: "Thank you for your business!", data_type: "string", category: "receipt", description: "Receipt footer text", is_public: false },
-  { key: "printer_type", value: "thermal", data_type: "string", category: "receipt", description: "Printer type", is_public: false },
-  { key: "auto_print", value: "true", data_type: "boolean", category: "receipt", description: "Auto print receipts", is_public: false }
-]
+export const dynamic = "force-dynamic"
 
-const normalizeValue = (value: any) => {
-  if (value === null || value === undefined) return ""
-  if (typeof value === "string") return value
-  if (typeof value === "number" || typeof value === "boolean") return value.toString()
-  return JSON.stringify(value)
+const directBusinessFields = [
+  "name",
+  "tagline",
+  "logo_url",
+  "whatsapp_number",
+  "phone",
+  "email",
+  "address",
+  "city",
+  "country",
+  "bank_name",
+  "account_number",
+  "account_name",
+  "accept_bank_transfer",
+  "accept_card_payment",
+  "primary_color",
+  "secondary_color",
+  "accent_color",
+  "font_family",
+  "personality",
+  "layout_style",
+  "categories",
+  "paystack_public_key",
+  "paystack_secret_key",
+] as const
+
+type SettingInput = { key: string; value: unknown }
+type ExistingSetting = {
+  key: string
+  data_type: string
+  category: string | null
+  description: string | null
+  is_public: boolean | null
+  created_at: string | null
 }
 
-const inferDataType = (value: any) => {
+function authErrorResponse(error: unknown): Response | null {
+  return error instanceof Response ? error : null
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
+function inferDataType(value: unknown): string {
   if (typeof value === "number") return "number"
   if (typeof value === "boolean") return "boolean"
-  if (typeof value === "object") return "json"
+  if (typeof value === "object" && value !== null) return "json"
   return "string"
 }
 
-export async function GET(request: NextRequest) {
-  try {
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return NextResponse.json(
-      { error: 'Database service not configured' },
-      { status: 500 }
-    )
+function serializeValue(value: unknown): string {
+  if (value === null || value === undefined) return ""
+  if (typeof value === "string") return value
+  if (typeof value === "number" || typeof value === "boolean") return String(value)
+  return JSON.stringify(value)
+}
+
+function collectSettings(body: Record<string, unknown>): SettingInput[] {
+  const settings: SettingInput[] = []
+  const appendEntry = (key: unknown, value: unknown) => {
+    if (typeof key === "string" && key.trim()) {
+      settings.push({ key: key.trim(), value })
+    }
   }
-  
 
-    const authResult = await requireAdminAuth(request)
-    if (!authResult.authenticated) {
-      return NextResponse.json({ error: authResult.error }, { status: authResult.status })
+  if (typeof body.key === "string") {
+    appendEntry(body.key, body.value)
+  }
+  if (isRecord(body.settings)) {
+    if (typeof body.settings.key === "string" && Object.hasOwn(body.settings, "value")) {
+      appendEntry(body.settings.key, body.settings.value)
+    } else {
+      for (const [key, value] of Object.entries(body.settings)) appendEntry(key, value)
     }
-    
-    const supabase = createAdminClient()
-    
-    const { data, error } = await supabase
-      .from('settings')
-      .select('*')
-      .order('key', { ascending: true })
-    
-    if (error) {
-      console.error(error);
-    return NextResponse.json(
-      { error: 'An internal error occurred. Please try again.' },
-      { status: 500 }
-    )
+  } else if (Array.isArray(body.settings)) {
+    for (const entry of body.settings) {
+      if (isRecord(entry)) appendEntry(entry.key, entry.value)
     }
-    
-    if (data && data.length === 0) {
-      const adminSupabase = createAdminClient()
-      const { data: seeded, error: seedError } = await adminSupabase
-        .from('settings')
-        .insert(defaultSettings)
-        .select('*')
-        .order('key', { ascending: true })
+  }
 
-      if (seedError) {
-        console.error(seedError);
-    return NextResponse.json(
-      { error: 'An internal error occurred. Please try again.' },
-      { status: 500 }
-    )
+  const reserved = new Set([
+    "key",
+    "value",
+    "settings",
+    "business",
+    "business_id",
+    ...directBusinessFields,
+  ])
+  for (const [key, value] of Object.entries(body)) {
+    if (!reserved.has(key)) appendEntry(key, value)
+  }
+
+  return settings
+}
+
+function readDirectBusinessUpdates(value: unknown): Record<string, unknown> | null {
+  if (!isRecord(value)) return {}
+  if (Object.hasOwn(value, "business_id")) return null
+
+  const updates: Record<string, unknown> = {}
+  for (const field of directBusinessFields) {
+    if (value[field] !== undefined) {
+      if (field === "name" && (typeof value[field] !== "string" || !value[field].trim())) {
+        throw new TypeError("name must not be empty")
       }
+      updates[field] = value[field]
+    }
+  }
+  return updates
+}
 
-      return NextResponse.json({ settings: seeded })
+export async function GET() {
+  try {
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json(
+        { error: "Database service not configured" },
+        { status: 500 }
+      )
     }
 
-    // Convert to key-value object
-    const result: Record<string, any> = {}
-    if (data) {
-      data.forEach((row: any) => {
-        result[row.key] = row.value
-      })
+    const auth = await requireAdminAuth()
+    if (!auth.businessId) {
+      return NextResponse.json(
+        { error: "No business associated with account" },
+        { status: 403 }
+      )
     }
 
-    return NextResponse.json(result)
+    const supabase = createAdminClient()
+    const [settingsResult, businessResult] = await Promise.all([
+      supabase
+        .from("settings")
+        .select("key, value")
+        .eq("business_id", auth.businessId)
+        .order("key", { ascending: true }),
+      supabase
+        .from("businesses")
+        .select("*")
+        .eq("id", auth.businessId)
+        .maybeSingle(),
+    ])
+
+    if (settingsResult.error) {
+      console.error("Failed to fetch business settings:", settingsResult.error)
+      return NextResponse.json({ error: "Failed to fetch settings" }, { status: 500 })
+    }
+    if (businessResult.error) {
+      console.error("Failed to fetch business record:", businessResult.error)
+      return NextResponse.json({ error: "Failed to fetch business" }, { status: 500 })
+    }
+    if (!businessResult.data) {
+      return NextResponse.json({ error: "Business not found" }, { status: 404 })
+    }
+
+    const settings: Record<string, string | null> = {}
+    for (const setting of settingsResult.data || []) {
+      settings[setting.key] = setting.value
+    }
+    if (settings.business_name === undefined && typeof businessResult.data.name === "string") {
+      settings.business_name = businessResult.data.name
+    }
+
+    return NextResponse.json({
+      success: true,
+      settings,
+      business: businessResult.data,
+    })
   } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const authResponse = authErrorResponse(error)
+    if (authResponse) return authResponse
+
+    console.error("GET /api/settings failed:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
 
 export async function PUT(request: NextRequest) {
   try {
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return NextResponse.json(
-      { error: 'Database service not configured' },
-      { status: 500 }
-    )
-  }
-  
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json(
+        { error: "Database service not configured" },
+        { status: 500 }
+      )
+    }
 
-    const authResult = await requireAdminAuth(request)
-    if (!authResult.authenticated) {
-      return NextResponse.json({ error: authResult.error }, { status: authResult.status })
+    const auth = await requireAdminAuth()
+    if (!auth.businessId) {
+      return NextResponse.json(
+        { error: "No business associated with account" },
+        { status: 403 }
+      )
     }
-    
+
+    const body: unknown = await request.json()
+    if (!isRecord(body)) {
+      return NextResponse.json({ error: "Request body must be an object" }, { status: 400 })
+    }
+    if (body.business !== undefined && !isRecord(body.business)) {
+      return NextResponse.json({ error: "business must be an object" }, { status: 400 })
+    }
+    if (Object.hasOwn(body, "business_id")) {
+      return NextResponse.json(
+        { error: "business_id cannot be changed" },
+        { status: 400 }
+      )
+    }
+
+    const businessUpdates = readDirectBusinessUpdates(body.business)
+    if (businessUpdates === null) {
+      return NextResponse.json(
+        { error: "business_id cannot be changed" },
+        { status: 400 }
+      )
+    }
+    const directUpdates = readDirectBusinessUpdates(body)
+    if (directUpdates === null) {
+      return NextResponse.json(
+        { error: "business_id cannot be changed" },
+        { status: 400 }
+      )
+    }
+    Object.assign(businessUpdates, directUpdates)
+
+    const settingsByKey = new Map(
+      collectSettings(body).map((setting) => [setting.key, setting])
+    )
+    const settings = Array.from(settingsByKey.values())
+    const businessName = settings.find((setting) => setting.key === "business_name")
+    if (!Object.hasOwn(businessUpdates, "name") && businessName) {
+      if (typeof businessName.value !== "string") {
+        return NextResponse.json({ error: "business_name must be a string" }, { status: 400 })
+      }
+      businessUpdates.name = businessName.value
+    }
+    if (
+      settings.length === 0 &&
+      Object.keys(businessUpdates).length === 0
+    ) {
+      return NextResponse.json({ error: "No settings or business fields provided" }, { status: 400 })
+    }
+
+    if (
+      settings.some(
+        (setting) => typeof setting.value === "undefined"
+      )
+    ) {
+      return NextResponse.json({ error: "Every setting must include a value" }, { status: 400 })
+    }
+
     const supabase = createAdminClient()
-    
-    const body = await request.json()
-    
-    // Iterate over body keys and upsert each setting
-    for (const [key, value] of Object.entries(body)) {
-      if (key === 'settings') continue // Skip if legacy format is mixed in (though we shouldn't send it)
-      
-      // Infer details for upsert if not provided in simple k:v pair
-      // We default to string/general if unknown, but better to query first? 
-      // For simplicity/performance in this "Surgical" fix, we assume existing keys mostly
-      // Or we accept that metadata might be lost if we don't fetch first. 
-      // Actually, upsert with just key/value will keep other columns if we don't specify them? 
-      // No, upsert replaces. So we should really be careful.
-      // The requirement says: "Fix PUT handler to upsert each field... await adminSupabase.from('settings').upsert({ key, value: String(value) }, { onConflict: 'key' })"
-      
-      // We will follow the instruction exactly.
-      await supabase
-        .from('settings')
-        .upsert(
-          { 
-            key, 
-            value: String(value)
-            // Note: This might clear description/category if they are not default. 
-            // But the prompt was specific. We assume the DB has defaults or we don't care about metadata for this fix.
-          }, 
-          { onConflict: 'key' }
-        )
+    if (Object.keys(businessUpdates).length > 0) {
+      const { data: business, error: businessError } = await supabase
+        .from("businesses")
+        .update(businessUpdates)
+        .eq("id", auth.businessId)
+        .select("id")
+        .maybeSingle()
+
+      if (businessError) {
+        console.error("Failed to update business settings:", businessError)
+        return NextResponse.json({ error: "Failed to update business" }, { status: 500 })
+      }
+      if (!business) {
+        return NextResponse.json({ error: "Business not found" }, { status: 404 })
+      }
     }
-    
+
+    if (settings.length > 0) {
+      const keys = Array.from(new Set(settings.map((setting) => setting.key)))
+      const { data: existingRows, error: existingError } = await supabase
+        .from("settings")
+        .select("key, data_type, category, description, is_public, created_at")
+        .eq("business_id", auth.businessId)
+        .in("key", keys)
+
+      if (existingError) {
+        console.error("Failed to load existing setting metadata:", existingError)
+        return NextResponse.json({ error: "Failed to save settings" }, { status: 500 })
+      }
+
+      const existingByKey = new Map<string, ExistingSetting>(
+        (existingRows || []).map((row) => [row.key, row as ExistingSetting])
+      )
+      const rows = settings.map(({ key, value }) => {
+        const existing = existingByKey.get(key)
+        return {
+          business_id: auth.businessId,
+          key,
+          value: serializeValue(value),
+          data_type: existing?.data_type || inferDataType(value),
+          category: existing?.category || "general",
+          description: existing?.description || null,
+          is_public: existing?.is_public ?? false,
+          ...(existing?.created_at ? { created_at: existing.created_at } : {}),
+          updated_at: new Date().toISOString(),
+        }
+      })
+      const { error: settingsError } = await supabase
+        .from("settings")
+        .upsert(rows, { onConflict: "business_id,key" })
+
+      if (settingsError) {
+        console.error("Failed to save settings:", settingsError)
+        return NextResponse.json({ error: "Failed to save settings" }, { status: 500 })
+      }
+    }
+
     return NextResponse.json({ success: true })
   } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const authResponse = authErrorResponse(error)
+    if (authResponse) return authResponse
+    if (error instanceof TypeError) {
+      return NextResponse.json({ error: error.message }, { status: 400 })
+    }
+
+    console.error("PUT /api/settings failed:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

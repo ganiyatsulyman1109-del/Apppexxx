@@ -1,406 +1,323 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient, createAdminClient } from '@/lib/utils/supabase'
-import { calculateDaysSinceInvestment, calculateTotalReturns } from '@/lib/investor-types'
-import { requireAdminAuthResult as requireAdminAuth } from '@/lib/auth'
+import { NextRequest, NextResponse } from "next/server"
+import { createAdminClient } from "@/lib/utils/supabase"
+import { calculateTotalReturns } from "@/lib/investor-types"
+import { assertBelongsToBusiness, requireAdminAuth } from "@/lib/auth"
 
-export const dynamic = 'force-dynamic'
+export const dynamic = "force-dynamic"
 
-function toNigeriaDateString(utcTimestamp: string): string {
-  try {
-    const formatter = new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'Africa/Lagos',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    })
-    return formatter.format(new Date(utcTimestamp))
-  } catch (e) {
-    const date = new Date(utcTimestamp)
-    const nigeriaOffset = 60 * 60 * 1000 // UTC+1
-    const nigeriaTime = new Date(date.getTime() + nigeriaOffset)
-    return nigeriaTime.toISOString().split('T')[0]
+function authErrorResponse(error: unknown): Response | null {
+  return error instanceof Response ? error : null
+}
+
+function parseLimit(value: string | null): number {
+  const parsed = Number(value)
+  return Number.isInteger(parsed) && parsed > 0 ? Math.min(parsed, 500) : 50
+}
+
+function presentInvestor<T extends { status: string; full_name: string }>(investor: T) {
+  return {
+    ...investor,
+    status: investor.status === "paused" ? "inactive" : investor.status,
+    name: investor.full_name,
   }
+}
+
+function toNigeriaDateString(value: string): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Africa/Lagos",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(value))
 }
 
 export async function GET(request: NextRequest) {
   try {
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return NextResponse.json(
-      { error: 'Database service not configured' },
-      { status: 500 }
-    )
-  }
-
-    const authResult = await requireAdminAuth(request)
-    if (!authResult.authenticated) {
-      return NextResponse.json({ error: authResult.error || 'Unauthorized' }, { status: authResult.status || 401 })
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json({ error: "Database service not configured" }, { status: 500 })
+    }
+    const auth = await requireAdminAuth()
+    if (!auth.businessId) {
+      return NextResponse.json({ error: "No business associated with account" }, { status: 403 })
     }
 
-    const supabase = createAdminClient()
-    
-    const { searchParams } = new URL(request.url)
-    const status = searchParams.get('status')
-    const limit = searchParams.get('limit') || '50'
-    
-    let query = supabase
-      .from('investors')
-      .select(`*`)
-      .order('created_at', { ascending: false })
-      .limit(parseInt(limit))
-    
+    const { searchParams } = request.nextUrl
+    let query = createAdminClient()
+      .from("investors")
+      .select("*")
+      .eq("business_id", auth.businessId)
+      .order("created_at", { ascending: false })
+      .limit(parseLimit(searchParams.get("limit")))
+    const status = searchParams.get("status")
     if (status) {
-      query = query.eq('status', status)
+      if (!["active", "inactive", "paused", "completed"].includes(status)) {
+        return NextResponse.json({ error: "Invalid investor status" }, { status: 400 })
+      }
+      query = query.eq("status", status === "inactive" ? "paused" : status)
     }
-    
+
     const { data, error } = await query
-    
     if (error) {
-      console.error(error);
-    return NextResponse.json(
-      { error: 'An internal error occurred. Please try again.' },
-      { status: 500 }
+      console.error("Failed to fetch business investors:", error)
+      return NextResponse.json({ error: "Failed to fetch investors" }, { status: 500 })
+    }
+
+    const investors = data || []
+    const activeInvestors = investors.filter(
+      (investor) => investor.status === "active" && investor.investment_date
     )
-    }
-    
-    const investors = []
-    
-    // Process investors and sync returns
-    // This ensures that even if the cron job fails, returns are calculated correctly when viewed
-    const adminSupabase = createAdminClient()
-    const updatePromises: PromiseLike<any>[] = []
+    const earliestDate = activeInvestors.reduce<string | null>((earliest, investor) => {
+      return !earliest || investor.investment_date < earliest ? investor.investment_date : earliest
+    }, null)
 
-    // Pre-fetch all necessary data to avoid N+1 queries in the loop.
-    // 1. Find the earliest investment date among all active investors
-    const activeInvestors = (data || []).filter(inv => inv.status === 'active' && inv.investment_date)
-    let earliestDate: string | null = null
-    
-    if (activeInvestors.length > 0) {
-      earliestDate = activeInvestors.reduce((min, inv) => {
-        return !min || inv.investment_date < min ? inv.investment_date : min
-      }, null as string | null)
-    }
-
-    let allPaidOrders: any[] = []
-    let allEasybuyPayments: any[] = []
-
+    let orderDates: string[] = []
+    let paymentDates: string[] = []
     if (earliestDate) {
-      const fetchAllDates = async (table: string, statusFilter?: {column: string, value: string}) => {
-        let results: any[] = []
-        let hasMore = true
-        let offset = 0
-        const limit = 1000
-        
-        while (hasMore) {
-          let q = adminSupabase
-            .from(table)
-            .select('created_at')
-            .gt('created_at', earliestDate)
-            .order('created_at', { ascending: true })
-            .range(offset, offset + limit - 1)
-            
-          if (statusFilter) {
-            q = q.eq(statusFilter.column, statusFilter.value)
-          }
-          
-          const { data } = await q
-          if (data && data.length > 0) {
-            results = results.concat(data)
-            offset += limit
-            if (data.length < limit) hasMore = false
-          } else {
-            hasMore = false
-          }
-        }
-        return results
-      }
-
-      const [paidOrders, easybuyPayments] = await Promise.all([
-        fetchAllDates('orders', { column: 'status', value: 'delivered' }),
-        fetchAllDates('easybuy_payments')
+      const [ordersResult, paymentsResult] = await Promise.all([
+        createAdminClient()
+          .from("orders")
+          .select("created_at")
+          .eq("business_id", auth.businessId)
+          .eq("status", "delivered")
+          .gt("created_at", earliestDate)
+          .order("created_at", { ascending: true })
+          .range(0, 99999),
+        createAdminClient()
+          .from("easybuy_payments")
+          .select("created_at")
+          .eq("business_id", auth.businessId)
+          .gt("created_at", earliestDate)
+          .order("created_at", { ascending: true })
+          .range(0, 99999),
       ])
-      
-      allPaidOrders = paidOrders || []
-      allEasybuyPayments = easybuyPayments || []
-    }
-    
-    for (const inv of (data || [])) {
-        const currentInv = { ...inv }
 
-        if (currentInv.status === 'active' && currentInv.investment_date && currentInv.investment_amount && currentInv.daily_return_rate) {
-            // Calculate earning days from actual paid orders and easybuy_payments
-            const investmentDateStr = toNigeriaDateString(currentInv.investment_date)
-            
-            // Filter pre-fetched data for this specific investor
-            const investorPaidOrders = allPaidOrders.filter(o => o.created_at > currentInv.investment_date)
-            const investorEbPayments = allEasybuyPayments.filter(p => p.created_at > currentInv.investment_date)
-            
-            // Count unique days when sales occurred (only days after investment_date)
-            const uniqueSalesDays = new Set<string>()
-            
-            investorPaidOrders.forEach(order => {
-              const orderDate = toNigeriaDateString(order.created_at)
-              if (orderDate > investmentDateStr) {
-                uniqueSalesDays.add(orderDate)
-              }
-            })
-            
-            investorEbPayments.forEach(payment => {
-              const paymentDate = toNigeriaDateString(payment.created_at)
-              if (paymentDate > investmentDateStr) {
-                uniqueSalesDays.add(paymentDate)
-              }
-            })
-            
-            const salesDays = uniqueSalesDays.size
-            
-            // Only calculate if days > 0
-            if (salesDays > 0) {
-                const expectedTotalEarned = calculateTotalReturns(
-                    Number(currentInv.investment_amount), 
-                    Number(currentInv.daily_return_rate), 
-                    salesDays
-                )
-                
-                const currentTotalEarned = Number(currentInv.total_returns_earned || 0)
-                const currentTotalPaid = Number(currentInv.total_returns_paid || 0)
-                
-                // Logic:
-                // Total Earned should be strictly based on time passed.
-                // Current Balance = Total Earned - Total Paid
-                
-                // If the stored total_returns_earned is less than expected (meaning time has passed), update it.
-                if (expectedTotalEarned > currentTotalEarned) {
-                        
-                        // Recalculate balance based on new total earned
-                        const newBalance = expectedTotalEarned - currentTotalPaid
-                        
-                        // Update local object for response immediately
-                        currentInv.total_returns_earned = expectedTotalEarned
-                        currentInv.current_balance = newBalance
-                        
-                        // Queue DB update
-                        updatePromises.push(
-                            adminSupabase.from('investors').update({
-                                total_returns_earned: expectedTotalEarned,
-                                current_balance: newBalance,
-                                updated_at: new Date().toISOString()
-                            }).eq('id', currentInv.id)
-                            .then(({ error }) => {
-                                if (error) {
-                                    console.error(`Error updating investor ${currentInv.id} returns:`, error)
-                                }
-                            })
-                        )
-                }
-            }
-        }
-        
-        investors.push({
-            ...currentInv,
-            name: currentInv.full_name
+      if (ordersResult.error || paymentsResult.error) {
+        console.error("Failed to calculate investor returns:", {
+          ordersError: ordersResult.error,
+          paymentsError: paymentsResult.error,
         })
-    }
-    
-    if (updatePromises.length > 0) {
-        // We don't await this to keep the response fast, or we can await if we want to be sure
-        // Given this is an admin view, awaiting is safer to ensure consistency
-        await Promise.all(updatePromises)
+        return NextResponse.json({ error: "Failed to calculate investor returns" }, { status: 500 })
+      }
+      orderDates = (ordersResult.data || []).map((order) => order.created_at)
+      paymentDates = (paymentsResult.data || []).map((payment) => payment.created_at)
     }
 
-    return NextResponse.json({ investors }, {
-      headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate'
+    const updatedInvestors = []
+    for (const investor of investors) {
+      const current = { ...investor }
+      if (
+        current.status === "active" &&
+        current.investment_date &&
+        Number(current.investment_amount) > 0 &&
+        Number(current.daily_return_rate) > 0
+      ) {
+        const investmentDate = toNigeriaDateString(current.investment_date)
+        const salesDays = new Set(
+          [...orderDates, ...paymentDates]
+            .filter((createdAt) => createdAt > current.investment_date)
+            .map(toNigeriaDateString)
+            .filter((date) => date > investmentDate)
+        ).size
+
+        if (salesDays > 0) {
+          const expectedEarned = calculateTotalReturns(
+            Number(current.investment_amount),
+            Number(current.daily_return_rate),
+            salesDays
+          )
+          const currentEarned = Number(current.total_returns_earned || 0)
+          if (expectedEarned > currentEarned) {
+            const currentPaid = Number(current.total_returns_paid || 0)
+            const newBalance = expectedEarned - currentPaid
+            const { data: updated, error: updateError } = await createAdminClient()
+              .from("investors")
+              .update({
+                total_returns_earned: expectedEarned,
+                current_balance: newBalance,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", current.id)
+              .eq("business_id", auth.businessId)
+              .select("*")
+              .maybeSingle()
+
+            if (updateError) {
+              console.error("Failed to refresh investor returns:", updateError)
+              return NextResponse.json({ error: "Failed to refresh investor returns" }, { status: 500 })
+            }
+            if (updated) Object.assign(current, updated)
+          }
+        }
       }
-    })
+      assertBelongsToBusiness(current.business_id, auth.businessId)
+      updatedInvestors.push(presentInvestor(current))
+    }
+
+    return NextResponse.json(
+      { investors: updatedInvestors },
+      { headers: { "Cache-Control": "no-store, no-cache, must-revalidate" } }
+    )
   } catch (error) {
-    console.error("Error fetching investors:", error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const authResponse = authErrorResponse(error)
+    if (authResponse) return authResponse
+    console.error("GET /api/investors failed:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
 
 export async function POST(request: NextRequest) {
+  let createdUserId: string | null = null
   try {
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return NextResponse.json(
-      { error: 'Database service not configured' },
-      { status: 500 }
-    )
-  }
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json({ error: "Database service not configured" }, { status: 500 })
+    }
+    const auth = await requireAdminAuth()
+    if (!auth.businessId) {
+      return NextResponse.json({ error: "No business associated with account" }, { status: 403 })
+    }
 
-    const authResult = await requireAdminAuth(request)
-    if (!authResult.authenticated) {
-      return NextResponse.json({ error: authResult.error || 'Unauthorized' }, { status: authResult.status || 401 })
+    const body: unknown = await request.json()
+    if (typeof body !== "object" || body === null || Array.isArray(body)) {
+      return NextResponse.json({ error: "Request body must be an object" }, { status: 400 })
+    }
+    const input = body as Record<string, unknown>
+    const fullName = typeof input.full_name === "string"
+      ? input.full_name.trim()
+      : typeof input.name === "string" ? input.name.trim() : ""
+    const email = typeof input.email === "string" ? input.email.trim().toLowerCase() : ""
+    const phone = typeof input.phone === "string" ? input.phone.trim() : ""
+    const password = typeof input.password === "string" ? input.password : ""
+    const investmentAmount = Number(input.investment_amount)
+    const dailyReturnRate = Number(input.daily_return_rate)
+    const investmentDate = typeof input.investment_date === "string"
+      ? input.investment_date
+      : new Date().toISOString().slice(0, 10)
+
+    if (!fullName || !email || !password || !Number.isFinite(investmentAmount) ||
+        investmentAmount <= 0 || !Number.isFinite(dailyReturnRate) ||
+        dailyReturnRate <= 0 || dailyReturnRate > 5 ||
+        !Number.isFinite(Date.parse(investmentDate))) {
+      return NextResponse.json({ error: "Valid name, email, password, investment amount, rate, and date are required" }, { status: 400 })
+    }
+    if (input.status !== undefined && !["active", "inactive"].includes(String(input.status))) {
+      return NextResponse.json({ error: "Invalid investor status" }, { status: 400 })
     }
 
     const supabase = createAdminClient()
-    
-    const body = await request.json()
-    const {
-      full_name,
-      name,
-      email,
-      phone,
-      investment_amount,
-      daily_return_rate,
-      investment_date,
-      password
-    } = body
-    
-    const resolvedFullName = full_name || name
-    const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : ''
-    const normalizedPhone = typeof phone === 'string' ? phone.trim() : ''
-
-    if (!resolvedFullName || !normalizedEmail || !investment_amount || !daily_return_rate || !password) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
-    }
-    
-    // Use password from frontend
-    const tempPassword = password
-    
-    // Use Admin client for user creation
-    const adminSupabase = createAdminClient()
-    
-    // Check if investor with this email already exists
-    const { data: existingInvestorRecord } = await adminSupabase
-      .from('investors')
-      .select('id')
-      .eq('email', normalizedEmail)
+    const { data: existingInvestor, error: investorLookupError } = await supabase
+      .from("investors")
+      .select("id")
+      .eq("business_id", auth.businessId)
+      .eq("email", email)
       .maybeSingle()
-
-    if (existingInvestorRecord) {
-      return NextResponse.json({ error: 'An investor with this email is already registered.' }, { status: 400 })
+    if (investorLookupError) {
+      console.error("Failed to check investor email:", investorLookupError)
+      return NextResponse.json({ error: "Failed to create investor" }, { status: 500 })
+    }
+    if (existingInvestor) {
+      return NextResponse.json({ error: "An investor with this email is already registered." }, { status: 409 })
     }
 
-    // Check if profile already exists for this email
-    const { data: existingProfile } = await adminSupabase
-      .from('profiles')
-      .select('id')
-      .eq('email', normalizedEmail)
+    const { data: existingProfile, error: profileLookupError } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("business_id", auth.businessId)
+      .eq("email", email)
       .maybeSingle()
-
-    let userId: string
-
+    if (profileLookupError) {
+      console.error("Failed to check investor profile:", profileLookupError)
+      return NextResponse.json({ error: "Failed to create investor" }, { status: 500 })
+    }
     if (existingProfile) {
-      userId = existingProfile.id
-      // Profile exists, we don't need to create user/profile again
-      // We just need to ensure they have the investor role
-    } else {
-      // Create Supabase auth user for the investor
-    const { data: authData, error: userCreationError } = await adminSupabase.auth.admin.createUser({
-      email: normalizedEmail,
-      password: tempPassword,
+      return NextResponse.json({ error: "An account with this email already exists in this business" }, { status: 409 })
+    }
+
+    const { data: authData, error: userCreationError } = await supabase.auth.admin.createUser({
+      email,
+      password,
       email_confirm: true,
-      ...(normalizedPhone ? { phone: normalizedPhone, phone_confirm: true } : {}),
-      user_metadata: {
-        full_name: resolvedFullName,
-        name: resolvedFullName,
-        role: 'investor'
-      }
+      ...(phone ? { phone, phone_confirm: true } : {}),
+      user_metadata: { full_name: fullName, name: fullName, role: "investor" },
     })
-
-      if (userCreationError) {
-        console.error(userCreationError);
-    return NextResponse.json(
-      { error: 'An internal error occurred. Please try again.' },
-      { status: 500 }
-    )
-      }
-
-      userId = authData.user.id
-
+    if (userCreationError) {
+      console.error("Failed to create investor login:", userCreationError)
+      return NextResponse.json({ error: "Failed to create investor login" }, { status: 400 })
     }
+    createdUserId = authData.user.id
 
-    // Assign role (upsert to handle if role already exists or user has other roles)
-    // Note: If user already has a role, this might fail depending on unique constraint on (user_id, role)
-    // If we want multiple roles, we should check if 'investor' role exists first.
-    
-    const { data: existingRole } = await adminSupabase
-      .from('user_roles')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('role', 'investor')
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .update({
+        business_id: auth.businessId,
+        role: "investor",
+        full_name: fullName,
+        phone: phone || null,
+      })
+      .eq("id", createdUserId)
+      .select("id")
       .maybeSingle()
-
-    if (!existingRole) {
-      const { error: roleError } = await adminSupabase
-        .from('user_roles')
-        .insert({
-          user_id: userId,
-          role: 'investor'
-        })
-
-      if (roleError) {
-        // Only rollback user if we just created it
-        if (!existingProfile) {
-          await adminSupabase.auth.admin.deleteUser(userId)
-        }
-        console.error(roleError);
-    return NextResponse.json(
-      { error: 'An internal error occurred. Please try again.' },
-      { status: 500 }
-    )
-      }
+    if (profileError || !profile) {
+      console.error("Failed to associate investor profile with business:", profileError)
+      await supabase.auth.admin.deleteUser(createdUserId)
+      createdUserId = null
+      return NextResponse.json({ error: "Failed to configure investor profile" }, { status: 500 })
     }
 
-    // Generate investor_id
-    const { data: lastInvestor } = await adminSupabase
-      .from('investors')
-      .select('investor_id')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-    
-    let nextIdNumber = 1
-    if (lastInvestor?.investor_id) {
-      const match = lastInvestor.investor_id.match(/INV(\d+)/)
-      if (match) {
-        nextIdNumber = parseInt(match[1]) + 1
-      }
+    const { error: roleError } = await supabase
+      .from("user_roles")
+      .insert({ user_id: createdUserId, business_id: auth.businessId, role: "investor" })
+    if (roleError) {
+      console.error("Failed to assign investor role:", roleError)
+      await supabase.auth.admin.deleteUser(createdUserId)
+      createdUserId = null
+      return NextResponse.json({ error: "Failed to assign investor role" }, { status: 500 })
     }
-    const investor_id = `INV${nextIdNumber.toString().padStart(4, '0')}`
 
-    // Create investor record
-    const { data: investor, error: investorError } = await adminSupabase
-      .from('investors')
+    const investorId = `INV${Date.now().toString(36).toUpperCase()}${crypto.randomUUID().slice(0, 4).toUpperCase()}`
+    const { data: investor, error: createError } = await supabase
+      .from("investors")
       .insert({
-        user_id: userId,
-        investor_id,
-        full_name: resolvedFullName,
-        email: normalizedEmail,
-        phone: normalizedPhone || null,
-        investment_amount,
-        daily_return_rate,
-        investment_date: investment_date || new Date().toISOString(),
-        // notes, // Removed: Not in schema
-        status: 'active',
+        business_id: auth.businessId,
+        user_id: createdUserId,
+        investor_id: investorId,
+        full_name: fullName,
+        email,
+        phone: phone || null,
+        investment_amount: investmentAmount,
+        daily_return_rate: dailyReturnRate,
+        investment_date: investmentDate,
+        status: input.status === "inactive" ? "paused" : input.status || "active",
         total_returns_earned: 0,
         total_returns_paid: 0,
-        current_balance: 0
+        current_balance: 0,
+        created_by: auth.userId,
       })
-      .select()
+      .select("*")
       .single()
-
-    if (investorError) {
-      // Don't delete user if it was an existing profile
-      if (!existingProfile) {
-        await adminSupabase.auth.admin.deleteUser(userId)
-      }
-      console.error(investorError);
-    return NextResponse.json(
-      { error: 'An internal error occurred. Please try again.' },
-      { status: 500 }
-    )
+    if (createError) {
+      console.error("Failed to create investor record:", createError)
+      await supabase.auth.admin.deleteUser(createdUserId)
+      createdUserId = null
+      return NextResponse.json({ error: "Failed to create investor" }, { status: 500 })
     }
+    assertBelongsToBusiness(investor.business_id, auth.businessId)
+    createdUserId = null
 
-    return NextResponse.json({
-      investor: {
-        ...investor,
-        name: investor.full_name
+    return NextResponse.json(
+      {
+        investor: presentInvestor(investor),
+        message: "Investor created successfully.",
       },
-      message: 'Investor created successfully. Login credentials sent via email.'
-    })
+      { status: 201 }
+    )
   } catch (error) {
-    console.error('Investor creation error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const authResponse = authErrorResponse(error)
+    if (authResponse) return authResponse
+    if (createdUserId) {
+      const { error: cleanupError } = await createAdminClient().auth.admin.deleteUser(createdUserId)
+      if (cleanupError) console.error("Failed to remove incomplete investor account:", cleanupError)
+    }
+    console.error("POST /api/investors failed:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

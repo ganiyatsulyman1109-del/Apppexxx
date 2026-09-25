@@ -1,10 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { requireStaffOrAdminAuth } from '@/lib/auth'
+import { NextResponse } from 'next/server'
+import { requireAdminAuth } from '@/lib/auth'
 import { createAdminClient } from '@/lib/utils/supabase'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(request: NextRequest) {
+function authErrorResponse(error: unknown): Response | null {
+  return error instanceof Response ? error : null
+}
+
+export async function GET() {
   try {
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return NextResponse.json(
@@ -13,9 +17,9 @@ export async function GET(request: NextRequest) {
     )
   }
 
-    const authResult = await requireStaffOrAdminAuth(request)
-    if (!authResult.authenticated) {
-      return NextResponse.json({ error: authResult.error }, { status: authResult.status })
+    const auth = await requireAdminAuth()
+    if (!auth.businessId) {
+      return NextResponse.json({ error: 'No business associated with account' }, { status: 403 })
     }
     
     const supabase = createAdminClient()
@@ -27,17 +31,21 @@ export async function GET(request: NextRequest) {
 
     const [
       { data: totalDebtData, error: totalDebtError },
-      { data: overduePurchasesData },
+      { data: overduePurchasesData, error: overdueError },
       { data: collectionsData, error: collectionsError },
       { data: activePurchases, error: agingError }
     ] = await Promise.all([
-      supabase.from('easybuy_customers').select('current_debt, credit_limit'),
-      supabase.from('easybuy_purchases').select('easybuy_customer_id, remaining_balance').or('status.eq.overdue,and(status.neq.paid,expected_completion_date.lt.' + now.toISOString() + ')'),
-      supabase.from('easybuy_payments').select('amount').gte('payment_date', startOfMonth.toISOString()),
-      supabase.from('easybuy_purchases').select('purchase_date, remaining_balance').eq('status', 'active')
+      supabase.from('easybuy_customers').select('current_debt, credit_limit').eq('business_id', auth.businessId),
+      supabase.from('easybuy_purchases').select('easybuy_customer_id, remaining_balance').eq('business_id', auth.businessId).or('status.eq.overdue,and(status.neq.paid,expected_completion_date.lt.' + now.toISOString() + ')'),
+      supabase.from('easybuy_payments').select('amount').eq('business_id', auth.businessId).gte('payment_date', startOfMonth.toISOString()),
+      supabase.from('easybuy_purchases').select('purchase_date, remaining_balance').eq('business_id', auth.businessId).in('status', ['active', 'pending', 'partial', 'overdue'])
     ])
 
-    if (totalDebtError) throw new Error(totalDebtError.message)
+    const queryErrors = [totalDebtError, overdueError, collectionsError, agingError].filter(Boolean)
+    if (queryErrors.length > 0) {
+      console.error('EasyBuy debt overview query failed:', queryErrors)
+      return NextResponse.json({ error: 'Failed to load debt overview' }, { status: 500 })
+    }
     
     const totalOutstandingDebt = totalDebtData?.reduce((sum, c) => sum + (c.current_debt || 0), 0) || 0
     const customersWithDebt = totalDebtData?.filter(c => c.current_debt > 0).length || 0
@@ -55,16 +63,9 @@ export async function GET(request: NextRequest) {
     const overduePaymentsAmount = overduePurchasesData?.reduce((sum, p) => sum + (p.remaining_balance || 0), 0) || 0
 
     // 4. Collections This Month
-    if (collectionsError) {
-        // Fail gracefully if table doesn't exist
-        console.warn('Could not fetch collections:', collectionsError)
-    }
-
     const collectionsThisMonth = collectionsData?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0
 
     // 5. Debt Aging Analysis
-    if (agingError) throw new Error(agingError.message)
-
     let days0to30 = 0
     let days31to60 = 0
     let days61to90 = 0
@@ -107,9 +108,10 @@ export async function GET(request: NextRequest) {
       }
     })
 
-  } catch (error: any) {
+  } catch (error) {
+    const authResponse = authErrorResponse(error)
+    if (authResponse) return authResponse
     console.error('Debt overview error:', error)
-    console.error(error);
     return NextResponse.json(
       { error: 'An internal error occurred. Please try again.' },
       { status: 500 }

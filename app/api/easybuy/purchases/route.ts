@@ -1,254 +1,294 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { requireStaffOrAdminAuth } from '@/lib/auth'
-import { createAdminClient } from '@/lib/utils/supabase'
-import { createOrderTransaction } from '@/lib/order-utils'
-import { notifyLowStock, notifyNewOrder } from '@/lib/notifications'
+import { NextRequest, NextResponse } from "next/server"
+import { assertBelongsToBusiness, requireAdminAuth } from "@/lib/auth"
+import { createAdminClient } from "@/lib/utils/supabase"
+import { createOrderTransaction, type OrderItem } from "@/lib/order-utils"
+import { notifyLowStock, notifyNewOrder } from "@/lib/notifications"
 
-export const dynamic = 'force-dynamic'
+export const dynamic = "force-dynamic"
+
+type PurchaseItem = OrderItem & {
+  product_id: string
+  quantity: number
+  unit_price?: number
+  price?: number
+}
+
+function authErrorResponse(error: unknown): Response | null {
+  return error instanceof Response ? error : null
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
+function parseLimit(value: string | null): number {
+  const parsed = Number(value)
+  return Number.isInteger(parsed) && parsed > 0 ? Math.min(parsed, 1000) : 100
+}
 
 export async function GET(request: NextRequest) {
   try {
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return NextResponse.json(
-      { error: 'Database service not configured' },
-      { status: 500 }
-    )
-  }
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json({ error: "Database service not configured" }, { status: 500 })
+    }
+    const auth = await requireAdminAuth()
+    if (!auth.businessId) {
+      return NextResponse.json({ error: "No business associated with account" }, { status: 403 })
+    }
 
-    const authResult = await requireStaffOrAdminAuth(request)
-    if (!authResult.authenticated) {
-      return NextResponse.json({ error: authResult.error }, { status: authResult.status })
-    }
-    
-    const supabase = createAdminClient()
-    
-    const { searchParams } = new URL(request.url)
-    const customer_id = searchParams.get('customer_id')
-    const status = searchParams.get('status')
-    const limit = searchParams.get('limit') || '10000'
-    
-    let query = supabase
-      .from('orders')
-      .select(`
-        *,
-        easybuy_customers!easybuy_customer_id_fkey (
-          full_name, 
-          phone, 
-          easybuy_id,
-          current_debt,
-          credit_limit
-        )
-      `)
-      .eq('source', 'easybuy')
-      .order('created_at', { ascending: false })
-      .limit(parseInt(limit))
-    
-    if (customer_id) {
-      query = query.eq('easybuy_customer_id', customer_id)
-    }
-    
-    if (status) {
-      query = query.eq('status', status)
-    }
-    
+    const { searchParams } = request.nextUrl
+    let query = createAdminClient()
+      .from("orders")
+      .select("*, easybuy_customers!easybuy_customer_id_fkey(full_name, phone, easybuy_id, current_debt, credit_limit)")
+      .eq("business_id", auth.businessId)
+      .eq("source", "easybuy")
+      .order("created_at", { ascending: false })
+      .limit(parseLimit(searchParams.get("limit")))
+
+    const customerId = searchParams.get("customer_id")
+    const status = searchParams.get("status")
+    if (customerId) query = query.eq("easybuy_customer_id", customerId)
+    if (status) query = query.eq("status", status)
+
     const { data, error } = await query
-    
     if (error) {
-      console.error(error);
-    return NextResponse.json(
-      { error: 'An internal error occurred. Please try again.' },
-      { status: 500 }
-    )
+      console.error("Failed to fetch EasyBuy purchases:", error)
+      return NextResponse.json({ error: "Failed to fetch purchases" }, { status: 500 })
     }
-    
-    return NextResponse.json({ purchases: data })
+    return NextResponse.json({ purchases: data || [] })
   } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const authResponse = authErrorResponse(error)
+    if (authResponse) return authResponse
+    console.error("GET /api/easybuy/purchases failed:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return NextResponse.json(
-      { error: 'Database service not configured' },
-      { status: 500 }
-    )
-  }
-
-    const authResult = await requireStaffOrAdminAuth(request)
-    if (!authResult.authenticated) {
-      return NextResponse.json({ error: authResult.error }, { status: authResult.status })
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json({ error: "Database service not configured" }, { status: 500 })
     }
-    
+    const auth = await requireAdminAuth()
+    if (!auth.businessId) {
+      return NextResponse.json({ error: "No business associated with account" }, { status: 403 })
+    }
+
+    const body: unknown = await request.json()
+    if (!isRecord(body)) {
+      return NextResponse.json({ error: "Request body must be an object" }, { status: 400 })
+    }
+    const customerId = typeof body.customer_id === "string" ? body.customer_id : ""
+    const staffIdentifier = typeof body.staff_id === "string" ? body.staff_id : ""
+    const items = body.items
+    const totalAmount = Number(body.total_amount)
+
+    if (!customerId || !Array.isArray(items) || items.length === 0 || !Number.isFinite(totalAmount) || totalAmount <= 0) {
+      return NextResponse.json(
+        { error: "customer_id, non-empty items, and a positive total_amount are required" },
+        { status: 400 }
+      )
+    }
+    const normalizedItems: PurchaseItem[] = []
+    for (const item of items) {
+      if (!isRecord(item) || typeof item.product_id !== "string" || !item.product_id) {
+        return NextResponse.json({ error: "Each item requires a product_id" }, { status: 400 })
+      }
+      const quantity = Number(item.quantity)
+      if (!Number.isSafeInteger(quantity) || quantity < 1) {
+        return NextResponse.json({ error: "Item quantity must be a positive whole number" }, { status: 400 })
+      }
+      normalizedItems.push({
+        product_id: item.product_id,
+        quantity,
+        name: typeof item.name === "string" ? item.name : undefined,
+      })
+    }
+
     const supabase = createAdminClient()
-    
-    const body = await request.json()
-    const { 
-      customer_id, 
-      items, 
-      total_amount,
-      staff_id,
-      notes 
-    } = body
-    
-    if (!customer_id || !items || !total_amount || !staff_id) {
-      return NextResponse.json({ error: 'Missing required fields: customer_id, items, total_amount, staff_id' }, { status: 400 })
-    }
-    
-    // Get customer details and validate
     const { data: customer, error: customerError } = await supabase
-      .from('easybuy_customers')
-      .select('*')
-      .eq('id', customer_id)
-      .single()
-      
-    if (customerError || !customer) {
-      return NextResponse.json({ error: 'Customer not found' }, { status: 404 })
+      .from("easybuy_customers")
+      .select("id, business_id, status, current_debt, total_purchases, credit_limit")
+      .eq("id", customerId)
+      .eq("business_id", auth.businessId)
+      .maybeSingle()
+
+    if (customerError) {
+      console.error("Failed to load EasyBuy customer:", customerError)
+      return NextResponse.json({ error: "Failed to load customer" }, { status: 500 })
     }
-    
-    if (customer.status !== 'active') {
-      return NextResponse.json({ error: 'Customer account is not active' }, { status: 400 })
-    }
-    
-    if (customer.current_debt + total_amount > customer.credit_limit) {
-      return NextResponse.json({ error: 'Purchase exceeds credit limit' }, { status: 400 })
-    }
-    
-    const resolvedStaffId = await resolveStaffUuid(supabase, staff_id)
-    if (!resolvedStaffId) {
-      return NextResponse.json({ error: 'Invalid staff identifier' }, { status: 400 })
+    if (!customer) return NextResponse.json({ error: "Customer not found" }, { status: 404 })
+    assertBelongsToBusiness(customer.business_id, auth.businessId)
+    if (customer.status !== "active") {
+      return NextResponse.json({ error: "Customer account is not active" }, { status: 400 })
     }
 
-    // Create the purchase using the transaction function
-    let order;
-    let orderError;
+    const productIds = [...new Set(normalizedItems.map((item) => item.product_id))]
+    const { data: products, error: productsError } = await supabase
+      .from("products")
+      .select("id, business_id, name, price, stock, threshold")
+      .eq("business_id", auth.businessId)
+      .in("id", productIds)
 
+    if (productsError) {
+      console.error("Failed to validate EasyBuy products:", productsError)
+      return NextResponse.json({ error: "Failed to validate products" }, { status: 500 })
+    }
+    const productById = new Map((products || []).map((product) => [product.id, product]))
+    for (const productId of productIds) {
+      const product = productById.get(productId)
+      if (!product) return NextResponse.json({ error: "Product not found" }, { status: 404 })
+      assertBelongsToBusiness(product.business_id, auth.businessId)
+    }
+    const computedTotal = normalizedItems.reduce((sum, item) => {
+      const product = productById.get(item.product_id)!
+      return sum + Number(product.price) * item.quantity
+    }, 0)
+    if (Math.abs(computedTotal - totalAmount) > 0.01) {
+      return NextResponse.json({ error: "Purchase total does not match product prices" }, { status: 400 })
+    }
+
+    const currentDebt = Number(customer.current_debt || 0)
+    const creditLimit = Number(customer.credit_limit || 0)
+    if (currentDebt + totalAmount > creditLimit) {
+      return NextResponse.json({ error: "Purchase exceeds credit limit" }, { status: 400 })
+    }
+
+    const staffId = staffIdentifier
+      ? await resolveStaffUuid(supabase, auth.businessId, staffIdentifier)
+      : null
+    if (staffIdentifier && !staffId) {
+      return NextResponse.json({ error: "Invalid staff identifier" }, { status: 400 })
+    }
+
+    let order
     try {
       order = await createOrderTransaction(supabase, {
-        source: 'easybuy',
+        source: "easybuy",
+        business_id: auth.businessId,
         customer_id: null,
-        easybuy_customer_id: customer_id,
-        staff_id: resolvedStaffId,
-        items,
-        subtotal: total_amount,
-        discount: 0,
-        tax: 0,
-        total: total_amount,
-        payment_method: 'easybuy',
+        easybuy_customer_id: customerId,
+        staff_id: staffId,
+        items: normalizedItems,
+        subtotal: computedTotal,
+        total: computedTotal,
+        payment_method: "easybuy",
         shipping_address: null,
-        notes,
-        status: 'pending',
-        payment_status: 'pending'
+        notes: typeof body.notes === "string" ? body.notes : null,
+        status: "pending",
+        payment_status: "pending",
       })
-    } catch (e: any) {
-      orderError = e
-    }
-    
-    if (orderError) {
-      console.error(orderError);
-    return NextResponse.json(
-      { error: 'An internal error occurred. Please try again.' },
-      { status: 500 }
-    )
+    } catch (error) {
+      console.error("Failed to create EasyBuy order:", error)
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : "Failed to create purchase" },
+        { status: 400 }
+      )
     }
 
-    // CREATE EASYBUY PURCHASE RECORDS
-    // We need to create an easybuy_purchase record for EACH ITEM in the order (or one per order depending on business logic)
-    // The schema implies item-level tracking or one main record. Let's look at schema again.
-    // The schema has 'product_id', 'quantity', 'unit_price' on easybuy_purchases table.
-    // This means we must create one record PER ITEM.
-    
-    const purchaseRecords = []
-    
-    for (const item of items) {
-      const { data: purchase, error: purchaseError } = await supabase
-        .from('easybuy_purchases')
-        .insert({
-          easybuy_customer_id: customer_id,
-          order_id: order.id,
-          product_id: item.product_id,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          total_amount: item.quantity * item.unit_price,
-          down_payment: 0,
-          remaining_balance: item.quantity * item.unit_price,
-          payment_plan_months: 12, // Default
-          monthly_payment: (item.quantity * item.unit_price) / 12,
-          status: 'pending',
-          purchase_date: new Date().toISOString(),
-          expected_completion_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() // 1 year default
-        })
-        .select()
-        .single()
-        
-      if (purchaseError) {
-        console.error('Failed to create easybuy_purchase record:', purchaseError)
-        // Continue creating others... 
-      } else {
-        purchaseRecords.push(purchase)
+    const now = new Date()
+    const expectedCompletionDate = new Date(now)
+    expectedCompletionDate.setUTCFullYear(expectedCompletionDate.getUTCFullYear() + 1)
+    const purchaseRows = normalizedItems.map((item) => {
+      const product = productById.get(item.product_id)!
+      const unitPrice = Number(product.price)
+      const lineTotal = item.quantity * unitPrice
+      return {
+        business_id: auth.businessId,
+        easybuy_customer_id: customerId,
+        order_id: order.id,
+        product_id: item.product_id,
+        quantity: item.quantity,
+        unit_price: unitPrice,
+        total_amount: lineTotal,
+        down_payment: 0,
+        remaining_balance: lineTotal,
+        payment_plan_months: 12,
+        monthly_payment: lineTotal / 12,
+        status: "pending",
+        processed_by: staffId,
+        purchase_date: now.toISOString(),
+        expected_completion_date: expectedCompletionDate.toISOString(),
       }
+    })
+
+    const { data: purchaseRecords, error: purchaseError } = await supabase
+      .from("easybuy_purchases")
+      .insert(purchaseRows)
+      .select()
+    if (purchaseError) {
+      console.error("EasyBuy order created but purchase records failed:", purchaseError)
+      return NextResponse.json(
+        { error: "Order was created, but purchase records could not be saved" },
+        { status: 500 }
+      )
     }
-    
-    // UPDATE CUSTOMER DEBT
-    const newDebt = Number(customer.current_debt || 0) + Number(total_amount)
-    const newTotalPurchases = Number(customer.total_purchases || 0) + Number(total_amount)
-    
-    await supabase
-      .from('easybuy_customers')
+
+    const newDebt = currentDebt + totalAmount
+    const newTotalPurchases = Number(customer.total_purchases ?? 0) + totalAmount
+    const { data: updatedCustomer, error: customerUpdateError } = await supabase
+      .from("easybuy_customers")
       .update({
         current_debt: newDebt,
         total_purchases: newTotalPurchases,
-        updated_at: new Date().toISOString()
+        last_purchase: now.toISOString(),
+        updated_at: now.toISOString(),
       })
-      .eq('id', customer_id)
-    
-    // Check low stock and notify
-    const productIds = items.map((item: any) => item.product_id)
-    const { data: products } = await supabase
-      .from('products')
-      .select('id, name, stock, threshold')
-      .in('id', productIds)
-      
-    if (products) {
-      for (const product of products) {
-        if (product.stock <= product.threshold) {
-          await notifyLowStock({
-            id: product.id,
-            name: product.name,
-            stock: product.stock
-          })
-        }
+      .eq("id", customerId)
+      .eq("business_id", auth.businessId)
+      .eq("current_debt", currentDebt)
+      .select("id")
+      .maybeSingle()
+
+    if (customerUpdateError || !updatedCustomer) {
+      console.error("EasyBuy purchase recorded but debt update failed:", customerUpdateError)
+      return NextResponse.json(
+        { error: "Purchase was recorded, but customer debt could not be updated" },
+        { status: 500 }
+      )
+    }
+
+    for (const product of products || []) {
+      const newStock = Number(product.stock) - normalizedItems
+        .filter((item) => item.product_id === product.id)
+        .reduce((sum, item) => sum + item.quantity, 0)
+      if (newStock <= Number(product.threshold ?? 0)) {
+        await notifyLowStock({ id: product.id, name: product.name, stock: newStock })
       }
     }
-    
-    // Notify about new order
     await notifyNewOrder({
       id: order.id,
       order_number: order.order_number,
-      total_amount: total_amount,
-      source: 'easybuy'
+      total_amount: totalAmount,
+      source: "easybuy",
     })
-    
-    return NextResponse.json({ purchase: order })
+
+    return NextResponse.json({ purchase: order, purchase_records: purchaseRecords }, { status: 201 })
   } catch (error) {
-    console.error('Purchase error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const authResponse = authErrorResponse(error)
+    if (authResponse) return authResponse
+    console.error("POST /api/easybuy/purchases failed:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
 
-async function resolveStaffUuid(supabase: any, staffIdentifier?: string) {
-  if (!staffIdentifier) return null
-
-  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(staffIdentifier)) {
-    return staffIdentifier
-  }
-
-  const { data } = await supabase
-    .from('staff')
-    .select('id')
-    .eq('staff_id', staffIdentifier)
+async function resolveStaffUuid(
+  supabase: ReturnType<typeof createAdminClient>,
+  businessId: string,
+  staffIdentifier: string
+): Promise<string | null> {
+  const column = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(staffIdentifier)
+    ? "id"
+    : "staff_id"
+  const { data, error } = await supabase
+    .from("staff")
+    .select("id, business_id")
+    .eq(column, column === "staff_id" ? staffIdentifier.toUpperCase().trim() : staffIdentifier)
+    .eq("business_id", businessId)
     .maybeSingle()
 
-  return data?.id || null
+  if (error) throw error
+  if (!data) return null
+  assertBelongsToBusiness(data.business_id, businessId)
+  return data.id
 }

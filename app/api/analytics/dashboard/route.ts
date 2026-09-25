@@ -1,9 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAdminAuthResult as requireAdminAuth } from '@/lib/auth'
+import { requireAdminAuth } from '@/lib/auth'
 import { createAdminClient } from '@/lib/utils/supabase'
-import { getNigerianDateRange } from '@/lib/utils/date'
 
 export const dynamic = 'force-dynamic'
+
+function authErrorResponse(error: unknown): Response | null {
+  return error instanceof Response ? error : null
+}
+
+type RevenueRow = { total_amount: unknown; source: unknown }
+type PaymentRow = { amount: unknown }
+type InvestorTotalsRow = { current_balance: unknown; total_returns_paid: unknown }
+type StatusRow = { status: string | null }
+type MonthlyOrderRow = { created_at: string; total_amount: unknown }
+type CategoryOrderRow = { items: unknown }
+type CategoryItem = Record<string, unknown>
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,17 +26,25 @@ export async function GET(request: NextRequest) {
   }
   
 
-    const authResult = await requireAdminAuth(request)
-    if (!authResult.authenticated) {
-      return NextResponse.json({ error: authResult.error }, { status: authResult.status })
+    const auth = await requireAdminAuth()
+    if (!auth.businessId) {
+      return NextResponse.json({ error: 'No business associated with account' }, { status: 403 })
     }
     const supabase = createAdminClient()
 
     
     const { searchParams } = new URL(request.url)
-    const period = (searchParams.get('period') || 'month') as 'today' | 'week' | 'month' | 'all' | 'custom' | 'yesterday' | 'last_7_days' | 'last_30_days' | 'last_90_days' | 'last_month'
+    const periodValue = searchParams.get('period') || 'month'
+    const periods = ['today', 'week', 'month', 'all', 'custom', 'yesterday', 'last_7_days', 'last_30_days', 'last_90_days', 'last_month'] as const
+    if (!periods.includes(periodValue as typeof periods[number])) {
+      return NextResponse.json({ error: 'Invalid dashboard period' }, { status: 400 })
+    }
+    const period = periodValue as typeof periods[number]
     const customStart = searchParams.get('start_date')
     const customEnd = searchParams.get('end_date')
+    if (period === 'custom' && (!customStart || !customEnd)) {
+      return NextResponse.json({ error: 'Custom period requires start_date and end_date' }, { status: 400 })
+    }
     
     // Get date range based on period (Nigeria/Lagos)
     const now = new Date()
@@ -44,6 +63,15 @@ export async function GET(request: NextRequest) {
     }
 
     if (period === 'custom' && customStart && customEnd) {
+      if (
+        !/^\d{4}-\d{2}-\d{2}$/.test(customStart) ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(customEnd) ||
+        !Number.isFinite(Date.parse(customStart)) ||
+        !Number.isFinite(Date.parse(customEnd)) ||
+        customStart > customEnd
+      ) {
+        return NextResponse.json({ error: 'Invalid custom date range' }, { status: 400 })
+      }
       startDate = new Date(customStart + 'T00:00:00+01:00').toISOString()
       endDate = new Date(customEnd + 'T23:59:59.999+01:00').toISOString()
     } else if (period === 'today') {
@@ -79,6 +107,9 @@ export async function GET(request: NextRequest) {
       startDate = new Date('2020-01-01T00:00:00Z').toISOString()
       endDate = getEndOfDayNigeria(now)
     }
+    if (!Number.isFinite(Date.parse(startDate)) || !Number.isFinite(Date.parse(endDate)) || startDate > endDate) {
+      return NextResponse.json({ error: 'Invalid date range' }, { status: 400 })
+    }
 
     // 1. Revenue & Orders Filtered by Period
     // Execute independent queries in parallel
@@ -97,6 +128,7 @@ export async function GET(request: NextRequest) {
       .not('status', 'eq', 'cancelled')
       .not('status', 'eq', 'refunded')
       .neq('source', 'easybuy')
+      .eq('business_id', auth.businessId)
       .limit(100000)
     
     if (shouldApplyPeriodFilter) {
@@ -112,6 +144,7 @@ export async function GET(request: NextRequest) {
       .not('status', 'eq', 'cancelled')
       .not('status', 'eq', 'refunded')
       .neq('source', 'easybuy')
+      .eq('business_id', auth.businessId)
       .limit(100000)
 
     if (shouldApplyPeriodFilter) {
@@ -124,6 +157,7 @@ export async function GET(request: NextRequest) {
     let easyBuyPaymentsQuery = supabase
       .from('easybuy_payments')
       .select('amount')
+      .eq('business_id', auth.businessId)
       .limit(100000)
     
     if (shouldApplyPeriodFilter) {
@@ -135,6 +169,7 @@ export async function GET(request: NextRequest) {
     let previousEasyBuyPaymentsQuery = supabase
       .from('easybuy_payments')
       .select('amount')
+      .eq('business_id', auth.businessId)
       .limit(100000)
 
     if (shouldApplyPeriodFilter) {
@@ -149,6 +184,7 @@ export async function GET(request: NextRequest) {
       .select('*', { count: 'exact', head: true })
       .not('status', 'eq', 'cancelled')
       .not('status', 'eq', 'refunded')
+      .eq('business_id', auth.businessId)
 
     if (shouldApplyPeriodFilter) {
       ordersQuery = ordersQuery
@@ -161,6 +197,7 @@ export async function GET(request: NextRequest) {
       .select('*', { count: 'exact', head: true })
       .not('status', 'eq', 'cancelled')
       .not('status', 'eq', 'refunded')
+      .eq('business_id', auth.businessId)
 
     if (shouldApplyPeriodFilter) {
       previousOrdersQuery = previousOrdersQuery
@@ -173,6 +210,7 @@ export async function GET(request: NextRequest) {
       .from('orders')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'pending')
+      .eq('business_id', auth.businessId)
 
     // Processing Orders (Ecommerce orders pending delivery)
     const processingOrdersQuery = supabase
@@ -180,23 +218,27 @@ export async function GET(request: NextRequest) {
       .select('*', { count: 'exact', head: true })
       .eq('source', 'ecommerce')
       .not('status', 'in', '("delivered","cancelled")')
+      .eq('business_id', auth.businessId)
 
     // Total Customers (Always All Time)
     const totalCustomersQuery = supabase
       .from('customers')
       .select('*', { count: 'exact', head: true })
+      .eq('business_id', auth.businessId)
 
     // Low Stock (Current State)
     const lowStockQuery = supabase
       .from('products')
       .select('id, stock, threshold')
       .eq('is_active', true)
+      .eq('business_id', auth.businessId)
 
     // Recent Orders (Always latest 5)
     const recentOrdersQuery = supabase
       .from('orders')
       .select('id, order_number, source, status, payment_status, total_amount, created_at, customers(full_name)')
       .order('created_at', { ascending: false })
+      .eq('business_id', auth.businessId)
       .limit(5)
 
     // Status Breakdown (Filtered by period)
@@ -205,6 +247,7 @@ export async function GET(request: NextRequest) {
       .select('status')
       .not('status', 'eq', 'cancelled')
       .not('status', 'eq', 'refunded')
+      .eq('business_id', auth.businessId)
       .gte('created_at', startDate)
       .lte('created_at', endDate)
 
@@ -218,6 +261,7 @@ export async function GET(request: NextRequest) {
       .not('status', 'eq', 'refunded')
       .in('payment_status', ['paid'])
       .neq('source', 'easybuy')
+      .eq('business_id', auth.businessId)
 
     // Category Revenue (Filtered by period)
     const categoryOrdersQuery = supabase
@@ -229,25 +273,28 @@ export async function GET(request: NextRequest) {
       .gte('created_at', startDate)
       .lte('created_at', endDate)
       .neq('source', 'easybuy')
+      .eq('business_id', auth.businessId)
 
     // Products for Category Map
     const productsQuery = supabase
       .from('products')
       .select('id, category')
+      .eq('business_id', auth.businessId)
 
     // Investor Totals (Always All Time)
     const investorTotalsQuery = supabase
       .from('investors')
       .select('current_balance, total_returns_paid')
       .eq('status', 'active')
+      .eq('business_id', auth.businessId)
 
     const [
       { data: revenueData, error: revenueError },
       { data: easyBuyPayments, error: ebError },
       { count: totalOrders, error: ordersError },
-      { data: previousRevenueData },
-      { data: previousEasyBuyPayments },
-      { count: previousTotalOrders },
+      { data: previousRevenueData, error: previousRevenueError },
+      { data: previousEasyBuyPayments, error: previousEasyBuyError },
+      { count: previousTotalOrders, error: previousOrdersError },
       { count: pendingOrders, error: pendingError },
       { count: processingOrders, error: processingError },
       { count: totalCustomers, error: customersError },
@@ -277,33 +324,31 @@ export async function GET(request: NextRequest) {
       investorTotalsQuery
     ])
     
-    if (revenueError) console.error("Revenue error:", revenueError.message)
-    if (ordersError) console.error("Orders error:", ordersError.message)
-    if (pendingError) console.error("Pending error:", pendingError.message)
-    if (processingError) console.error("Processing error:", processingError.message)
-    if (customersError) console.error("Customers error:", customersError.message)
-    if (lowStockError) console.error("Low stock error:", lowStockError.message)
-    if (recentOrdersError) console.error("Recent orders error:", recentOrdersError.message)
-    if (statusError) console.error("Status error:", statusError.message)
-    if (monthlyOrdersError) console.error("Monthly orders error:", monthlyOrdersError.message)
-    if (categoryError) console.error("Category error:", categoryError.message)
-    if (productsError) console.error("Products error:", productsError.message)
-    if (investorError) console.error("Investor error:", investorError.message)
+    const queryErrors = [
+      revenueError, ebError, ordersError, previousRevenueError, previousEasyBuyError,
+      previousOrdersError, pendingError, processingError, customersError, lowStockError,
+      recentOrdersError, statusError, monthlyOrdersError, categoryError, productsError,
+      investorError,
+    ].filter(Boolean)
+    if (queryErrors.length > 0) {
+      console.error('Dashboard analytics query failed:', queryErrors)
+      return NextResponse.json({ error: 'Failed to load dashboard analytics' }, { status: 500 })
+    }
 
-    const safeRevenue = revenueError ? [] : (revenueData || [])
-    const safeEasyBuy = ebError ? [] : (easyBuyPayments || [])
-    const safePreviousRevenue = previousRevenueData || []
-    const safePreviousEasyBuy = previousEasyBuyPayments || []
+    const safeRevenue: RevenueRow[] = revenueData || []
+    const safeEasyBuy: PaymentRow[] = easyBuyPayments || []
+    const safePreviousRevenue: RevenueRow[] = previousRevenueData || []
+    const safePreviousEasyBuy: PaymentRow[] = previousEasyBuyPayments || []
 
-    const safeLowStock = lowStockError ? [] : (lowStockData || [])
-    const lowStockCount = safeLowStock.filter((p: any) => Number(p.stock || 0) <= Number(p.threshold ?? 10)).length
+    const safeLowStock = lowStockData || []
+    const lowStockCount = safeLowStock.filter((p) => Number(p.stock || 0) <= Number(p.threshold ?? 10)).length
 
     let totalRevenue = 0
     let posRevenue = 0
     let ecommerceRevenue = 0
     let easyBuyRevenue = 0
 
-    safeRevenue.forEach((o: any) => {
+    safeRevenue.forEach((o) => {
       const amount = Number(o.total_amount || 0)
       totalRevenue += amount
       if (o.source === 'ecommerce') {
@@ -313,16 +358,16 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    if (!ebError && safeEasyBuy) {
-        easyBuyRevenue = safeEasyBuy.reduce((sum, p: any) => sum + Number(p.amount || 0), 0)
+    if (safeEasyBuy.length > 0) {
+        easyBuyRevenue = safeEasyBuy.reduce((sum, p) => sum + Number(p.amount || 0), 0)
         totalRevenue += easyBuyRevenue
     }
 
     let previousTotalRevenue = 0
-    safePreviousRevenue.forEach((o: any) => {
+    safePreviousRevenue.forEach((o) => {
       previousTotalRevenue += Number(o.total_amount || 0)
     })
-    previousTotalRevenue += safePreviousEasyBuy.reduce((sum, p: any) => sum + Number(p.amount || 0), 0)
+    previousTotalRevenue += safePreviousEasyBuy.reduce((sum, p) => sum + Number(p.amount || 0), 0)
 
     const currentTotalOrders = Number(totalOrders || 0)
     const previousOrdersCount = Number(previousTotalOrders || 0)
@@ -340,12 +385,14 @@ export async function GET(request: NextRequest) {
     const averageOrderValueGrowth = getGrowthPercent(currentAverageOrderValue, previousAverageOrderValue)
 
     // Process Investor Totals
-    const totalInvestorObligations = (investorTotals || []).reduce((sum, i: any) => sum + Number(i.current_balance || 0), 0)
-    const totalInvestorPaid = (investorTotals || []).reduce((sum, i: any) => sum + Number(i.total_returns_paid || 0), 0)
+    const investorTotalsRows: InvestorTotalsRow[] = investorTotals || []
+    const totalInvestorObligations = investorTotalsRows.reduce((sum, i) => sum + Number(i.current_balance || 0), 0)
+    const totalInvestorPaid = investorTotalsRows.reduce((sum, i) => sum + Number(i.total_returns_paid || 0), 0)
 
     // Process Status Breakdown
     const statusCounts: { [key: string]: number } = {}
-    statusOrders?.forEach((order: any) => {
+    const statusRows: StatusRow[] = statusOrders || []
+    statusRows.forEach((order) => {
       const status = order.status || 'unknown'
       statusCounts[status] = (statusCounts[status] || 0) + 1
     })
@@ -358,7 +405,8 @@ export async function GET(request: NextRequest) {
 
     // Process Monthly Revenue
     const monthlyRevenueData: { [key: string]: number } = {}
-    monthlyOrders?.forEach((order: any) => {
+    const monthlyRows: MonthlyOrderRow[] = monthlyOrders || []
+    monthlyRows.forEach((order) => {
       const date = new Date(order.created_at)
       const monthKey = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' })
       if (!monthlyRevenueData[monthKey]) {
@@ -370,20 +418,38 @@ export async function GET(request: NextRequest) {
       .map(([month, revenue]) => ({ month, revenue }))
       .sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime())
 
-    const normalizeItems = (items: any): any[] => {
+    const normalizeItems = (items: unknown): CategoryItem[] => {
       if (!items) return []
-      if (Array.isArray(items)) return items
+      if (Array.isArray(items)) {
+        return items.filter(
+          (item): item is CategoryItem =>
+            typeof item === 'object' && item !== null && !Array.isArray(item)
+        )
+      }
       if (typeof items === 'string') {
         try {
 
           const parsed = JSON.parse(items)
-          return Array.isArray(parsed) ? parsed : []
+          return Array.isArray(parsed)
+            ? parsed.filter(
+                (item): item is CategoryItem =>
+                  typeof item === 'object' && item !== null && !Array.isArray(item)
+              )
+            : []
         } catch {
           return []
         }
       }
-      if (typeof items === 'object' && Array.isArray(items.items)) {
-        return items.items
+      if (
+        typeof items === 'object' &&
+        items !== null &&
+        'items' in items &&
+        Array.isArray(items.items)
+      ) {
+        return items.items.filter(
+          (item): item is CategoryItem =>
+            typeof item === 'object' && item !== null && !Array.isArray(item)
+        )
       }
       return []
     }
@@ -397,14 +463,17 @@ export async function GET(request: NextRequest) {
 
     const categoryRevenue: { [key: string]: number } = {}
 
-    categoryOrders?.forEach(order => {
+    const categoryOrderRows: CategoryOrderRow[] = categoryOrders || []
+    categoryOrderRows.forEach(order => {
       const items = normalizeItems(order.items)
-      items.forEach((item: any) => {
-        const productId = item.product_id || item.productId
+      items.forEach((item) => {
+        const productIdValue = item.product_id || item.productId
+        const productId = typeof productIdValue === 'string' ? productIdValue : ''
         const quantity = Number(item.quantity || 0)
         const price = Number(item.price ?? item.unit_price ?? item.unitPrice ?? 0)
         const revenue = quantity * price
-        const category = productCategoryMap.get(productId) || item.category || 'uncategorized'
+        const categoryValue = productCategoryMap.get(productId) || item.category
+        const category = typeof categoryValue === 'string' ? categoryValue : 'uncategorized'
         categoryRevenue[category] = (categoryRevenue[category] || 0) + revenue
       })
     })
@@ -457,6 +526,9 @@ export async function GET(request: NextRequest) {
       }
     })
   } catch (error) {
+    const authResponse = authErrorResponse(error)
+    if (authResponse) return authResponse
+    console.error('GET /api/analytics/dashboard failed:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

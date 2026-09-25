@@ -1,10 +1,21 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { requireAdminAuthResult as requireAdminAuth } from '@/lib/auth'
+import { NextResponse } from 'next/server'
+import { requireAdminAuth } from '@/lib/auth'
 import { createAdminClient } from '@/lib/utils/supabase'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(request: NextRequest) {
+type CustomerLocationFields = {
+  city: string | null
+  state: string | null
+  address: string | null
+  phone: string | null
+}
+
+function authErrorResponse(error: unknown): Response | null {
+  return error instanceof Response ? error : null
+}
+
+export async function GET() {
   try {
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return NextResponse.json(
@@ -14,9 +25,9 @@ export async function GET(request: NextRequest) {
   }
   
 
-    const authResult = await requireAdminAuth(request)
-    if (!authResult.authenticated) {
-      return NextResponse.json({ error: authResult.error }, { status: authResult.status })
+    const auth = await requireAdminAuth()
+    if (!auth.businessId) {
+      return NextResponse.json({ error: 'No business associated with account' }, { status: 403 })
     }
     const supabase = createAdminClient()
 
@@ -28,11 +39,13 @@ export async function GET(request: NextRequest) {
       supabase
         .from('orders')
         .select('customer_id, total_amount, created_at')
+        .eq('business_id', auth.businessId)
         .neq('status', 'cancelled')
         .eq('payment_status', 'paid'),
       supabase
         .from('customers')
         .select('id, full_name, email, phone, created_at, city, state, address')
+        .eq('business_id', auth.businessId)
     ])
 
     if (customerOrdersError) {
@@ -73,7 +86,7 @@ export async function GET(request: NextRequest) {
       if (!customerSpending[customerId]) {
         customerSpending[customerId] = { totalSpent: 0, orderCount: 0, lastOrderDate: order.created_at }
       }
-      customerSpending[customerId].totalSpent += order.total_amount || 0
+      customerSpending[customerId].totalSpent += Number(order.total_amount || 0)
       customerSpending[customerId].orderCount += 1
       if (new Date(order.created_at) > new Date(customerSpending[customerId].lastOrderDate)) {
         customerSpending[customerId].lastOrderDate = order.created_at
@@ -81,7 +94,7 @@ export async function GET(request: NextRequest) {
     })
 
     // Combine customer data with spending data
-    const resolveLocation = (customer: any) => {
+    const resolveLocation = (customer: CustomerLocationFields) => {
       const city = customer.city || ''
       const state = customer.state || ''
       const address = customer.address || ''
@@ -127,6 +140,7 @@ export async function GET(request: NextRequest) {
     const { data: newCustomersData, error: newCustomersError } = await supabase
       .from('customers')
       .select('created_at')
+      .eq('business_id', auth.businessId)
       .gte('created_at', twelveMonthsAgo.toISOString())
       .order('created_at', { ascending: true })
 
@@ -270,6 +284,9 @@ export async function GET(request: NextRequest) {
       customerSegments
     })
   } catch (error) {
+    const authResponse = authErrorResponse(error)
+    if (authResponse) return authResponse
+    console.error('GET /api/analytics/customers failed:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
