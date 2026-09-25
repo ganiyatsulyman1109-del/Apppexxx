@@ -76,14 +76,14 @@ export function AdminHeader({ currentPage, adminEmail, onLogout }: AdminHeaderPr
   }, [fetchNotifications])
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b border-[#e5e7eb] bg-white px-4 text-[#111827]">
+    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b border-border bg-background px-4 text-foreground">
       <SidebarTrigger />
 
       {/* Breadcrumb */}
       <nav className="flex items-center gap-1 text-sm">
-        <span className="text-[#6b7280]">Admin</span>
-        <ChevronRight className="h-4 w-4 text-[#6b7280]" />
-        <span className="font-medium text-[#111827]">{pageLabels[currentPage]}</span>
+        <span className="text-muted-foreground">Admin</span>
+        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        <span className="font-medium text-foreground">{pageLabels[currentPage]}</span>
       </nav>
 
       <div className="flex-1" />
@@ -94,7 +94,7 @@ export function AdminHeader({ currentPage, adminEmail, onLogout }: AdminHeaderPr
           <Button variant="ghost" size="icon" className="relative">
             <Bell className="h-5 w-5" />
             {notificationCount > 0 && (
-              <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center bg-red-500 text-white text-xs">
+              <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center badge-negative text-xs">
                 {notificationCount}
               </Badge>
             )}
@@ -190,7 +190,7 @@ export function AdminHeader({ currentPage, adminEmail, onLogout }: AdminHeaderPr
             My Profile
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={onLogout} className="text-red-600 cursor-pointer">
+          <DropdownMenuItem onClick={onLogout} className="text-destructive cursor-pointer">
             <span>Logout</span>
           </DropdownMenuItem>
         </DropdownMenuContent>

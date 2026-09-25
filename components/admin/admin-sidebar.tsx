@@ -52,18 +52,18 @@ const menuItems = [
 
 export function AdminSidebar({ currentPage, onPageChange, onLogout }: AdminSidebarProps) {
   return (
-    <Sidebar collapsible="icon" className="bg-white text-[#374151] border-r border-[#e5e7eb]">
-      <SidebarHeader className="p-4 bg-white">
+    <Sidebar collapsible="icon" className="bg-background text-foreground border-r border-border">
+      <SidebarHeader className="p-4 bg-background">
         <div className="flex items-center gap-3">
           <BrandLogo size={36} className="rounded-lg" />
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-            <span className="font-semibold text-sm text-[#111827]">Apex</span>
-            <span className="text-xs text-[#6b7280]">Admin Panel</span>
+            <span className="font-semibold text-sm text-foreground">Apex</span>
+            <span className="text-xs text-muted-foreground">Admin Panel</span>
           </div>
         </div>
       </SidebarHeader>
-      <SidebarSeparator className="bg-[#e5e7eb]" />
-      <SidebarContent className="bg-white">
+      <SidebarSeparator className="bg-border" />
+      <SidebarContent className="bg-background">
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -75,8 +75,8 @@ export function AdminSidebar({ currentPage, onPageChange, onLogout }: AdminSideb
                     tooltip={item.label}
                     className={
                       currentPage === item.id
-                        ? "bg-[#eff6ff] text-[#2563eb] border-r-2 border-[#2563eb] hover:bg-[#eff6ff] hover:text-[#2563eb]"
-                        : "text-[#6b7280] hover:bg-[#f9fafb] hover:text-[#111827]"
+                        ? "bg-accent text-[#2563eb] border-r-2 border-[#2563eb] hover:bg-accent hover:text-[#2563eb]"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
                     }
                   >
                     <item.icon className="h-4 w-4" />
@@ -88,13 +88,13 @@ export function AdminSidebar({ currentPage, onPageChange, onLogout }: AdminSideb
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="bg-white">
+      <SidebarFooter className="bg-background">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={onLogout}
               tooltip="Logout"
-              className="text-[#6b7280] hover:bg-[#f9fafb] hover:text-[#111827]"
+              className="text-muted-foreground hover:bg-muted hover:text-foreground"
             >
               <LogOut className="h-4 w-4" />
               <span>Logout</span>

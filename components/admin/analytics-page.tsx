@@ -307,7 +307,7 @@ export function AnalyticsPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6 p-6">
+      <div className="space-y-6 p-6 bg-background text-foreground">
         <div className="h-8 w-48 bg-muted rounded animate-pulse" />
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           {Array.from({ length: 6 }).map((_, index) => (
@@ -380,7 +380,7 @@ export function AnalyticsPage() {
 
       {/* Top Metrics Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        <Card>
+        <Card className="bg-card border-border shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -408,7 +408,7 @@ export function AnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-card border-border shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Orders</CardTitle>
             <ShoppingCart className="h-4 w-4 text-muted-foreground" />
@@ -422,7 +422,7 @@ export function AnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-card border-border shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Avg Order Value</CardTitle>
             <CreditCard className="h-4 w-4 text-muted-foreground" />
@@ -436,7 +436,7 @@ export function AnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-card border-border shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Conversion Rate</CardTitle>
             <RefreshCw className="h-4 w-4 text-muted-foreground" />
@@ -450,7 +450,7 @@ export function AnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-card border-border shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Returning</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -464,7 +464,7 @@ export function AnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-card border-border shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">New Customers</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -472,15 +472,15 @@ export function AnalyticsPage() {
           <CardContent>
             <div className="text-xl font-bold">{stats.newCustomers}</div>
             <div className="flex items-center text-xs">
-              <ArrowDownRight className="h-3 w-3 text-red-500" />
-              <span className="text-red-500">{Math.abs(stats.newCustomersChange)}%</span>
+              <ArrowDownRight className="h-3 w-3 text-destructive" />
+              <span className="text-destructive">{Math.abs(stats.newCustomersChange)}%</span>
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Revenue Chart Section */}
-      <Card>
+      <Card className="bg-card border-border shadow-sm">
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
@@ -496,7 +496,7 @@ export function AnalyticsPage() {
                     key={filter}
                     onClick={() => setRevenueFilter(filter)}
                     className={`px-3 py-1.5 text-sm ${
-                      revenueFilter === filter ? "bg-blue-600 text-white" : "bg-background hover:bg-muted"
+                      revenueFilter === filter ? "bg-primary text-white" : "bg-background hover:bg-muted"
                     }`}
                   >
                     {filter === "all"
@@ -566,13 +566,13 @@ export function AnalyticsPage() {
       {/* Product Performance */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Top Selling Products */}
-        <Card>
+        <Card className="bg-card border-border shadow-sm">
           <CardHeader>
             <CardTitle>Top Selling Products</CardTitle>
             <CardDescription>Best performers by revenue</CardDescription>
           </CardHeader>
           <CardContent>
-            <Table>
+            <Table className="bg-card border border-border rounded-lg overflow-hidden">
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12">#</TableHead>
@@ -611,7 +611,7 @@ export function AnalyticsPage() {
         </Card>
 
         {/* Bottom 5 Products */}
-        <Card>
+        <Card className="bg-card border-border shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               Bottom 5 Products
@@ -622,7 +622,7 @@ export function AnalyticsPage() {
             <CardDescription>Low performers that may need marketing</CardDescription>
           </CardHeader>
           <CardContent>
-            <Table>
+            <Table className="bg-card border border-border rounded-lg overflow-hidden">
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12">#</TableHead>
@@ -665,7 +665,7 @@ export function AnalyticsPage() {
       </div>
 
       {/* Category Performance Pie Chart */}
-      <Card>
+      <Card className="bg-card border-border shadow-sm">
         <CardHeader>
           <CardTitle>Category Performance</CardTitle>
           <CardDescription>Revenue distribution by product category</CardDescription>
@@ -722,7 +722,7 @@ export function AnalyticsPage() {
       {/* Customer Insights */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* New vs Returning */}
-        <Card>
+        <Card className="bg-card border-border shadow-sm">
           <CardHeader>
             <CardTitle>New vs Returning Customers</CardTitle>
             <CardDescription>Monthly customer acquisition trends</CardDescription>
@@ -749,13 +749,13 @@ export function AnalyticsPage() {
         </Card>
 
         {/* Top Customers by Lifetime Value */}
-        <Card>
+        <Card className="bg-card border-border shadow-sm">
           <CardHeader>
             <CardTitle>Customer Lifetime Value</CardTitle>
             <CardDescription>Top 5 customers by total spend</CardDescription>
           </CardHeader>
           <CardContent>
-            <Table>
+            <Table className="bg-card border border-border rounded-lg overflow-hidden">
               <TableHeader>
                 <TableRow>
                   <TableHead>Customer</TableHead>
@@ -783,7 +783,7 @@ export function AnalyticsPage() {
       </div>
 
       {/* Geographic Distribution */}
-      <Card>
+      <Card className="bg-card border-border shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MapPin className="h-5 w-5" />
@@ -792,7 +792,7 @@ export function AnalyticsPage() {
           <CardDescription>Geographic distribution of customers and revenue</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
+          <Table className="bg-card border border-border rounded-lg overflow-hidden">
             <TableHeader>
               <TableRow>
                 <TableHead>Location</TableHead>
@@ -813,7 +813,7 @@ export function AnalyticsPage() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
-                          <div className="h-full bg-blue-600 rounded-full" style={{ width: `${percentage}%` }} />
+                          <div className="h-full bg-primary rounded-full" style={{ width: `${percentage}%` }} />
                         </div>
                         <span className="text-sm text-muted-foreground">{percentage}%</span>
                       </div>
@@ -827,7 +827,7 @@ export function AnalyticsPage() {
       </Card>
 
       {/* Easy Buy Analytics */}
-      <Card>
+      <Card className="bg-card border-border shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CreditCard className="h-5 w-5" />
@@ -845,7 +845,7 @@ export function AnalyticsPage() {
               <p className="text-sm text-muted-foreground">Collection Rate This Month</p>
               <div className="flex items-center gap-2">
                 <p className="text-3xl font-bold">{stats.collectionRate}%</p>
-                <Badge className="bg-green-500 text-white">
+                <Badge className="badge-positive">
                   <ArrowUpRight className="h-3 w-3 mr-1" />
                   {stats.collectionRateChange}%
                 </Badge>
@@ -866,12 +866,12 @@ export function AnalyticsPage() {
                   const percentage = totalDebt > 0 ? ((aging.amount / totalDebt) * 100).toFixed(0) : "0"
                   const color =
                     aging.range === "0-30 days"
-                      ? "bg-green-500"
+                      ? "bg-positive"
                       : aging.range === "31-60 days"
-                        ? "bg-yellow-500"
+                        ? "bg-warning"
                         : aging.range === "61-90 days"
-                          ? "bg-[#2563eb]"
-                          : "bg-red-500"
+                          ? "bg-primary"
+                          : "bg-negative"
                   return (
                     <div key={aging.range} className="flex items-center gap-2">
                       <div className={`w-2 h-2 rounded-full ${color}`} />
@@ -887,7 +887,7 @@ export function AnalyticsPage() {
       </Card>
 
       {/* Export Section */}
-      <Card>
+      <Card className="bg-card border-border shadow-sm">
         <CardHeader>
           <CardTitle>Export Reports</CardTitle>
           <CardDescription>Download or schedule automated reports</CardDescription>
@@ -896,7 +896,7 @@ export function AnalyticsPage() {
           <div className="flex flex-wrap gap-3">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                <Button className="bg-primary hover:bg-primary/90 text-white">
                   <Download className="h-4 w-4 mr-2" />
                   Export Report
                 </Button>

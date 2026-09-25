@@ -90,7 +90,7 @@ export function StockAdjustmentModal({ open, onClose, product, products = [], on
         setError("")
       }
     }}>
-      <DialogContent>
+      <DialogContent className="bg-card text-card-foreground border-border shadow-lg">
         <DialogHeader>
           <DialogTitle>Adjust Stock {activeProduct ? `- ${activeProduct.name}` : ''}</DialogTitle>
         </DialogHeader>
@@ -154,7 +154,7 @@ export function StockAdjustmentModal({ open, onClose, product, products = [], on
             <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading} className="bg-primary text-primary-foreground hover:bg-primary/90">
               {loading ? "Adjusting..." : "Adjust Stock"}
             </Button>
           </div>

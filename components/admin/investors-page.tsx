@@ -214,18 +214,18 @@ export function InvestorsPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 bg-background text-foreground">
       {successMessage && (
-        <div className="bg-green-50 border border-green-200 text-green-800 rounded-lg p-4 mb-6 shadow-sm">
+        <div className="bg-positive-bg border border-border text-positive rounded-lg p-4 mb-6 shadow-sm">
           <div className="flex items-start">
             <div className="flex-shrink-0 mt-0.5">
-              <UserCheck className="h-5 w-5 text-green-600" />
+              <UserCheck className="h-5 w-5 text-positive" />
             </div>
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-green-800">
+              <h3 className="text-sm font-medium text-positive">
                 Investor registered successfully!
               </h3>
-              <div className="mt-2 text-sm text-green-700">
+              <div className="mt-2 text-sm text-positive">
                 <p>Login credentials:</p>
                 <ul className="list-disc pl-5 mt-1 space-y-1">
                   <li><strong>Email:</strong> {successMessage.email}</li>
@@ -237,7 +237,7 @@ export function InvestorsPage() {
                 <button
                   type="button"
                   onClick={() => setSuccessMessage(null)}
-                  className="text-sm font-medium text-green-800 hover:text-green-700"
+                  className="text-sm font-medium text-positive hover:text-positive"
                 >
                   Dismiss
                 </button>
@@ -257,7 +257,7 @@ export function InvestorsPage() {
           <Button onClick={fetchInvestors} variant="outline" size="icon" title="Refresh">
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
-          <Button onClick={() => setShowAddModal(true)} className="bg-[#2563eb] hover:bg-[#1d4ed8]">
+          <Button onClick={() => setShowAddModal(true)} className="bg-primary hover:bg-primary/90">
             <Plus className="h-4 w-4 mr-2" />
             Add Investor
           </Button>
@@ -277,27 +277,27 @@ export function InvestorsPage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card className="p-4">
+        <Card className="p-4 bg-card border-border shadow-sm">
           <p className="text-sm text-muted-foreground">Total Revenue</p>
-          <p className="text-2xl font-bold text-green-600">
+          <p className="text-2xl font-bold text-positive">
             {formatNaira(totalRevenue)}
           </p>
           <p className="text-xs text-muted-foreground">
             All confirmed order revenue
           </p>
         </Card>
-        <Card className="p-4">
+        <Card className="p-4 bg-card border-border shadow-sm">
           <p className="text-sm text-muted-foreground">
             Investor Obligations
           </p>
-          <p className="text-2xl font-bold text-orange-600">
+          <p className="text-2xl font-bold text-[#2563eb]">
             {formatNaira(totalOwed)}
           </p>
           <p className="text-xs text-muted-foreground">
             {formatNaira(totalPaid)} already paid out
           </p>
         </Card>
-        <Card className="p-4">
+        <Card className="p-4 bg-card border-border shadow-sm">
           <p className="text-sm text-muted-foreground font-medium">
             Net Revenue (after obligations paid)
           </p>
@@ -315,11 +315,11 @@ export function InvestorsPage() {
 
       {/* Investors List */}
       {loading ? (
-        <Card>
+        <Card className="bg-card border-border shadow-sm">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 border-b">
+                <thead className="bg-muted border-b">
                   <tr>
                     {Array.from({ length: 7 }).map((_, i) => (
                       <th key={i} className="py-3 px-4" />
@@ -328,10 +328,10 @@ export function InvestorsPage() {
                 </thead>
                 <tbody className="divide-y">
                   {Array.from({ length: 5 }).map((_, i) => (
-                    <tr key={i} className="hover:bg-gray-50">
+                    <tr key={i} className="hover:bg-muted">
                       {Array.from({ length: 7 }).map((_, j) => (
                         <td key={j} className="py-4 px-4">
-                          <div className="h-4 bg-gray-200 rounded animate-pulse" />
+                          <div className="h-4 bg-muted rounded animate-pulse" />
                         </td>
                       ))}
                     </tr>
@@ -342,11 +342,11 @@ export function InvestorsPage() {
           </CardContent>
         </Card>
       ) : filteredInvestors.length === 0 ? (
-        <Card>
+        <Card className="bg-card border-border shadow-sm">
           <CardContent className="py-12 text-center">
             <p className="text-muted-foreground mb-4">No investors found</p>
             {investors.length === 0 && (
-              <Button onClick={() => setShowAddModal(true)} className="bg-[#2563eb] hover:bg-[#1d4ed8]">
+              <Button onClick={() => setShowAddModal(true)} className="bg-primary hover:bg-primary/90">
                 <Plus className="h-4 w-4 mr-2" />
                 Add First Investor
               </Button>
@@ -354,11 +354,11 @@ export function InvestorsPage() {
           </CardContent>
         </Card>
       ) : (
-        <Card>
+        <Card className="bg-card border-border shadow-sm">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 border-b">
+                <thead className="bg-muted border-b">
                   <tr>
                     <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
                       Name
@@ -390,7 +390,7 @@ export function InvestorsPage() {
                     const due = days > 0 ? (investor.currentBalance || 0) : 0
 
                     return (
-                      <tr key={investor.id} className="hover:bg-gray-50">
+                      <tr key={investor.id} className="hover:bg-muted">
                         <td className="py-4 px-4">
                           <div>
                             <p className="font-medium">{investor.name}</p>
@@ -408,7 +408,7 @@ export function InvestorsPage() {
                         <td className="py-4 px-4 text-right font-semibold text-blue-600">
                           {formatNaira(investor.investmentAmount)}
                         </td>
-                        <td className="py-4 px-4 text-right font-medium text-green-600">
+                        <td className="py-4 px-4 text-right font-medium text-positive">
                           {investor.dailyReturnRate}%
                         </td>
                         <td className="py-4 px-4 text-right">
@@ -421,7 +421,7 @@ export function InvestorsPage() {
                               <span>Paid:</span>
                               <span>{formatNaira(investor.totalReturnsPaid || 0)}</span>
                             </div>
-                            <div className="flex justify-between font-bold text-orange-600 text-sm gap-2 border-t pt-0.5 mt-0.5">
+                            <div className="flex justify-between font-bold text-[#2563eb] text-sm gap-2 border-t pt-0.5 mt-0.5">
                               <span>Due:</span>
                               <span>{formatNaira(due)}</span>
                             </div>
@@ -432,8 +432,8 @@ export function InvestorsPage() {
                             variant={investor.status === "active" ? "default" : "secondary"}
                             className={
                               investor.status === "active"
-                                ? "bg-green-100 text-green-800"
-                                : "bg-gray-100 text-gray-600"
+                                ? "bg-positive-bg text-positive"
+                                : "bg-muted text-muted-foreground"
                             }
                           >
                             {investor.status === "active" ? "Active" : "Inactive"}
@@ -450,7 +450,7 @@ export function InvestorsPage() {
                               }}
                               disabled={days === 0}
                               title={days === 0 ? "Returns begin tomorrow" : "Record Payment"}
-                              className="text-orange-600 hover:text-orange-700 hover:bg-orange-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="text-[#2563eb] hover:text-[#1d4ed8] hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <Banknote className="h-4 w-4" />
                             </Button>
@@ -473,8 +473,8 @@ export function InvestorsPage() {
                             <button
                               onClick={() => handleToggleStatus(investor)}
                               className={investor.status === 'active'
-                                ? 'text-red-600 hover:bg-red-50'
-                                : 'text-green-600 hover:bg-green-50'}
+                                ? 'text-destructive hover:bg-negative-bg'
+                                : 'text-positive hover:bg-green-50'}
                             >
                               {investor.status === 'active'
                                 ? 'Deactivate'

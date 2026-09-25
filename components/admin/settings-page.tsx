@@ -333,7 +333,7 @@ export function SettingsPage({ initialTab = "business" }: SettingsPageProps) {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 bg-background text-foreground">
       <div>
         <h1 className="text-3xl font-bold">Settings</h1>
         <p className="text-muted-foreground">Manage your system preferences and configurations</p>
@@ -369,7 +369,7 @@ export function SettingsPage({ initialTab = "business" }: SettingsPageProps) {
         </TabsList>
 
         <TabsContent value="business" className="space-y-4">
-          <Card>
+          <Card className="bg-card border-border shadow-sm">
             <CardHeader>
               <CardTitle>Business Information</CardTitle>
               <CardDescription>Update your business details and contact information</CardDescription>
@@ -409,7 +409,7 @@ export function SettingsPage({ initialTab = "business" }: SettingsPageProps) {
         </TabsContent>
 
         <TabsContent value="notifications" className="space-y-4">
-          <Card>
+          <Card className="bg-card border-border shadow-sm">
             <CardHeader>
               <CardTitle>Notification Preferences</CardTitle>
               <CardDescription>Choose how you want to receive alerts and updates</CardDescription>
@@ -462,7 +462,7 @@ export function SettingsPage({ initialTab = "business" }: SettingsPageProps) {
         </TabsContent>
 
         <TabsContent value="users" className="space-y-4">
-          <Card>
+          <Card className="bg-card border-border shadow-sm">
             <CardHeader>
               <CardTitle>Staff Management</CardTitle>
               <CardDescription>Manage staff accounts and access permissions</CardDescription>
@@ -536,7 +536,7 @@ export function SettingsPage({ initialTab = "business" }: SettingsPageProps) {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge className={member.is_active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}>
+                        <Badge className={member.is_active ? "bg-positive-bg text-positive" : "bg-red-100 text-red-700"}>
                           {member.is_active ? "Active" : "Inactive"}
                         </Badge>
                         <Button variant="outline" onClick={() => handleToggleStaff(member)} disabled={savingSection === `staff-toggle-${member.id}`}>
@@ -591,7 +591,7 @@ export function SettingsPage({ initialTab = "business" }: SettingsPageProps) {
         </TabsContent>
 
         <TabsContent value="security" className="space-y-4">
-          <Card>
+          <Card className="bg-card border-border shadow-sm">
             <CardHeader>
               <CardTitle>Security Settings</CardTitle>
               <CardDescription>Manage passwords and security preferences</CardDescription>
@@ -632,7 +632,7 @@ export function SettingsPage({ initialTab = "business" }: SettingsPageProps) {
         </TabsContent>
 
         <TabsContent value="printer" className="space-y-4">
-          <Card>
+          <Card className="bg-card border-border shadow-sm">
             <CardHeader>
               <CardTitle>Receipt & Printer Settings</CardTitle>
               <CardDescription>Configure receipt format and printer preferences</CardDescription>

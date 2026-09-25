@@ -95,13 +95,13 @@ export function ProductsPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 bg-background text-foreground">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Products</h1>
           <p className="text-muted-foreground">Manage your product inventory and pricing</p>
         </div>
-        <Button className="bg-[#2563eb] hover:bg-[#1d4ed8]" onClick={handleAddProduct}>
+        <Button className="bg-primary hover:bg-primary/90" onClick={handleAddProduct}>
           <Plus className="mr-2 h-4 w-4" />
           Add Product
         </Button>
@@ -135,14 +135,14 @@ export function ProductsPage() {
         </Select>
       </div>
 
-      <Card>
+      <Card className="bg-card border-border shadow-sm">
         <CardHeader>
           <CardTitle>All Products ({products.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead>
+              <thead className="bg-muted border-b border-border">
                 <tr className="border-b">
                   <th className="text-left py-3 px-4 font-medium">Product</th>
                   <th className="text-left py-3 px-4 font-medium">SKU</th>
@@ -158,26 +158,26 @@ export function ProductsPage() {
                     <tr key={i} className="border-b">
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
-                          <div className="h-12 w-12 rounded bg-gray-200 animate-pulse" />
-                          <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
+                          <div className="h-12 w-12 rounded bg-muted animate-pulse" />
+                          <div className="h-4 w-32 bg-muted rounded animate-pulse" />
                         </div>
                       </td>
                       <td className="py-3 px-4">
-                        <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
+                        <div className="h-4 w-20 bg-muted rounded animate-pulse" />
                       </td>
                       <td className="py-3 px-4">
-                        <div className="h-6 w-24 bg-gray-200 rounded-full animate-pulse" />
+                        <div className="h-6 w-24 bg-muted rounded-full animate-pulse" />
                       </td>
                       <td className="py-3 px-4 text-right">
-                        <div className="h-4 w-20 bg-gray-200 rounded animate-pulse ml-auto" />
+                        <div className="h-4 w-20 bg-muted rounded animate-pulse ml-auto" />
                       </td>
                       <td className="py-3 px-4 text-center">
-                        <div className="h-6 w-12 bg-gray-200 rounded-full animate-pulse mx-auto" />
+                        <div className="h-6 w-12 bg-muted rounded-full animate-pulse mx-auto" />
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center justify-end gap-2">
-                          <div className="h-8 w-8 bg-gray-200 rounded animate-pulse" />
-                          <div className="h-8 w-8 bg-gray-200 rounded animate-pulse" />
+                          <div className="h-8 w-8 bg-muted rounded animate-pulse" />
+                          <div className="h-8 w-8 bg-muted rounded animate-pulse" />
                         </div>
                       </td>
                     </tr>

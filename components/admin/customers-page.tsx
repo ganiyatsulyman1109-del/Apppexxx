@@ -79,7 +79,7 @@ export function CustomersPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-6 bg-background text-foreground">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Customers</h1>
@@ -100,9 +100,9 @@ export function CustomersPage() {
         />
       </div>
 
-      <Card>
+      <Card className="bg-card border-border shadow-sm">
         <CardContent className="p-0">
-          <Table>
+          <Table className="bg-card border border-border rounded-lg overflow-hidden">
             <TableHeader>
               <TableRow>
                 <TableHead>Customer</TableHead>
@@ -119,7 +119,7 @@ export function CustomersPage() {
                   <TableRow key={i}>
                     {Array.from({ length: 6 }).map((_, j) => (
                       <TableCell key={j}>
-                        <div className="h-4 bg-gray-200 rounded animate-pulse" />
+                        <div className="h-4 bg-muted rounded animate-pulse" />
                       </TableCell>
                     ))}
                   </TableRow>
@@ -189,7 +189,7 @@ export function CustomersPage() {
                         <div className="text-sm">{formatNigerianDate(recent.created_at, 'datetime')}</div>
                       </div>
                       <div className="flex justify-between">
-                        <Badge variant={recent.payment_status === 'paid' ? 'default' : 'secondary'} className={recent.payment_status === 'paid' ? 'bg-green-100 text-green-800' : ''}>
+                        <Badge variant={recent.payment_status === 'paid' ? 'default' : 'secondary'} className={recent.payment_status === 'paid' ? 'badge-positive' : ''}>
                           {recent.payment_status}
                         </Badge>
                         <Badge className={getStatusColor(recent.status as any)}>
@@ -218,7 +218,7 @@ export function CustomersPage() {
                 })()}
               </div>
             ) : null}
-            <Table>
+            <Table className="bg-card border border-border rounded-lg overflow-hidden">
               <TableHeader>
                 <TableRow>
                   <TableHead>Order #</TableHead>
@@ -274,7 +274,7 @@ export function CustomersPage() {
                       <TableCell>{formatNigerianDate(order.created_at, 'date')}</TableCell>
                       <TableCell>{formatCurrency(order.total_amount)}</TableCell>
                       <TableCell>
-                        <Badge variant={order.payment_status === 'paid' ? 'default' : 'secondary'} className={order.payment_status === 'paid' ? 'bg-green-100 text-green-800' : ''}>
+                        <Badge variant={order.payment_status === 'paid' ? 'default' : 'secondary'} className={order.payment_status === 'paid' ? 'badge-positive' : ''}>
                           {order.payment_status}
                         </Badge>
                       </TableCell>

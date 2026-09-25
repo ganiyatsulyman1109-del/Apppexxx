@@ -129,7 +129,7 @@ export function AuditLogPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 bg-background text-foreground">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Audit Log</h1>
@@ -197,9 +197,9 @@ export function AuditLogPage() {
         </div>
       </div>
 
-      <Card>
+      <Card className="bg-card border-border shadow-sm">
         <CardContent className="p-0">
-          <Table>
+          <Table className="bg-card border border-border rounded-lg overflow-hidden">
             <TableHeader>
               <TableRow>
                 <TableHead>Date</TableHead>
@@ -217,7 +217,7 @@ export function AuditLogPage() {
                   <TableRow key={i}>
                     {Array.from({ length: 7 }).map((_, j) => (
                       <TableCell key={j}>
-                        <div className="h-4 bg-gray-200 rounded animate-pulse" />
+                        <div className="h-4 bg-muted rounded animate-pulse" />
                       </TableCell>
                     ))}
                   </TableRow>

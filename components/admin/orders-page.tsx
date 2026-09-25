@@ -228,32 +228,32 @@ export function OrdersPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "pending":
-        return "bg-yellow-100 text-yellow-800"
+        return "badge-warning"
       case "processing":
-        return "bg-blue-100 text-blue-800"
+        return "badge-info"
       case "ready":
-        return "bg-green-100 text-green-800"
+        return "badge-positive"
       case "delivered":
-        return "bg-gray-100 text-gray-800"
+        return "badge-info"
       case "cancelled":
-        return "bg-red-100 text-red-800"
+        return "badge-negative"
       default:
-        return "bg-gray-100 text-gray-800"
+        return "badge-info"
     }
   }
 
   const getSourceBadge = (source: string) => {
     if (source === "online") {
-      return <Badge className="bg-blue-600">Online</Badge>
+      return <Badge className="bg-primary">Online</Badge>
     }
     if (source === "easybuy") {
-      return <Badge className="bg-purple-600">EasyBuy</Badge>
+      return <Badge className="bg-info">EasyBuy</Badge>
     }
-    return <Badge className="bg-[#2563eb]">POS</Badge>
+    return <Badge className="bg-primary">POS</Badge>
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 bg-background text-foreground">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Orders</h1>
@@ -262,22 +262,22 @@ export function OrdersPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
-        <Card>
+        <Card className="bg-card border-border shadow-sm">
           <CardContent className="pt-6">
             <div className="text-2xl font-bold">{counts.total}</div>
             <p className="text-sm text-muted-foreground">Total Orders</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-card border-border shadow-sm">
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-yellow-600">
+            <div className="text-2xl font-bold text-warning">
               {counts.pending}
             </div>
             <p className="text-sm font-medium text-muted-foreground">Pending EasyBuy Orders</p>
             <p className="text-xs text-muted-foreground mt-1">EasyBuy sales awaiting payment</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-card border-border shadow-sm">
           <CardContent className="pt-6">
             <div className="text-2xl font-bold text-blue-600">
               {counts.processing}
@@ -286,9 +286,9 @@ export function OrdersPage() {
             <p className="text-xs text-muted-foreground mt-1">Ecommerce orders pending delivery</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-card border-border shadow-sm">
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-2xl font-bold text-positive">
               {counts.delivered}
             </div>
             <p className="text-sm font-medium text-muted-foreground">Ecommerce Delivered</p>
@@ -322,14 +322,14 @@ export function OrdersPage() {
         </Select>
       </div>
 
-      <Card>
+      <Card className="bg-card border-border shadow-sm">
         <CardHeader>
           <CardTitle>All Orders ({filteredOrders.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-hidden">
             <table className="w-full">
-              <thead>
+              <thead className="bg-muted border-b border-border">
                 <tr className="border-b">
                   <th className="text-left py-3 px-4 font-medium">Order #</th>
                   <th className="text-left py-3 px-4 font-medium">Customer</th>
@@ -347,7 +347,7 @@ export function OrdersPage() {
                     <tr key={i} className="border-b">
                       {Array.from({ length: 8 }).map((_, j) => (
                         <td key={j} className="py-3 px-4">
-                          <div className="h-4 bg-gray-200 rounded animate-pulse" />
+                          <div className="h-4 bg-muted rounded animate-pulse" />
                         </td>
                       ))}
                     </tr>
@@ -457,7 +457,7 @@ export function OrdersPage() {
               <div>
                 <h4 className="font-semibold mb-2">Order Items</h4>
                 <div className="border rounded-md overflow-hidden">
-                  <Table>
+                  <Table className="bg-card border border-border rounded-lg overflow-hidden">
                     <TableHeader>
                       <TableRow>
                         <TableHead>Product</TableHead>
@@ -540,7 +540,7 @@ export function OrdersPage() {
             <div className="mt-4">
               <Label className="mb-2 block">Order Items (Quantity Edit)</Label>
               <div className="border rounded-md overflow-hidden">
-                <Table>
+                <Table className="bg-card border border-border rounded-lg overflow-hidden">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Product</TableHead>
