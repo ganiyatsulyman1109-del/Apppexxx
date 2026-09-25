@@ -9,14 +9,14 @@ export const dynamic = 'force-dynamic'
 
 function LoadingFallback() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#f9fafb]">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="bg-white rounded-2xl shadow-sm p-8 text-center">
           <div className="flex justify-center mb-4">
             <BrandLogo size={72} className="animate-spin" priority />
           </div>
           <h1 className="text-2xl font-bold mb-2">Loading...</h1>
-          <p className="text-gray-600">Please wait while we process your payment.</p>
+          <p className="text-[#6b7280]">Please wait while we process your payment.</p>
         </div>
       </div>
     </div>
@@ -25,7 +25,7 @@ function LoadingFallback() {
 
 export default function PaymentCallbackPage() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#f9fafb]">
       <Navbar />
       <Suspense fallback={<LoadingFallback />}>
         <PaymentCallbackContent />

@@ -107,7 +107,7 @@ export default function POSPage() {
           <Button
             onClick={handleBackToPOS}
             variant="outline"
-            className="flex items-center gap-2 border-2 border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-medium px-4 py-2 rounded-lg shadow-sm"
+            className="flex items-center gap-2 border-2 border-[#d1d5db] bg-white hover:bg-[#f9fafb] text-[#374151] font-medium px-4 py-2 rounded-lg shadow-sm"
           >
             <X className="w-4 h-4" />
             Exit

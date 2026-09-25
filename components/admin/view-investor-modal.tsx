@@ -273,7 +273,7 @@ export function ViewInvestorModal({
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-[#f9fafb]0 hover:text-[#374151]"
                         >
                           {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                         </button>
@@ -286,21 +286,21 @@ export function ViewInvestorModal({
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+              <div className="grid grid-cols-2 gap-4 p-4 bg-[#f9fafb] rounded-lg">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Days Since Investment</p>
+                  <p className="text-sm font-medium text-[#6b7280]">Days Since Investment</p>
                   <p className="text-lg font-semibold">{daysSinceInvestment} days</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Daily Return</p>
+                  <p className="text-sm font-medium text-[#6b7280]">Daily Return</p>
                   <p className="text-lg font-semibold">{formatNaira(dailyReturn)}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Returns</p>
+                  <p className="text-sm font-medium text-[#6b7280]">Total Returns</p>
                   <p className="text-lg font-semibold text-green-600">{formatNaira(totalReturns)}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-600">ROI</p>
+                  <p className="text-sm font-medium text-[#6b7280]">ROI</p>
                   <p className="text-lg font-semibold text-blue-600">{roi.toFixed(2)}%</p>
                 </div>
               </div>
@@ -318,19 +318,19 @@ export function ViewInvestorModal({
             <TabsContent value="payments" className="space-y-4">
               {loading ? (
                 <div className="text-center py-8">
-                  <p className="text-gray-500">Loading payment history...</p>
+                  <p className="text-[#f9fafb]0">Loading payment history...</p>
                 </div>
               ) : paymentHistory.length === 0 ? (
                 <div className="text-center py-8">
-                  <p className="text-gray-500">No payment history available</p>
+                  <p className="text-[#f9fafb]0">No payment history available</p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {paymentHistory.map((payment, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div key={index} className="flex items-center justify-between p-3 bg-[#f9fafb] rounded-lg">
                       <div>
                         <p className="font-medium">{formatDate(payment.created_at)}</p>
-                        <p className="text-sm text-gray-600">Payment #{index + 1}</p>
+                        <p className="text-sm text-[#6b7280]">Payment #{index + 1}</p>
                       </div>
                       <div className="text-right">
                         <p className="font-semibold">{formatNaira(payment.amount)}</p>

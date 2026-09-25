@@ -34,9 +34,9 @@ export function ProductCard({ product }: ProductCardProps) {
   }
 
   return (
-    <div className="group relative bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-xl hover:border-blue-300 transition-all duration-300">
+    <div className="group relative bg-white rounded-xl border border-[#e5e7eb] overflow-hidden hover:shadow-xl hover:border-blue-300 transition-all duration-300">
       {/* Image Container */}
-      <Link href={`/product/${product.id}`} className="block relative aspect-square bg-gray-50 overflow-hidden">
+      <Link href={`/product/${product.id}`} className="block relative aspect-square bg-[#f9fafb] overflow-hidden">
         <Image
           src={product.image_url || product.image || '/placeholder-product.png'}
           alt={product.name}
@@ -53,16 +53,16 @@ export function ProductCard({ product }: ProductCardProps) {
 
       {/* Product Info */}
       <div className="p-4">
-        <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">{product.brand}</p>
+        <p className="text-xs text-[#f9fafb]0 uppercase tracking-wider mb-1">{product.brand}</p>
         <Link href={`/product/${product.id}`}>
-          <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
+          <h3 className="font-semibold text-[#111827] mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
             {product.name}
           </h3>
         </Link>
         
         {/* Price */}
         <div className="flex items-baseline gap-2 mb-3">
-          <span className="text-2xl font-bold text-gray-900">
+          <span className="text-2xl font-bold text-[#111827]">
             ₦{product.price.toLocaleString()}
           </span>
         </div>

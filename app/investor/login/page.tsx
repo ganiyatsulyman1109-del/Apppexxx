@@ -44,10 +44,10 @@ export default function InvestorLoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-[#f9fafb]">
       <div className="bg-white rounded-2xl shadow-sm p-8 w-full max-w-sm">
         <h1 className="text-2xl font-bold text-center mb-2">Investor Portal</h1>
-        <p className="text-center text-gray-500 text-sm mb-6">
+        <p className="text-center text-[#f9fafb]0 text-sm mb-6">
           Sign in to your investor account
         </p>
         {error && (

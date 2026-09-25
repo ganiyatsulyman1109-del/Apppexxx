@@ -122,27 +122,27 @@ export function EasyBuyDashboard({ staffName, staffId, onBack, isAdmin = false }
         <header className="bg-card border-b border-border px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="h-8 w-24 bg-gray-200 rounded animate-pulse" />
+              <div className="h-8 w-24 bg-[#e5e7eb] rounded animate-pulse" />
               <div className="h-6 w-px bg-border" />
               <div className="space-y-2">
-                <div className="h-6 w-48 bg-gray-200 rounded animate-pulse" />
-                <div className="h-3 w-32 bg-gray-200 rounded animate-pulse" />
+                <div className="h-6 w-48 bg-[#e5e7eb] rounded animate-pulse" />
+                <div className="h-3 w-32 bg-[#e5e7eb] rounded animate-pulse" />
               </div>
             </div>
-            <div className="h-10 w-32 bg-gray-200 rounded animate-pulse" />
+            <div className="h-10 w-32 bg-[#e5e7eb] rounded animate-pulse" />
           </div>
           <div className="flex gap-1 mt-4">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-10 w-24 bg-gray-200 rounded-t-lg animate-pulse" />
+              <div key={i} className="h-10 w-24 bg-[#e5e7eb] rounded-t-lg animate-pulse" />
             ))}
           </div>
         </header>
         
         <div className="flex-1 p-6">
-          <div className="h-12 w-full bg-gray-200 rounded animate-pulse mb-6" />
+          <div className="h-12 w-full bg-[#e5e7eb] rounded animate-pulse mb-6" />
           <div className="space-y-4">
             {[1, 2, 3, 4, 5].map(i => (
-              <div key={i} className="h-20 w-full bg-gray-200 rounded animate-pulse" />
+              <div key={i} className="h-20 w-full bg-[#e5e7eb] rounded animate-pulse" />
             ))}
           </div>
         </div>

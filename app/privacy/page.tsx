@@ -15,7 +15,7 @@ export default function PrivacyPage() {
           </h1>
           
           <div className="bg-card rounded-lg shadow-sm p-8 mb-8">
-            <div className="prose prose-gray dark:prose-invert max-w-none">
+            <div className="prose prose-gray max-w-none">
               <p className="text-lg text-muted-foreground mb-6">
                 At Apex Enterprise, we are committed to protecting your privacy and ensuring 
                 the security of your personal information. This Privacy Policy explains how we 

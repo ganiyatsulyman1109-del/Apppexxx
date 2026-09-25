@@ -20,7 +20,7 @@ export function ProductImageGallery({ product }: ProductImageGalleryProps) {
     <div className="space-y-4">
       {/* Main Image with Zoom */}
       <div
-        className="relative aspect-square bg-gray-100 rounded-2xl overflow-hidden cursor-zoom-in"
+        className="relative aspect-square bg-[#f3f4f6] rounded-2xl overflow-hidden cursor-zoom-in"
         onMouseEnter={() => setIsZoomed(true)}
         onMouseLeave={() => setIsZoomed(false)}
       >
@@ -41,7 +41,7 @@ export function ProductImageGallery({ product }: ProductImageGalleryProps) {
           <button
             key={index}
             onClick={() => setSelectedIndex(index)}
-            className={`relative aspect-square bg-gray-100 rounded-lg overflow-hidden border-2 transition-all hover:border-blue-400 ${
+            className={`relative aspect-square bg-[#f3f4f6] rounded-lg overflow-hidden border-2 transition-all hover:border-blue-400 ${
               selectedIndex === index ? "border-blue-600 shadow-md" : "border-transparent"
             }`}
           >

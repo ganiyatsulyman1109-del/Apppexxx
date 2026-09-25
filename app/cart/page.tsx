@@ -13,17 +13,17 @@ export default function CartPage() {
   const { items, removeFromCart, updateQuantity, getTotalPrice } = useCart()
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#f9fafb]">
       <Navbar />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Shopping Cart</h1>
+        <h1 className="text-3xl font-bold text-[#111827] mb-8">Shopping Cart</h1>
 
         {items.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
-            <ShoppingBag className="w-20 h-20 text-gray-300 mx-auto mb-4" />
+            <ShoppingBag className="w-20 h-20 text-[#d1d5db] mx-auto mb-4" />
             <h2 className="text-2xl font-semibold mb-2">Your cart is empty</h2>
-            <p className="text-gray-600 mb-6">Add items to your cart to see them here</p>
+            <p className="text-[#6b7280] mb-6">Add items to your cart to see them here</p>
             <Link href="/shop">
               <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
                 Continue Shopping
@@ -37,12 +37,12 @@ export default function CartPage() {
               {/* Desktop Table View */}
               <div className="hidden md:block bg-white rounded-2xl shadow-sm overflow-hidden">
                 <table className="w-full">
-                  <thead className="bg-gray-50 border-b">
+                  <thead className="bg-[#f9fafb] border-b">
                     <tr>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Product</th>
-                      <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900">Price</th>
-                      <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900">Quantity</th>
-                      <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900">Subtotal</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-[#111827]">Product</th>
+                      <th className="px-6 py-4 text-center text-sm font-semibold text-[#111827]">Price</th>
+                      <th className="px-6 py-4 text-center text-sm font-semibold text-[#111827]">Quantity</th>
+                      <th className="px-6 py-4 text-right text-sm font-semibold text-[#111827]">Subtotal</th>
                       <th className="px-6 py-4"></th>
                     </tr>
                   </thead>
@@ -51,7 +51,7 @@ export default function CartPage() {
                       <tr key={item.product.id}>
                         <td className="px-6 py-6">
                           <div className="flex items-center gap-4">
-                            <div className="relative w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                            <div className="relative w-20 h-20 bg-[#f3f4f6] rounded-lg overflow-hidden flex-shrink-0">
                               <Image
                                 src={item.product.image || "/placeholder.svg?height=80&width=80"}
                                 alt={item.product.name}
@@ -60,8 +60,8 @@ export default function CartPage() {
                               />
                             </div>
                             <div>
-                              <h3 className="font-medium text-gray-900">{item.product.name}</h3>
-                              <p className="text-sm text-gray-600">{item.product.brand}</p>
+                              <h3 className="font-medium text-[#111827]">{item.product.name}</h3>
+                              <p className="text-sm text-[#6b7280]">{item.product.brand}</p>
                             </div>
                           </div>
                         </td>
@@ -72,7 +72,7 @@ export default function CartPage() {
                           <div className="flex items-center justify-center gap-2">
                             <button
                               onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                              className="w-8 h-8 rounded border border-gray-300 flex items-center justify-center hover:bg-gray-100 transition-colors"
+                              className="w-8 h-8 rounded border border-[#d1d5db] flex items-center justify-center hover:bg-[#f3f4f6] transition-colors"
                               disabled={item.quantity <= 1}
                             >
                               <Minus className="w-4 h-4" />
@@ -80,7 +80,7 @@ export default function CartPage() {
                             <span className="w-12 text-center font-medium">{item.quantity}</span>
                             <button
                               onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                              className="w-8 h-8 rounded border border-gray-300 flex items-center justify-center hover:bg-gray-100 transition-colors"
+                              className="w-8 h-8 rounded border border-[#d1d5db] flex items-center justify-center hover:bg-[#f3f4f6] transition-colors"
                               disabled={item.quantity >= item.product.stock}
                             >
                               <Plus className="w-4 h-4" />
@@ -110,7 +110,7 @@ export default function CartPage() {
                 {items.map((item) => (
                   <div key={item.product.id} className="bg-white rounded-xl shadow-sm p-4">
                     <div className="flex gap-4 mb-4">
-                      <div className="relative w-24 h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                      <div className="relative w-24 h-24 bg-[#f3f4f6] rounded-lg overflow-hidden flex-shrink-0">
                         <Image
                           src={item.product.image || "/placeholder.svg?height=96&width=96"}
                           alt={item.product.name}
@@ -119,8 +119,8 @@ export default function CartPage() {
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-gray-900 mb-1">{item.product.name}</h3>
-                        <p className="text-sm text-gray-600 mb-2">{item.product.brand}</p>
+                        <h3 className="font-medium text-[#111827] mb-1">{item.product.name}</h3>
+                        <p className="text-sm text-[#6b7280] mb-2">{item.product.brand}</p>
                         <p className="text-lg font-semibold text-blue-600">
                           ₦{item.product.price.toLocaleString()}
                         </p>
@@ -137,7 +137,7 @@ export default function CartPage() {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                          className="w-8 h-8 rounded border border-gray-300 flex items-center justify-center hover:bg-gray-100"
+                          className="w-8 h-8 rounded border border-[#d1d5db] flex items-center justify-center hover:bg-[#f3f4f6]"
                           disabled={item.quantity <= 1}
                         >
                           <Minus className="w-4 h-4" />
@@ -145,7 +145,7 @@ export default function CartPage() {
                         <span className="w-12 text-center font-medium">{item.quantity}</span>
                         <button
                           onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                          className="w-8 h-8 rounded border border-gray-300 flex items-center justify-center hover:bg-gray-100"
+                          className="w-8 h-8 rounded border border-[#d1d5db] flex items-center justify-center hover:bg-[#f3f4f6]"
                           disabled={item.quantity >= item.product.stock}
                         >
                           <Plus className="w-4 h-4" />
@@ -171,12 +171,12 @@ export default function CartPage() {
               <div className="bg-white rounded-2xl shadow-sm p-6 sticky top-24">
                 <h2 className="text-xl font-bold mb-6">Cart Summary</h2>
                 <div className="space-y-4 mb-6">
-                  <div className="flex justify-between text-gray-700">
+                  <div className="flex justify-between text-[#374151]">
                     <span>Subtotal</span>
                     <span className="font-medium">₦{getTotalPrice().toLocaleString()}</span>
                   </div>
                   <div className="border-t pt-4">
-                    <p className="text-sm text-gray-600 mb-4">
+                    <p className="text-sm text-[#6b7280] mb-4">
                       Delivery fee will be discussed after order confirmation
                     </p>
                   </div>

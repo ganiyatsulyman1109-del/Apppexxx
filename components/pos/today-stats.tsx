@@ -126,15 +126,15 @@ export function TodayStats({ stats, refreshKey = 0 }: TodayStatsProps) {
           </div>
         </div>
 
-        <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
+        <div className="flex items-center justify-between p-3 bg-[#fffbeb] rounded-lg">
           <div className="flex items-center gap-2">
-            <Clock className="w-5 h-5 text-orange-600" />
+            <Clock className="w-5 h-5 text-[#d97706]" />
             <div className="flex flex-col">
-              <span className="text-sm font-medium text-orange-800">EasyBuy Payments Received</span>
-              <span className="text-xs text-orange-600/80">Payments collected today</span>
+              <span className="text-sm font-medium text-[#92400e]">EasyBuy Payments Received</span>
+              <span className="text-xs text-[#d97706]/80">Payments collected today</span>
             </div>
           </div>
-          <span className="font-bold text-orange-800">{formatPrice(localStats.easyBuyCredit)}</span>
+          <span className="font-bold text-[#92400e]">{formatPrice(localStats.easyBuyCredit)}</span>
         </div>
 
         <div className="col-span-full bg-primary/10 rounded-lg p-4 border-2 border-primary/30">

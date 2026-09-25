@@ -51,16 +51,16 @@ export function ProductInfo({ product }: ProductInfoProps) {
     <div className="space-y-6">
       {/* Brand */}
       <div>
-        <p className="text-sm text-gray-600 mb-1">Brand: {product.brand}</p>
-        <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
+        <p className="text-sm text-[#6b7280] mb-1">Brand: {product.brand}</p>
+        <h1 className="text-3xl font-bold text-[#111827]">{product.name}</h1>
       </div>
 
       {/* SKU */}
-      <p className="text-sm text-gray-600">SKU: {product.id.toUpperCase()}</p>
+      <p className="text-sm text-[#6b7280]">SKU: {product.id.toUpperCase()}</p>
 
       {/* Price */}
       <div className="flex items-baseline gap-2">
-        <span className="text-4xl font-bold text-gray-900">₦{product.price.toLocaleString()}</span>
+        <span className="text-4xl font-bold text-[#111827]">₦{product.price.toLocaleString()}</span>
       </div>
 
       {/* Stock Status */}
@@ -87,7 +87,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
 
       {/* Quantity Selector */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
+        <label className="block text-sm font-medium text-[#374151] mb-2">Quantity</label>
         <div className="flex items-center gap-3">
           <Button
             variant="outline"
@@ -134,7 +134,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
       </div>
 
       {/* Additional Info */}
-      <div className="border-t pt-6 space-y-2 text-sm text-gray-600">
+      <div className="border-t pt-6 space-y-2 text-sm text-[#6b7280]">
         <p>✓ Free delivery on orders above ₦50,000</p>
         <p>✓ Genuine products with warranty</p>
         <p>✓ Easy returns within 7 days</p>

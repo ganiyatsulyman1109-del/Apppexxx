@@ -29,7 +29,7 @@ export function CartDrawer() {
           </h2>
           <button
             onClick={closeCart}
-            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            className="p-2 rounded-lg hover:bg-[#f3f4f6] transition-colors"
             aria-label="Close cart"
           >
             <X className="w-5 h-5" />
@@ -39,9 +39,9 @@ export function CartDrawer() {
         {/* Cart Items */}
         {items.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-            <ShoppingBag className="w-16 h-16 text-gray-300 mb-4" />
+            <ShoppingBag className="w-16 h-16 text-[#d1d5db] mb-4" />
             <h3 className="text-lg font-semibold mb-2">Your cart is empty</h3>
-            <p className="text-gray-600 mb-6">Start adding items to your cart</p>
+            <p className="text-[#6b7280] mb-6">Start adding items to your cart</p>
             <Button onClick={closeCart} className="bg-blue-600 hover:bg-blue-700">
               Continue Shopping
             </Button>
@@ -50,7 +50,7 @@ export function CartDrawer() {
           <>
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
               {items.map((item) => (
-                <div key={item.product.id} className="flex gap-4 bg-gray-50 p-4 rounded-lg">
+                <div key={item.product.id} className="flex gap-4 bg-[#f9fafb] p-4 rounded-lg">
                   <div className="relative w-20 h-20 bg-white rounded-lg overflow-hidden flex-shrink-0">
                     <Image
                       src={item.product.image || "/placeholder.svg?height=80&width=80"}
@@ -61,11 +61,11 @@ export function CartDrawer() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="font-medium text-sm truncate">{item.product.name}</h4>
-                    <p className="text-xs text-gray-600 mb-2">{item.product.brand}</p>
+                    <p className="text-xs text-[#6b7280] mb-2">{item.product.brand}</p>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                        className="w-6 h-6 rounded border border-gray-300 flex items-center justify-center hover:bg-gray-100"
+                        className="w-6 h-6 rounded border border-[#d1d5db] flex items-center justify-center hover:bg-[#f3f4f6]"
                         disabled={item.quantity <= 1}
                       >
                         <Minus className="w-3 h-3" />
@@ -73,7 +73,7 @@ export function CartDrawer() {
                       <span className="text-sm font-medium w-8 text-center">{item.quantity}</span>
                       <button
                         onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                        className="w-6 h-6 rounded border border-gray-300 flex items-center justify-center hover:bg-gray-100"
+                        className="w-6 h-6 rounded border border-[#d1d5db] flex items-center justify-center hover:bg-[#f3f4f6]"
                         disabled={item.quantity >= item.product.stock}
                       >
                         <Plus className="w-3 h-3" />

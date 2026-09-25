@@ -137,14 +137,14 @@ export default function CheckoutPage() {
 
   if (isUserLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#f9fafb] flex items-center justify-center">
         <BrandLogo size={64} className="animate-spin" priority />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#f9fafb]">
       <Navbar />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -157,13 +157,13 @@ export default function CheckoutPage() {
             <ArrowLeft className="w-4 h-4" />
             Back
           </Button>
-          <h1 className="text-3xl font-bold text-gray-900 ml-4">Checkout</h1>
+          <h1 className="text-3xl font-bold text-[#111827] ml-4">Checkout</h1>
         </div>
 
         {items.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
             <h2 className="text-2xl font-semibold mb-2">Your cart is empty</h2>
-            <p className="text-gray-600 mb-6">Add items to your cart to checkout</p>
+            <p className="text-[#6b7280] mb-6">Add items to your cart to checkout</p>
             <Link href="/shop">
               <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
                 Continue Shopping
@@ -269,18 +269,18 @@ export default function CheckoutPage() {
                       <div key={item.product.id} className="flex justify-between">
                         <div>
                           <p className="font-medium">{item.product.name}</p>
-                          <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
+                          <p className="text-sm text-[#6b7280]">Qty: {item.quantity}</p>
                         </div>
                         <p className="font-medium">₦{(item.product.price * item.quantity).toLocaleString()}</p>
                       </div>
                     ))}
                     
                     <div className="border-t pt-4">
-                      <div className="flex justify-between text-gray-700 mb-2">
+                      <div className="flex justify-between text-[#374151] mb-2">
                         <span>Subtotal</span>
                         <span className="font-medium">₦{getTotalPrice().toLocaleString()}</span>
                       </div>
-                      <div className="flex justify-between text-gray-700 mb-2">
+                      <div className="flex justify-between text-[#374151] mb-2">
                         <span>Delivery Fee</span>
                         <span className="font-medium text-sm">To be discussed</span>
                       </div>
@@ -316,7 +316,7 @@ export default function CheckoutPage() {
                     )}
                   </Button>
                   
-                  <p className="text-xs text-gray-600 mt-4 text-center">
+                  <p className="text-xs text-[#6b7280] mt-4 text-center">
                     You will be redirected to Paystack to complete your payment securely.
                   </p>
                 </CardContent>

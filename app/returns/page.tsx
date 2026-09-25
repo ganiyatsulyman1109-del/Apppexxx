@@ -15,7 +15,7 @@ export default function ReturnsPage() {
           </h1>
           
           <div className="bg-card rounded-lg shadow-sm p-8 mb-8">
-            <div className="prose prose-gray dark:prose-invert max-w-none">
+            <div className="prose prose-gray max-w-none">
               <p className="text-lg text-muted-foreground mb-6">
                 At Apex Enterprise, we want you to be completely satisfied with your purchase. 
                 If you need to return an item, please review our return policy below.
@@ -32,7 +32,7 @@ export default function ReturnsPage() {
               <h2 className="text-2xl font-semibold text-foreground mb-4">
                 Eligible Items for Return
               </h2>
-              <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-4">
+              <div className="bg-green-50 bg-green-950/20 border border-green-200 border-green-800 rounded-lg p-4 mb-4">
                 <h3 className="text-lg font-semibold text-foreground mb-2">
                   Items that can be returned:
                 </h3>
@@ -44,7 +44,7 @@ export default function ReturnsPage() {
                 </ul>
               </div>
               
-              <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
+              <div className="bg-red-50 bg-red-950/20 border border-red-200 border-red-800 rounded-lg p-4 mb-6">
                 <h3 className="text-lg font-semibold text-foreground mb-2">
                   Items that cannot be returned:
                 </h3>
