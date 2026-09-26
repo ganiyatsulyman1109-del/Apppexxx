@@ -1,72 +1,55 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { requireAdminAuthResult as requireAdminAuth } from '@/lib/auth'
-import { createAdminClient } from '@/lib/utils/supabase'
+﻿import { NextRequest, NextResponse } from "next/server"
+import { requireAdminAuth } from "@/lib/auth"
+import { createAdminClient } from "@/lib/utils/supabase"
+
+export const dynamic = "force-dynamic"
+function authResponse(error: unknown): Response | null {
+  return error instanceof Response ? error : null
+}
+function dateBound(value: string, end: boolean): string | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null
+  const parsed = new Date(`${value}T${end ? "23:59:59.999" : "00:00:00.000"}+01:00`)
+  return Number.isFinite(parsed.getTime()) ? parsed.toISOString() : null
+}
 
 export async function GET(request: NextRequest) {
   try {
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return NextResponse.json(
-      { error: 'Database service not configured' },
-      { status: 500 }
-    )
-  }
-
-    const authResult = await requireAdminAuth(request)
-    if (!authResult.authenticated) {
-      return NextResponse.json({ error: authResult.error }, { status: authResult.status })
-    }
-
-    const { searchParams } = new URL(request.url)
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '50')
-    const action_type = searchParams.get('action_type')
-    const entity_type = searchParams.get('entity_type')
-    const startDate = searchParams.get('start_date')
-    const endDate = searchParams.get('end_date')
+    const auth = await requireAdminAuth()
+    if (!auth.businessId) return NextResponse.json({ success: false, error: "No business associated with account" }, { status: 403 })
+    const params = request.nextUrl.searchParams
+    const page = Number.parseInt(params.get("page") || "1", 10)
+    const rawLimit = Number.parseInt(params.get("limit") || "50", 10)
+    const limit = Number.isInteger(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 200) : 50
+    if (!Number.isInteger(page) || page < 1) return NextResponse.json({ success: false, error: "page must be a positive integer" }, { status: 400 })
     const offset = (page - 1) * limit
-
-    const supabase = createAdminClient()
-
-    let query = supabase
-      .from('audit_logs')
-      .select('*', { count: 'exact' })
-      .order('created_at', { ascending: false })
-
-    if (action_type && action_type !== 'all') {
-      query = query.eq('action_type', action_type)
-    }
-
-    if (entity_type && entity_type !== 'all') {
-      query = query.eq('entity_type', entity_type)
-    }
-    
+    let query = createAdminClient().from("audit_logs").select("*", { count: "exact" })
+      .eq("business_id", auth.businessId).order("created_at", { ascending: false })
+    const action = params.get("action") || params.get("action_type")
+    const tableName = params.get("table_name")
+    if (action) query = query.eq("action_type", action)
+    if (tableName) query = query.eq("entity_type", tableName)
+    const startDate = params.get("start_date")
+    const endDate = params.get("end_date")
     if (startDate) {
-      query = query.gte('created_at', new Date(startDate + 'T00:00:00+01:00').toISOString())
+      const start = dateBound(startDate, false)
+      if (!start) return NextResponse.json({ success: false, error: "Invalid start_date" }, { status: 400 })
+      query = query.gte("created_at", start)
     }
-    
     if (endDate) {
-      query = query.lte('created_at', new Date(endDate + 'T23:59:59+01:00').toISOString())
+      const end = dateBound(endDate, true)
+      if (!end) return NextResponse.json({ success: false, error: "Invalid end_date" }, { status: 400 })
+      query = query.lte("created_at", end)
     }
-    
-    query = query.range(offset, offset + limit - 1)
-
-    const { data, count, error } = await query
-
+    const { data, count, error } = await query.range(offset, offset + limit - 1)
     if (error) {
-      console.error(error);
-    return NextResponse.json(
-      { error: 'An internal error occurred. Please try again.' },
-      { status: 500 }
-    )
+      console.error("Failed to load business audit logs:", error)
+      return NextResponse.json({ success: false, error: "Failed to load audit logs" }, { status: 500 })
     }
-
-    return NextResponse.json({ 
-      logs: data, 
-      total: count || 0,
-      page,
-      totalPages: Math.ceil((count || 0) / limit)
-    })
+    return NextResponse.json({ success: true, logs: data || [], total: count || 0 })
   } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const response = authResponse(error)
+    if (response) return response
+    console.error("GET /api/admin/audit-logs failed:", error)
+    return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 })
   }
 }

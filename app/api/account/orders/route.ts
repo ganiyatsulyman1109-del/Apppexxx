@@ -1,64 +1,50 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient, createAdminClient } from '@/lib/utils/supabase'
+﻿import { NextRequest, NextResponse } from "next/server"
+import { createServerClient } from "@/lib/utils/supabase"
 
-export async function GET(_request: NextRequest) {
+export const dynamic = "force-dynamic"
+
+function fail(error: string, status = 500) {
+  return NextResponse.json({ success: false, error }, { status })
+}
+function isValidBusinessId(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+}
+
+export async function GET(request: NextRequest) {
   try {
     const supabase = createServerClient()
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-    const admin = createAdminClient()
-
-    // Try by user_id first
-    let customer = null
-    const { data: byUserId } = await admin
-      .from('customers')
-      .select('id, full_name, email')
-      .eq('user_id', session.user.id)
-      .limit(1)
-
-    if (byUserId && byUserId.length > 0) {
-      customer = byUserId[0]
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError) {
+      console.error("Failed to authenticate customer orders request:", authError)
+      return fail("Failed to authenticate", 401)
     }
-    
-    if (!customer && session.user.email) {
-      // Fallback: find by email and link user_id
-      const { data: byEmail } = await admin
-        .from('customers')
-        .select('id, full_name, email')
-        .eq('email', session.user.email)
-        .single()
+    if (!user) return fail("Unauthorized", 401)
+    const requestedBusinessId = request.nextUrl.searchParams.get("business_id")
+    if (requestedBusinessId && !isValidBusinessId(requestedBusinessId)) return fail("Invalid business_id", 400)
 
-      if (byEmail) {
-        customer = byEmail
-        // Link user_id to this customer
-        await admin.from('customers')
-          .update({
-            user_id: session.user.id,
-            updated_at: new Date().toISOString()
-          })
-          .eq('email', session.user.email)
-      }
+    let customerQuery = supabase.from("customers").select("id,business_id,full_name,email")
+      .eq("user_id", user.id)
+    if (requestedBusinessId) customerQuery = customerQuery.eq("business_id", requestedBusinessId)
+    const { data: customers, error: customersError } = await customerQuery
+    if (customersError) {
+      console.error("Failed to find customer records for current user:", customersError)
+      return fail("Failed to load customer account")
     }
+    const customerIds = (customers || []).map((customer) => customer.id)
+    if (customerIds.length === 0) return NextResponse.json({ success: true, orders: [] })
 
-    if (!customer) return NextResponse.json({ orders: [] })
-
-    const { data: orders, error } = await admin
-      .from('orders')
-      .select(`id, order_number, source, status, payment_status, total_amount, items, shipping_address, created_at, updated_at`)
-      .eq('customer_id', customer.id)
-      .order('created_at', { ascending: false })
-
-    if (error) {
-      console.error(error);
-      return NextResponse.json(
-        { error: 'An internal error occurred. Please try again.' },
-        { status: 500 }
-      )
+    let ordersQuery = supabase.from("orders")
+      .select("id,business_id,order_number,source,channel,status,payment_status,total_amount,items,shipping_address,created_at,updated_at")
+      .in("customer_id", customerIds).order("created_at", { ascending: false })
+    if (requestedBusinessId) ordersQuery = ordersQuery.eq("business_id", requestedBusinessId)
+    const { data: orders, error: ordersError } = await ordersQuery
+    if (ordersError) {
+      console.error("Failed to load current user's orders:", ordersError)
+      return fail("Failed to load orders")
     }
-
-    return NextResponse.json({ orders: orders || [], customer })
-  } catch {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ success: true, orders: orders || [] })
+  } catch (error) {
+    console.error("GET /api/account/orders failed:", error)
+    return fail("Internal server error")
   }
 }
