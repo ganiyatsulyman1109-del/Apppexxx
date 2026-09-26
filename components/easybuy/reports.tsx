@@ -239,7 +239,7 @@ export function EasyBuyReports() {
         <Card className="p-4">
           <p className="text-sm font-medium text-muted-foreground mb-1">Collection Rate</p>
           <div className="flex items-center gap-2">
-            <p className="text-2xl font-bold text-gray-800">{metrics.collectionRate}%</p>
+            <p className="text-2xl font-bold text-[#1f2937]">{metrics.collectionRate}%</p>
             {metrics.collectionRate >= 80 ? (
               <TrendingUp className="w-4 h-4 text-green-500" />
             ) : metrics.collectionRate < 50 ? (
@@ -253,14 +253,14 @@ export function EasyBuyReports() {
 
       {/* Customer Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="p-4 bg-gray-50">
+        <Card className="p-4 bg-[#f9fafb]">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Total Customers</p>
               <p className="text-xl font-bold">{metrics.totalCustomers}</p>
             </div>
             <div className="p-2 bg-white rounded-full">
-              <Percent className="w-4 h-4 text-gray-500" />
+              <Percent className="w-4 h-4 text-[#f9fafb]0" />
             </div>
           </div>
         </Card>
@@ -297,7 +297,7 @@ export function EasyBuyReports() {
         <div className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-left">
+              <thead className="bg-[#f9fafb] text-left">
                 <tr>
                   <th className="p-3 font-medium text-muted-foreground">Customer</th>
                   <th className="p-3 font-medium text-muted-foreground">Risk Level</th>
@@ -357,7 +357,7 @@ export function EasyBuyReports() {
               <h3 className="font-bold text-lg">Customer Details</h3>
               <button 
                 onClick={() => setSelectedHighRiskCustomer(null)}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-[#f9fafb]0 hover:text-[#374151]"
               >
                 ✕
               </button>
@@ -402,7 +402,7 @@ export function EasyBuyReports() {
             </div>
             <button 
               onClick={() => setSelectedHighRiskCustomer(null)}
-              className="w-full mt-4 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-lg text-sm font-medium"
+              className="w-full mt-4 bg-[#f3f4f6] hover:bg-[#e5e7eb] text-[#374151] py-2 rounded-lg text-sm font-medium"
             >
               Close
             </button>

@@ -4,7 +4,7 @@ import { BrandLogo } from "@/components/brand-logo"
 
 export function Footer() {
   return (
-    <footer className="bg-gray-900 text-gray-300">
+    <footer className="bg-[#111827] text-[#d1d5db]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
           {/* Brand */}
@@ -13,10 +13,10 @@ export function Footer() {
               <BrandLogo size={40} className="rounded-xl" />
               <div>
                 <div className="font-bold text-white text-lg leading-none">Apex</div>
-                <div className="text-xs text-gray-400">Enterprise</div>
+                <div className="text-xs text-[#9ca3af]">Enterprise</div>
               </div>
             </div>
-            <p className="text-sm text-gray-400 mb-4">
+            <p className="text-sm text-[#9ca3af] mb-4">
               Your trusted partner for quality products and everyday essentials.
             </p>
             <div className="flex gap-3">
@@ -24,7 +24,7 @@ export function Footer() {
                 href="https://facebook.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-gray-800 hover:bg-blue-600 flex items-center justify-center transition-colors"
+                className="w-10 h-10 rounded-full bg-[#1f2937] hover:bg-blue-600 flex items-center justify-center transition-colors"
               >
                 <Facebook className="w-5 h-5" />
               </a>
@@ -32,7 +32,7 @@ export function Footer() {
                 href="https://instagram.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-gray-800 hover:bg-pink-600 flex items-center justify-center transition-colors"
+                className="w-10 h-10 rounded-full bg-[#1f2937] hover:bg-pink-600 flex items-center justify-center transition-colors"
               >
                 <Instagram className="w-5 h-5" />
               </a>
@@ -40,7 +40,7 @@ export function Footer() {
                 href="https://twitter.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-gray-800 hover:bg-blue-400 flex items-center justify-center transition-colors"
+                className="w-10 h-10 rounded-full bg-[#1f2937] hover:bg-blue-400 flex items-center justify-center transition-colors"
               >
                 <Twitter className="w-5 h-5" />
               </a>
@@ -134,7 +134,7 @@ export function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="pt-8 border-t border-gray-800 text-center text-sm text-gray-400">
+        <div className="pt-8 border-t border-[#1f2937] text-center text-sm text-[#9ca3af]">
           <p>© 2026 Apex Enterprise. All rights reserved.</p>
         </div>
       </div>

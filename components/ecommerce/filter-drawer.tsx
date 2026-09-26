@@ -37,7 +37,7 @@ export function FilterDrawer({
       {/* Mobile Filter Button */}
       <Button
         onClick={() => setIsOpen(true)}
-        className="w-full bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+        className="w-full bg-white border border-[#d1d5db] text-[#374151] hover:bg-[#f9fafb]"
       >
         <Filter className="w-4 h-4 mr-2" />
         Filters
@@ -59,11 +59,11 @@ export function FilterDrawer({
         style={{ maxHeight: "80vh" }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
+        <div className="flex items-center justify-between p-4 border-b border-[#e5e7eb]">
+          <h2 className="text-lg font-semibold text-[#111827]">Filters</h2>
           <button
             onClick={() => setIsOpen(false)}
-            className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors"
+            className="w-8 h-8 rounded-full hover:bg-[#f3f4f6] flex items-center justify-center transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -86,7 +86,7 @@ export function FilterDrawer({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-gray-200 bg-gray-50">
+        <div className="p-4 border-t border-[#e5e7eb] bg-[#f9fafb]">
           <div className="flex gap-2">
             <Button 
               className="flex-1" 

@@ -93,7 +93,7 @@ export default function PaymentCallbackContent() {
   }, [reference])
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#f9fafb]">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <Card className="bg-white rounded-2xl shadow-sm">
           <CardHeader className="text-center">
@@ -117,7 +117,7 @@ export default function PaymentCallbackContent() {
           
           <CardContent className="text-center">
             {status === "verifying" && (
-              <p className="text-gray-600">
+              <p className="text-[#6b7280]">
                 Please wait while we verify your payment with Paystack...
               </p>
             )}
@@ -125,7 +125,7 @@ export default function PaymentCallbackContent() {
             {status === "success" && (
               <div className="space-y-8">
                 <div className="space-y-4">
-                  <p className="text-gray-600">
+                  <p className="text-[#6b7280]">
                     Thank you for your purchase! Your order has been successfully processed.
                   </p>
                   <div className="bg-green-50 p-4 rounded-lg inline-block w-full max-w-md">
@@ -169,15 +169,15 @@ export default function PaymentCallbackContent() {
                       <Button 
                         onClick={() => router.push('/login')} 
                         variant="outline"
-                        className="w-full text-gray-700 hover:bg-gray-50"
+                        className="w-full text-[#374151] hover:bg-[#f9fafb]"
                       >
                         Already have an account? Sign In
                       </Button>
                     </div>
                   </div>
                 ) : (
-                  <div className="bg-gray-50 border border-gray-100 rounded-xl p-6 max-w-md mx-auto">
-                     <p className="text-sm text-gray-600 mb-4">
+                  <div className="bg-[#f9fafb] border border-[#f3f4f6] rounded-xl p-6 max-w-md mx-auto">
+                     <p className="text-sm text-[#6b7280] mb-4">
                        You can view your order status in your account dashboard.
                      </p>
                      <Link href="/account">
@@ -233,7 +233,7 @@ export default function PaymentCallbackContent() {
             
             {status === "failed" && (
               <div className="space-y-4">
-                <p className="text-gray-600">
+                <p className="text-[#6b7280]">
                   {error || "We couldn't verify your payment. Please try again or contact support."}
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center mt-6">

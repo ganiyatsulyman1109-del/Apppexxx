@@ -154,8 +154,8 @@ export function EasyBuyDebtOverview() {
 
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-orange-600" />
+            <div className="w-10 h-10 rounded-lg bg-[#fef3c7] flex items-center justify-center">
+              <TrendingUp className="w-5 h-5 text-[#d97706]" />
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Average Debt</p>

@@ -34,10 +34,10 @@ export function FeaturedProducts() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between mb-12">
           <div>
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+            <h2 className="text-3xl sm:text-4xl font-bold text-[#111827] mb-2">
               Featured Products
             </h2>
-            <p className="text-lg text-gray-600">
+            <p className="text-lg text-[#6b7280]">
               Top picks from our collection
             </p>
           </div>
@@ -52,7 +52,7 @@ export function FeaturedProducts() {
         {/* Loading State */}
         {loading && (
           <div className="text-center py-12">
-            <p className="text-gray-500">Loading featured products...</p>
+            <p className="text-[#f9fafb]0">Loading featured products...</p>
           </div>
         )}
 
@@ -68,7 +68,7 @@ export function FeaturedProducts() {
         {/* No Results */}
         {!loading && featuredProducts.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-gray-500">No featured products available.</p>
+            <p className="text-[#f9fafb]0">No featured products available.</p>
           </div>
         )}
 

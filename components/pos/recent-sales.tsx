@@ -25,7 +25,7 @@ const PAYMENT_BADGES: Record<PaymentMethod, { label: string; className: string; 
   },
   easybuy: {
     label: "Easy Buy",
-    className: "bg-orange-100 text-orange-800 hover:bg-orange-100",
+    className: "bg-[#fef3c7] text-[#92400e] hover:bg-[#fef3c7]",
     icon: <Clock className="w-3 h-3" />,
   },
 }

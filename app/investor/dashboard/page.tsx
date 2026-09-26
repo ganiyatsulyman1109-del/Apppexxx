@@ -61,12 +61,12 @@ export default function InvestorDashboard() {
   const fmt = (n: any) => Number(n || 0).toLocaleString('en-NG')
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-[#f9fafb] p-6">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold">Welcome, {investor?.full_name}</h1>
-            <p className="text-gray-500 text-sm">Investor ID: {investor?.investor_id}</p>
+            <p className="text-[#f9fafb]0 text-sm">Investor ID: {investor?.investor_id}</p>
           </div>
           <button
             onClick={async () => {
@@ -74,45 +74,45 @@ export default function InvestorDashboard() {
               await supabase.auth.signOut()
               router.push('/investor/login')
             }}
-            className="text-sm text-gray-500 hover:text-gray-700 border rounded-lg px-3 py-1.5"
+            className="text-sm text-[#f9fafb]0 hover:text-[#374151] border rounded-lg px-3 py-1.5"
           >
             Sign Out
           </button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-white rounded-xl p-5 shadow-sm">
-            <p className="text-sm text-gray-500 mb-1">Investment Amount</p>
+            <p className="text-sm text-[#f9fafb]0 mb-1">Investment Amount</p>
             <p className="text-2xl font-bold text-blue-600">
               &#8358;{fmt(investor?.investment_amount)}
             </p>
           </div>
           <div className="bg-white rounded-xl p-5 shadow-sm">
-            <p className="text-sm text-gray-500 mb-1">Total Returns Earned</p>
+            <p className="text-sm text-[#f9fafb]0 mb-1">Total Returns Earned</p>
             <p className="text-2xl font-bold text-green-600">
               &#8358;{fmt(investor?.total_returns_earned)}
             </p>
           </div>
           <div className="bg-white rounded-xl p-5 shadow-sm">
-            <p className="text-sm text-gray-500 mb-1">Current Balance</p>
-            <p className="text-2xl font-bold text-orange-600">
+            <p className="text-sm text-[#f9fafb]0 mb-1">Current Balance</p>
+            <p className="text-2xl font-bold text-[#d97706]">
               &#8358;{fmt(investor?.current_balance)}
             </p>
           </div>
           <div className="bg-white rounded-xl p-5 shadow-sm">
-            <p className="text-sm text-gray-500 mb-1">Total Paid Out</p>
+            <p className="text-sm text-[#f9fafb]0 mb-1">Total Paid Out</p>
             <p className="text-2xl font-bold text-purple-600">
               &#8358;{fmt(investor?.total_returns_paid)}
             </p>
           </div>
           <div className="bg-white rounded-xl p-5 shadow-sm">
-            <p className="text-sm text-gray-500 mb-1">Daily Return Rate</p>
-            <p className="text-2xl font-bold text-gray-800">
+            <p className="text-sm text-[#f9fafb]0 mb-1">Daily Return Rate</p>
+            <p className="text-2xl font-bold text-[#1f2937]">
               {investor?.daily_return_rate}%
             </p>
           </div>
           <div className="bg-white rounded-xl p-5 shadow-sm">
-            <p className="text-sm text-gray-500 mb-1">Investment Date</p>
-            <p className="text-2xl font-bold text-gray-800">
+            <p className="text-sm text-[#f9fafb]0 mb-1">Investment Date</p>
+            <p className="text-2xl font-bold text-[#1f2937]">
               {investor?.investment_date}
             </p>
           </div>

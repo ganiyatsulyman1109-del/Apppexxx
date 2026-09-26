@@ -60,7 +60,7 @@ export default function ProductDetailPage() {
       <div className="min-h-screen bg-white">
         <Navbar />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
+          <h1 className="text-2xl font-bold text-[#111827] mb-4">
             {loading ? 'Loading product...' : 'Product Not Found'}
           </h1>
           <Link href="/shop">

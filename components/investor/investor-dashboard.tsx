@@ -115,18 +115,18 @@ export function InvestorDashboard({ investor, onLogout }: InvestorDashboardProps
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-[#f9fafb]">
         <header className="bg-white border-b shadow-sm sticky top-0 z-10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 bg-blue-600 rounded-lg animate-pulse" />
                 <div className="space-y-2">
-                  <div className="h-6 w-24 bg-gray-200 rounded animate-pulse" />
-                  <div className="h-3 w-20 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-6 w-24 bg-[#e5e7eb] rounded animate-pulse" />
+                  <div className="h-3 w-20 bg-[#e5e7eb] rounded animate-pulse" />
                 </div>
               </div>
-              <div className="h-8 w-20 bg-gray-200 rounded animate-pulse" />
+              <div className="h-8 w-20 bg-[#e5e7eb] rounded animate-pulse" />
             </div>
           </div>
         </header>
@@ -136,13 +136,13 @@ export function InvestorDashboard({ investor, onLogout }: InvestorDashboardProps
             {[1, 2, 3, 4].map(i => (
               <Card key={i} className="bg-white">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
-                  <div className="h-4 w-4 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-4 w-20 bg-[#e5e7eb] rounded animate-pulse" />
+                  <div className="h-4 w-4 bg-[#e5e7eb] rounded animate-pulse" />
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    <div className="h-8 w-16 bg-gray-200 rounded animate-pulse" />
-                    <div className="h-3 w-24 bg-gray-200 rounded animate-pulse" />
+                    <div className="h-8 w-16 bg-[#e5e7eb] rounded animate-pulse" />
+                    <div className="h-3 w-24 bg-[#e5e7eb] rounded animate-pulse" />
                   </div>
                 </CardContent>
               </Card>
@@ -152,23 +152,23 @@ export function InvestorDashboard({ investor, onLogout }: InvestorDashboardProps
           <div className="grid gap-6 md:grid-cols-2">
             <Card className="bg-white">
               <CardHeader>
-                <div className="h-6 w-32 bg-gray-200 rounded animate-pulse" />
+                <div className="h-6 w-32 bg-[#e5e7eb] rounded animate-pulse" />
               </CardHeader>
               <CardContent>
-                <div className="h-64 w-full bg-gray-200 rounded animate-pulse" />
+                <div className="h-64 w-full bg-[#e5e7eb] rounded animate-pulse" />
               </CardContent>
             </Card>
 
             <Card className="bg-white">
               <CardHeader>
-                <div className="h-6 w-32 bg-gray-200 rounded animate-pulse" />
+                <div className="h-6 w-32 bg-[#e5e7eb] rounded animate-pulse" />
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {[1, 2, 3, 4].map(i => (
                     <div key={i} className="flex items-center justify-between">
-                      <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
-                      <div className="h-4 w-16 bg-gray-200 rounded animate-pulse" />
+                      <div className="h-4 w-20 bg-[#e5e7eb] rounded animate-pulse" />
+                      <div className="h-4 w-16 bg-[#e5e7eb] rounded animate-pulse" />
                     </div>
                   ))}
                 </div>
@@ -181,7 +181,7 @@ export function InvestorDashboard({ investor, onLogout }: InvestorDashboardProps
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#f9fafb]">
       {/* Header */}
       <header className="bg-white border-b shadow-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -190,7 +190,7 @@ export function InvestorDashboard({ investor, onLogout }: InvestorDashboardProps
               <BrandLogo size={40} className="rounded-lg" />
               <div>
                 <h1 className="font-bold text-[#111827]">Apex Enterprise</h1>
-                <p className="text-xs text-orange-600 font-medium">Investor Portal</p>
+                <p className="text-xs text-[#d97706] font-medium">Investor Portal</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -253,13 +253,13 @@ export function InvestorDashboard({ investor, onLogout }: InvestorDashboardProps
 
         {/* Stats Grid */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
-          <Card className="bg-white border-orange-200">
+          <Card className="bg-white border-[#fde68a]">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-orange-800">Total Investment</CardTitle>
-              <DollarSign className="h-4 w-4 text-orange-600" />
+              <CardTitle className="text-sm font-medium text-[#92400e]">Total Investment</CardTitle>
+              <DollarSign className="h-4 w-4 text-[#d97706]" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-orange-900">{formatNaira(investor.investmentAmount)}</div>
+              <div className="text-2xl font-bold text-[#78350f]">{formatNaira(investor.investmentAmount)}</div>
               <p className="text-xs text-muted-foreground">Initial investment amount</p>
             </CardContent>
           </Card>
@@ -369,21 +369,21 @@ export function InvestorDashboard({ investor, onLogout }: InvestorDashboardProps
                 </div>
                 <div className="flex items-center justify-between border-t pt-4">
                   <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-orange-100 flex items-center justify-center">
-                      <DollarSign className="h-4 w-4 text-orange-600" />
+                    <div className="h-8 w-8 rounded-full bg-[#fef3c7] flex items-center justify-center">
+                      <DollarSign className="h-4 w-4 text-[#d97706]" />
                     </div>
-                    <span className="text-sm font-medium text-orange-900">Your Weekly Return</span>
+                    <span className="text-sm font-medium text-[#78350f]">Your Weekly Return</span>
                   </div>
-                  <span className="text-sm font-bold text-orange-900">{formatNaira(weeklyReturn)}</span>
+                  <span className="text-sm font-bold text-[#78350f]">{formatNaira(weeklyReturn)}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-orange-100 flex items-center justify-center">
-                      <DollarSign className="h-4 w-4 text-orange-600" />
+                    <div className="h-8 w-8 rounded-full bg-[#fef3c7] flex items-center justify-center">
+                      <DollarSign className="h-4 w-4 text-[#d97706]" />
                     </div>
-                    <span className="text-sm font-medium text-orange-900">Your Monthly Return</span>
+                    <span className="text-sm font-medium text-[#78350f]">Your Monthly Return</span>
                   </div>
-                  <span className="text-sm font-bold text-orange-900">{formatNaira(monthlyReturn)}</span>
+                  <span className="text-sm font-bold text-[#78350f]">{formatNaira(monthlyReturn)}</span>
                 </div>
               </div>
             </CardContent>

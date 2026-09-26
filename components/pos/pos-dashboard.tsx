@@ -380,24 +380,24 @@ export function POSDashboard({ staffName, staffId, onLogout, onOpenEasyBuy, onOp
       <div className="min-h-screen bg-background flex flex-col">
         <header className="bg-card border-b p-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="h-8 w-32 bg-gray-200 rounded animate-pulse" />
-            <div className="h-6 w-20 bg-gray-200 rounded animate-pulse" />
+            <div className="h-8 w-32 bg-[#e5e7eb] rounded animate-pulse" />
+            <div className="h-6 w-20 bg-[#e5e7eb] rounded animate-pulse" />
           </div>
           <div className="flex items-center gap-2">
-            <div className="h-8 w-24 bg-gray-200 rounded animate-pulse" />
-            <div className="h-8 w-8 bg-gray-200 rounded-full animate-pulse" />
+            <div className="h-8 w-24 bg-[#e5e7eb] rounded animate-pulse" />
+            <div className="h-8 w-8 bg-[#e5e7eb] rounded-full animate-pulse" />
           </div>
         </header>
         
         <div className="flex-1 flex gap-6 p-6">
           <div className="flex-1 space-y-6">
-            <div className="h-12 w-full bg-gray-200 rounded animate-pulse" />
-            <div className="h-40 w-full bg-gray-200 rounded animate-pulse" />
-            <div className="h-64 w-full bg-gray-200 rounded animate-pulse" />
+            <div className="h-12 w-full bg-[#e5e7eb] rounded animate-pulse" />
+            <div className="h-40 w-full bg-[#e5e7eb] rounded animate-pulse" />
+            <div className="h-64 w-full bg-[#e5e7eb] rounded animate-pulse" />
           </div>
           <div className="w-96 space-y-6">
-            <div className="h-48 w-full bg-gray-200 rounded animate-pulse" />
-            <div className="h-64 w-full bg-gray-200 rounded animate-pulse" />
+            <div className="h-48 w-full bg-[#e5e7eb] rounded animate-pulse" />
+            <div className="h-64 w-full bg-[#e5e7eb] rounded animate-pulse" />
           </div>
         </div>
       </div>

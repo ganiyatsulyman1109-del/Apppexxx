@@ -15,7 +15,7 @@ export default function AboutPage() {
           </h1>
           
           <div className="bg-card rounded-lg shadow-sm p-8 mb-8">
-            <div className="prose prose-gray dark:prose-invert max-w-none">
+            <div className="prose prose-gray max-w-none">
               <p className="text-lg text-muted-foreground mb-6">
                 Welcome to Apex Enterprise, your destination for quality everyday essentials and trusted products.
                 We are committed to making shopping simple, convenient, and dependable for every customer.

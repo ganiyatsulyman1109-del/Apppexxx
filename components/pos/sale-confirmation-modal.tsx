@@ -172,7 +172,7 @@ export function SaleConfirmationModal({
               {receiptNumber && (
                 <div className="bg-muted rounded-lg p-4 mx-auto max-w-xs">
                   <p className="text-sm text-muted-foreground mb-1">Receipt Number</p>
-                  <p className="text-xl font-bold text-orange-600">{receiptNumber}</p>
+                  <p className="text-xl font-bold text-[#d97706]">{receiptNumber}</p>
                 </div>
               )}
               <p className="text-muted-foreground">

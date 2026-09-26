@@ -115,7 +115,7 @@ export default function CustomerAccountPage() {
       case 'cancelled':
         return 'text-red-600 bg-red-50'
       default:
-        return 'text-gray-600 bg-gray-50'
+        return 'text-[#6b7280] bg-[#f9fafb]'
     }
   }
 
@@ -158,7 +158,7 @@ export default function CustomerAccountPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#f9fafb]">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -181,7 +181,7 @@ export default function CustomerAccountPage() {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">My Account</h1>
+              <h1 className="text-3xl font-bold text-[#111827]">My Account</h1>
               <p className="text-muted-foreground mt-1">
                 Welcome back, {profile?.full_name || user?.email}!
               </p>

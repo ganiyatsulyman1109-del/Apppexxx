@@ -27,7 +27,7 @@ export function PurchaseHistoryTab({ purchases }: PurchaseHistoryTabProps) {
       case "overdue":
         return "bg-red-100 text-red-800 border-red-200"
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200"
+        return "bg-[#f3f4f6] text-[#1f2937] border-[#e5e7eb]"
     }
   }
 
@@ -66,7 +66,7 @@ export function PurchaseHistoryTab({ purchases }: PurchaseHistoryTabProps) {
               <td className="px-4 py-3 text-sm text-right font-medium">
                 ₦{Number(purchase.amount || 0).toLocaleString("en-NG")}
               </td>
-              <td className="px-4 py-3 text-sm text-right font-medium text-orange-600">
+              <td className="px-4 py-3 text-sm text-right font-medium text-[#d97706]">
                 ₦{Number((purchase.remainingBalance ?? (purchase.status === 'paid' ? 0 : purchase.amount)) || 0).toLocaleString("en-NG")}
               </td>
               <td className="px-4 py-3 text-sm text-muted-foreground">{purchase.dueDate ? formatDate(purchase.dueDate) : '-'}</td>

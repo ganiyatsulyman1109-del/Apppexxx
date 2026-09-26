@@ -110,7 +110,7 @@ export function RegisterCustomerModal({ onClose, onComplete, staffId }: Register
           <h2 className="text-xl font-bold text-foreground mb-2">Customer Registered Successfully!</h2>
           <div className="bg-muted rounded-lg p-4 mb-4">
             <p className="text-sm text-muted-foreground mb-1">EasyBuy ID</p>
-            <p className="text-2xl font-bold text-orange-600">{generatedEasyBuyId}</p>
+            <p className="text-2xl font-bold text-[#d97706]">{generatedEasyBuyId}</p>
           </div>
           <p className="text-muted-foreground mb-6">
             The customer has been registered and can now make credit purchases. Save this EasyBuy ID for future reference.

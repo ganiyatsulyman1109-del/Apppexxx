@@ -15,7 +15,7 @@ export default function ShippingPage() {
           </h1>
           
           <div className="bg-card rounded-lg shadow-sm p-8 mb-8">
-            <div className="prose prose-gray dark:prose-invert max-w-none">
+            <div className="prose prose-gray max-w-none">
               <p className="text-lg text-muted-foreground mb-6">
                 At Apex Enterprise, we strive to provide fast and reliable delivery services for all your orders across Nigeria.
               </p>
@@ -80,7 +80,7 @@ export default function ShippingPage() {
                 You can track your delivery status through our website or contact our customer service.
               </p>
               
-              <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-lg p-6 mt-8">
+              <div className="bg-[#fffbeb] border border-[#fde68a] rounded-lg p-6 mt-8">
                 <h3 className="text-xl font-semibold text-foreground mb-2">
                   Important Notes
                 </h3>

@@ -15,7 +15,7 @@ export default function TermsPage() {
           </h1>
           
           <div className="bg-card rounded-lg shadow-sm p-8 mb-8">
-            <div className="prose prose-gray dark:prose-invert max-w-none">
+            <div className="prose prose-gray max-w-none">
               <p className="text-lg text-muted-foreground mb-6">
                 Please read these terms and conditions carefully before using our website and purchasing 
                 products from Apex Enterprise. By accessing and using our services, you agree to be 
