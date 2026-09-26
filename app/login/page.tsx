@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { Suspense, useState } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -18,6 +17,10 @@ type LoginResponse = {
   error?: string
 }
 
+function internalRedirect(value: string | null, fallback: string) {
+  return value && value.startsWith("/") && !value.startsWith("//") ? value : fallback
+}
+
 function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -27,34 +30,36 @@ function LoginContent() {
   const [rememberMe, setRememberMe] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+
   const redirectOverride = searchParams.get("redirect")
   const registered = searchParams.get("registered") === "true"
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!email.trim() || !password) {
+    const normalizedEmail = email.trim()
+
+    if (!normalizedEmail || !password) {
       setError("Please enter your email and password.")
       return
     }
 
-    setIsLoading(true)
     setError("")
+    setIsLoading(true)
 
     try {
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), password }),
+        body: JSON.stringify({ email: normalizedEmail, password }),
       })
-      const data = (await response.json()) as LoginResponse
+      const data = (await response.json().catch(() => ({}))) as LoginResponse
 
       if (!response.ok) {
         setError(data.error || "Invalid email or password.")
         return
       }
 
-      void rememberMe
-      router.push(redirectOverride || data.redirect || "/account")
+      router.push(internalRedirect(redirectOverride, internalRedirect(data.redirect ?? null, "/account")))
     } catch {
       setError("Login failed. Please try again.")
     } finally {
@@ -63,31 +68,37 @@ function LoginContent() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#f9fafb] px-4 py-10">
-      <Card className="w-full max-w-md rounded-2xl border-[#e5e7eb] bg-white shadow-sm">
+    <main className="flex min-h-screen items-center justify-center bg-[#f9fafb] px-4 py-10 text-[#111827]">
+      <Card className="w-full max-w-md rounded-xl border-[#e5e7eb] bg-white shadow-sm">
         <CardHeader className="space-y-4 px-6 pb-2 pt-8 text-center sm:px-8">
           <BrandLogo size={56} className="mx-auto rounded-xl" priority />
           <div className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-[#111827]">Welcome back</CardTitle>
+            <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
             <CardDescription className="text-[#6b7280]">Log in to your Apex Enterprise account.</CardDescription>
           </div>
         </CardHeader>
         <CardContent className="px-6 pb-8 pt-6 sm:px-8">
-          {registered && <div role="status" className="mb-4 rounded-lg border border-green-200 bg-green-50 px-3 py-2.5 text-sm text-green-700">Your account was created successfully. You can log in now.</div>}
+          {registered && (
+            <div role="status" className="mb-4 rounded-lg border border-green-200 bg-green-50 px-3 py-2.5 text-sm text-green-700">
+              Account created successfully. Please log in.
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email address</Label>
               <div className="relative">
                 <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6b7280]" aria-hidden="true" />
-                <Input id="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} className="h-11 border-[#d1d5db] pl-10 text-[#111827] placeholder:text-[#9ca3af] focus-visible:ring-[#2563eb]" autoComplete="email" required />
+                <Input id="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" required className="h-11 border-[#d1d5db] pl-10 text-[#111827] placeholder:text-[#9ca3af] focus-visible:ring-[#2563eb]" />
               </div>
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <div className="relative">
                 <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6b7280]" aria-hidden="true" />
-                <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} className="h-11 border-[#d1d5db] pl-10 pr-11 text-[#111827] placeholder:text-[#9ca3af] focus-visible:ring-[#2563eb]" autoComplete="current-password" required />
-                <button type="button" onClick={() => setShowPassword((current) => !current)} className="absolute right-3 top-1/2 -translate-y-1/2 rounded-sm text-[#6b7280] hover:text-[#111827] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb]" aria-label={showPassword ? "Hide password" : "Show password"}>
+                <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required className="h-11 border-[#d1d5db] pl-10 pr-11 text-[#111827] placeholder:text-[#9ca3af] focus-visible:ring-[#2563eb]" />
+                <button type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? "Hide password" : "Show password"} className="absolute right-3 top-1/2 -translate-y-1/2 rounded-sm text-[#6b7280] hover:text-[#111827] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb]">
                   {showPassword ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
                 </button>
               </div>
@@ -103,10 +114,11 @@ function LoginContent() {
               <Link href="/forgot-password" className="text-sm font-medium text-[#2563eb] hover:underline">Forgot password?</Link>
             </div>
 
-            <Button type="submit" className="h-11 w-full bg-[#2563eb] text-white hover:bg-[#1d4ed8]" disabled={isLoading}>
+            <Button type="submit" disabled={isLoading} className="h-11 w-full bg-[#2563eb] text-white hover:bg-[#1d4ed8]">
               {isLoading ? "Logging in..." : "Log in"}
             </Button>
           </form>
+
           <p className="mt-6 text-center text-sm text-[#6b7280]">
             Don&apos;t have an account?{" "}
             <Link href="/signup" className="font-medium text-[#2563eb] hover:underline">Sign up</Link>
