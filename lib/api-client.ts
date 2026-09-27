@@ -25,11 +25,14 @@ class ApiClient {
         // If refresh fails, sign out and redirect
         await supabase.auth.signOut();
         if (typeof window !== 'undefined') {
-            const currentPath = window.location.pathname;
-            // Only redirect if we're not already on a login page
-            if (!currentPath.includes('/login')) {
-              window.location.href = currentPath.startsWith('/admin') ? '/login' : '/';
+          const currentPath = window.location.pathname;
+          // Only redirect if we're not already on a login page
+          if (!currentPath.includes('/login')) {
+            const redirectPath = currentPath.startsWith('/admin') ? '/login' : '/';
+            if (currentPath !== redirectPath) {
+              window.location.href = redirectPath;
             }
+          }
         }
         throw new Error('Session expired. Please log in again.');
       }
