@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient, createServerClient } from '@/lib/utils/supabase'
+import { resolveUserRole } from '@/lib/auth'
+import { getPostLoginRedirect } from '@/lib/auth-routing'
 
 export async function POST(request: Request) {
   try {
@@ -26,25 +28,38 @@ export async function POST(request: Request) {
     }
 
     const adminClient = createAdminClient()
-    const { data: profile } = await adminClient
+    const { data: profile, error: profileError } = await adminClient
       .from('profiles')
       .select('*, businesses(*)')
       .eq('id', data.user.id)
-      .single()
+      .maybeSingle()
 
-    const role = profile?.role || 'customer'
-    const business = profile?.businesses || null
-    let redirect = '/'
-
-    if (role === 'business_owner' || role === 'staff') {
-      redirect = business?.is_onboarded ? '/admin' : '/onboarding'
-    } else if (role === 'customer') {
-      redirect = '/account'
-    } else if (role === 'investor') {
-      redirect = '/investor/dashboard'
-    } else if (role === 'platform_admin') {
-      redirect = '/platform-admin'
+    if (profileError) {
+      console.error('Login profile lookup failed:', profileError)
+      await supabase.auth.signOut()
+      return NextResponse.json(
+        { error: 'Unable to load your account. Please try again.' },
+        { status: 500 }
+      )
     }
+
+    let role: string | null
+    try {
+      role = await resolveUserRole(data.user.id, profile?.role)
+    } catch (roleError) {
+      await supabase.auth.signOut()
+      throw roleError
+    }
+    const redirect = role ? getPostLoginRedirect(role, profile?.businesses?.is_onboarded === true) : null
+    if (!role || !redirect) {
+      await supabase.auth.signOut()
+      return NextResponse.json(
+        { error: 'Your account role is not configured. Please contact support.' },
+        { status: 403 }
+      )
+    }
+
+    const business = profile?.businesses || null
 
     return NextResponse.json({
       success: true,

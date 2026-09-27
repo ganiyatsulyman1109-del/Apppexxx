@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { InvestorLogin } from "@/components/investor/investor-login"
 import { InvestorDashboard } from "@/components/investor/investor-dashboard"
 import type { Investor } from "@/lib/investor-types"
-import { getCurrentUser } from "@/lib/auth"
 import { BrandLogo } from "@/components/brand-logo"
 
 export default function InvestorPage() {
@@ -18,17 +17,27 @@ export default function InvestorPage() {
 
   const checkAuth = async () => {
     try {
-      const user = await getCurrentUser()
-      if (user && user.role === 'investor') {
+      const response = await fetch("/api/auth/me", { credentials: "include" })
+      if (!response.ok) {
+        setIsLoggedIn(false)
+        return
+      }
+      const account = await response.json()
+      const user = account.user
+      if (user && account.role === 'investor') {
         // Fetch investor data from database
         const { createBrowserClient } = await import('@/lib/utils/supabase')
         const supabase = createBrowserClient()
         
-        const { data: investorData, error } = await supabase
+        const { data: investorData, error: investorError } = await supabase
           .from('investors')
           .select('*')
           .eq('user_id', user.id)
           .single()
+
+        if (investorError) {
+          throw investorError
+        }
 
         if (investorData) {
           const investor: Investor = {

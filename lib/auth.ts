@@ -1,4 +1,4 @@
-import { createServerClient, createAdminClient } from "@/lib/utils/supabase"
+import { createBrowserClient, createServerClient, createAdminClient } from "@/lib/utils/supabase"
 
 // Types
 export interface User {
@@ -26,6 +26,30 @@ export interface AdminAuthUser {
   full_name: string | null
 }
 
+export async function resolveUserRole(
+  userId: string,
+  profileRole: string | null | undefined
+): Promise<string | null> {
+  if (profileRole) {
+    return profileRole
+  }
+
+  const adminClient = createAdminClient()
+  const { data: role, error } = await adminClient
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .limit(1)
+    .maybeSingle()
+
+  if (error) {
+    console.error("Legacy role lookup failed:", error)
+    throw new Error("Unable to determine account role")
+  }
+
+  return role?.role ?? null
+}
+
 function authResponse(status: 401 | 403, error: string): Response {
   return new Response(JSON.stringify({ error }), {
     status,
@@ -41,11 +65,11 @@ export async function requireAdminAuth(): Promise<AdminAuthUser> {
     throw authResponse(401, "Unauthorized")
   }
 
-  if (!["business_owner", "staff", "platform_admin"].includes(user.role)) {
+  if (!["business_owner", "staff", "platform_admin", "admin"].includes(user.role)) {
     throw authResponse(403, "Forbidden")
   }
 
-  if (!user.business_id && user.role !== "platform_admin") {
+  if (!user.business_id && user.role !== "platform_admin" && user.role !== "admin") {
     throw authResponse(403, "No business associated with account")
   }
 
@@ -239,11 +263,16 @@ export async function getCurrentUser(): Promise<User | null> {
       return null
     }
 
+    const role = await resolveUserRole(user.id, profile.role)
+    if (!role) {
+      return null
+    }
+
     return {
       id: user.id,
       email: user.email!,
       full_name: profile.full_name,
-      role: profile.role,
+      role,
       business_id: profile.business_id,
       business: profile.businesses || null,
     }
@@ -429,7 +458,7 @@ export async function getCurrentUserWithId(): Promise<{ id: string; role: string
 
 // Password reset functions
 export async function sendPasswordResetEmail(email: string) {
-  const supabase = createServerClient()
+  const supabase = createBrowserClient()
   
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password`

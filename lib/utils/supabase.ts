@@ -6,6 +6,12 @@ import {
 import { createClient } from "@supabase/supabase-js"
 import type { NextRequest, NextResponse } from "next/server"
 
+type CookieToSet = {
+  name: string
+  value: string
+  options: CookieOptions
+}
+
 const getRequiredEnv = (key: string, value: string | undefined) => {
   if (!value) {
     throw new Error(`Missing required environment variable: ${key}`)
@@ -31,7 +37,11 @@ export const createAdminClient = () => {
   })
 }
 
-export const createServerClient = (request?: NextRequest, response?: NextResponse) => {
+export const createServerClient = (
+  request?: NextRequest,
+  response?: NextResponse,
+  onProxyCookiesChanged?: (cookiesToSet: CookieToSet[]) => void
+) => {
   const url = getRequiredEnv("NEXT_PUBLIC_SUPABASE_URL", process.env.NEXT_PUBLIC_SUPABASE_URL)
   const anonKey = getRequiredEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
   
@@ -39,32 +49,20 @@ export const createServerClient = (request?: NextRequest, response?: NextRespons
   if (request && response) {
     return createSupabaseServerClient(url, anonKey, {
       cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value
+        getAll() {
+          return request.cookies.getAll()
         },
-        set(name: string, value: string, options: CookieOptions) {
-          request.cookies.set({
-            name,
-            value,
-            ...options,
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => {
+            request.cookies.set(name, value)
           })
-          response.cookies.set({
-            name,
-            value,
-            ...options,
-          })
-        },
-        remove(name: string, options: CookieOptions) {
-          request.cookies.set({
-            name,
-            value: '',
-            ...options,
-          })
-          response.cookies.set({
-            name,
-            value: '',
-            ...options,
-          })
+          if (onProxyCookiesChanged) {
+            onProxyCookiesChanged(cookiesToSet)
+          } else {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              response.cookies.set(name, value, options)
+            })
+          }
         },
       },
     })
@@ -73,28 +71,17 @@ export const createServerClient = (request?: NextRequest, response?: NextRespons
   // For Route Handlers and Server Actions
   return createSupabaseServerClient(url, anonKey, {
     cookies: {
-      async get(name: string) {
+      async getAll() {
         const { cookies } = await import("next/headers")
         const cookieStore = await cookies()
-        return cookieStore.get(name)?.value
+        return cookieStore.getAll()
       },
-      async set(name: string, value: string, options: CookieOptions) {
+      async setAll(cookiesToSet) {
         const { cookies } = await import("next/headers")
         const cookieStore = await cookies()
-        try {
-          cookieStore.set({ name, value, ...options })
-        } catch (error) {
-          // Handled if called from Server Component
-        }
-      },
-      async remove(name: string, options: CookieOptions) {
-        const { cookies } = await import("next/headers")
-        const cookieStore = await cookies()
-        try {
-          cookieStore.set({ name, value: '', ...options })
-        } catch (error) {
-          // Handled if called from Server Component
-        }
+        cookiesToSet.forEach(({ name, value, options }) => {
+          cookieStore.set(name, value, options)
+        })
       },
     },
   })

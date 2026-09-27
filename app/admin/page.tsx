@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { AdminLogin } from "@/components/admin/admin-login"
 import { AdminDashboard } from "@/components/admin/admin-dashboard"
 import { createBrowserClient } from "@/lib/utils/supabase"
+import { canAccessAdminDashboard } from "@/lib/auth-routing"
 import { EasyBuyDashboard } from "@/components/easybuy/easybuy-dashboard"
 import { BrandLogo } from "@/components/brand-logo"
 
@@ -29,13 +30,14 @@ export default function AdminPage() {
         setIsLoggedIn(false)
         return
       }
-      const { data: roleData } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .single()
-      if (roleData?.role === 'admin') {
-        setAdminEmail(user.email || "")
+      const response = await fetch("/api/auth/me", { credentials: "include" })
+      if (!response.ok) {
+        setIsLoggedIn(false)
+        return
+      }
+      const data = await response.json()
+      if (canAccessAdminDashboard(data.role)) {
+        setAdminEmail(data.user?.email || user.email || "")
         setIsLoggedIn(true)
       } else {
         setIsLoggedIn(false)

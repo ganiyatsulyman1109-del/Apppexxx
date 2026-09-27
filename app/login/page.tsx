@@ -17,10 +17,6 @@ type LoginResponse = {
   error?: string
 }
 
-function internalRedirect(value: string | null, fallback: string) {
-  return value && value.startsWith("/") && !value.startsWith("//") ? value : fallback
-}
-
 function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -31,7 +27,6 @@ function LoginContent() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
 
-  const redirectOverride = searchParams.get("redirect")
   const registered = searchParams.get("registered") === "true"
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -59,7 +54,7 @@ function LoginContent() {
         return
       }
 
-      router.push(internalRedirect(redirectOverride, internalRedirect(data.redirect ?? null, "/account")))
+      router.replace(data.redirect || "/account")
     } catch {
       setError("Login failed. Please try again.")
     } finally {

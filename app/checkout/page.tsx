@@ -12,7 +12,6 @@ import { Footer } from "@/components/ecommerce/footer"
 import { WhatsAppButton } from "@/components/ecommerce/whatsapp-button"
 import { useCart } from "@/components/ecommerce/cart-context"
 import { BrandLogo } from "@/components/brand-logo"
-import { getCurrentUser } from "@/lib/auth"
 import { Loader2, ArrowLeft, CreditCard } from "lucide-react"
 
 interface ShippingDetails {
@@ -50,14 +49,18 @@ export default function CheckoutPage() {
   useEffect(() => {
     const loadUserData = async () => {
       try {
-        const userData = await getCurrentUser()
-        if (userData) {
+        const response = await fetch("/api/auth/me", { credentials: "include" })
+        if (response.ok) {
+          const data = await response.json()
+          const userData = data.user
           // Pre-fill form with user data
-          setShippingDetails(prev => ({
-            ...prev,
-            fullName: userData.full_name || "",
-            email: userData.email || "",
-          }))
+          if (userData) {
+            setShippingDetails(prev => ({
+              ...prev,
+              fullName: userData.full_name || "",
+              email: userData.email || "",
+            }))
+          }
         }
       } catch (err) {
         console.error("Error loading user data:", err)

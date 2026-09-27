@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { createServerClient } from "@/lib/utils/supabase"
+import { createBrowserClient } from "@/lib/utils/supabase"
 import { BrandLogo } from "@/components/brand-logo"
 
 export default function ForgotPasswordPage() {
@@ -30,28 +30,7 @@ export default function ForgotPasswordPage() {
     setError("")
 
     try {
-      const supabase = createServerClient()
-      
-      // Check if user exists and has admin or investor role
-      const { data: userData, error: userError } = await supabase
-        .from('user_roles')
-        .select(`
-          user_id,
-          role,
-          profiles!inner(
-            email
-          )
-        `)
-        .eq('profiles.email', email)
-        .in('role', ['admin', 'investor'])
-        .single()
-
-      if (userError || !userData) {
-        setError("No admin or investor account found with this email address")
-        return
-      }
-
-      // Send password reset email
+      const supabase = createBrowserClient()
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
       })
@@ -62,7 +41,7 @@ export default function ForgotPasswordPage() {
       }
 
       setSuccess(true)
-    } catch (err) {
+    } catch {
       setError("An unexpected error occurred. Please try again.")
     } finally {
       setIsLoading(false)
@@ -86,15 +65,14 @@ export default function ForgotPasswordPage() {
               <div>
                 <CardTitle className="text-2xl font-bold text-[#111827]">Check Your Email</CardTitle>
                 <CardDescription className="text-lg mt-1">
-                  Password reset instructions have been sent to your email
+                  Check your email for password reset instructions
                 </CardDescription>
               </div>
             </CardHeader>
             <CardContent>
               <div className="text-center space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  We've sent a password reset link to <strong>{email}</strong>. 
-                  Please check your email and click the link to reset your password.
+                  If an account exists for <strong>{email}</strong>, a password reset link will arrive shortly.
                 </p>
                 <p className="text-xs text-muted-foreground">
                   The link will expire in 1 hour for security reasons.
@@ -160,7 +138,7 @@ export default function ForgotPasswordPage() {
               <div className="text-sm text-muted-foreground">
                 <p>Enter your email address and we'll send you a link to reset your password.</p>
                 <p className="mt-2 text-xs">
-                  <strong>Note:</strong> This is only available for admin and investor accounts.
+                  If an account exists for that email address, reset instructions will be sent.
                 </p>
               </div>
 
@@ -176,12 +154,8 @@ export default function ForgotPasswordPage() {
             <div className="mt-6 text-center">
               <p className="text-sm text-muted-foreground">
                 Remember your password?{" "}
-                <Link href="/admin" className="text-blue-600 hover:underline">
-                  Admin Login
-                </Link>
-                {" "}or{" "}
-                <Link href="/investor" className="text-blue-600 hover:underline">
-                  Investor Login
+                <Link href="/login" className="text-blue-600 hover:underline">
+                  Log in
                 </Link>
               </p>
             </div>

@@ -4,7 +4,6 @@ import type React from "react"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
 import { Eye, EyeOff, Lock, Mail } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,6 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { apiClient } from "@/lib/api-client"
 import { BrandLogo } from "@/components/brand-logo"
+import { canAccessAdminDashboard } from "@/lib/auth-routing"
 
 interface AdminLoginProps {
   onLogin: (email: string) => void
@@ -36,24 +36,20 @@ export function AdminLogin({ onLogin }: AdminLoginProps) {
 
     try {
       const result = await apiClient.login(email, password)
-      if (result?.role === 'admin') {
-        onLogin(email)
+      if (canAccessAdminDashboard(result?.role)) {
+        if (result.redirect && result.redirect !== "/admin") {
+          router.replace(result.redirect)
+        } else {
+          onLogin(email)
+        }
         return
       }
       setError(result?.role ? "Access denied. Admin privileges required." : "Invalid credentials")
-    } catch (err) {
+    } catch {
       setError("Login failed. Please try again.")
     } finally {
       setIsLoading(false)
     }
-  }
-
-  const handleForgotPassword = () => {
-    if (!email) {
-      setError("Please enter your email address first")
-      return
-    }
-    router.push(`/forgot-password?email=${encodeURIComponent(email)}`)
   }
 
   return (
