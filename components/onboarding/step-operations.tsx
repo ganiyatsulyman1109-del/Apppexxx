@@ -35,9 +35,9 @@ function Question({
   )
 }
 
-export function getBusinessTier(data: Pick<OnboardingData, "hasPos" | "offersCreditSales">) {
-  if (data.hasPos && data.offersCreditSales) return "enterprise" as const
-  if (data.hasPos) return "hybrid" as const
+export function getBusinessTier(data: Pick<OnboardingData, "hasPhysicalShop" | "hasPos" | "offersCreditSales">) {
+  if (data.hasPhysicalShop && data.hasPos && data.offersCreditSales) return "enterprise" as const
+  if (data.hasPhysicalShop && data.hasPos) return "hybrid" as const
   return "presence" as const
 }
 

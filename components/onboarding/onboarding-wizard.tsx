@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, ArrowRight, Check, LoaderCircle, Save } from "lucide-react"
 import { BrandLogo } from "@/components/brand-logo"
@@ -168,18 +168,21 @@ export function OnboardingWizard({
   const [secretConfigured, setSecretConfigured] = useState(paystackSecretConfigured)
   const autoContinueRef = useRef(false)
 
-  const updateData = (patch: Partial<OnboardingData>) => {
+  const updateData = useCallback((patch: Partial<OnboardingData>) => {
     setData((current) => ({ ...current, ...patch }))
     setError("")
     setDraftSaved(false)
-  }
+  }, [])
 
   useEffect(() => {
     if (step !== 1 || data.hasPhysicalShop !== false || autoContinueRef.current) return
     autoContinueRef.current = true
-    const timeout = window.setTimeout(() => setStep(2), 1400)
+    const timeout = window.setTimeout(() => {
+      updateData({ hasPos: false, offersCreditSales: false, hasStaff: false })
+      setStep(2)
+    }, 1400)
     return () => window.clearTimeout(timeout)
-  }, [step, data.hasPhysicalShop])
+  }, [step, data.hasPhysicalShop, updateData])
 
   function continueStep() {
     setError("")

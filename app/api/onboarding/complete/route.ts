@@ -4,6 +4,56 @@ import { createAdminClient } from "@/lib/utils/supabase"
 
 export const dynamic = "force-dynamic"
 
+const businessCategories = new Set([
+  "food-catering",
+  "fashion-online",
+  "fashion-physical",
+  "cosmetics-online",
+  "cosmetics-physical",
+  "electronics-shop",
+  "gadgets-online",
+  "phones-accessories",
+  "pharmacy",
+  "supermarket-provisions",
+  "hardware",
+  "services",
+  "photography-creative",
+  "automotive",
+  "home-furniture",
+  "books-education",
+  "health-wellness",
+  "events-entertainment",
+  "other-online",
+  "other-physical",
+])
+
+const storeTemplates = new Set(["boutique", "gallery", "grid", "catalog", "storefront"])
+const supportedBanks = new Set([
+  "Access Bank", "First Bank", "GTBank", "Zenith Bank", "UBA", "Fidelity Bank", "FCMB",
+  "Sterling Bank", "Union Bank", "Polaris Bank", "Wema Bank", "Stanbic IBTC", "Ecobank",
+  "Keystone Bank", "Heritage Bank", "Providus Bank", "Kuda Bank", "Opay", "Moniepoint",
+  "PalmPay", "Other",
+])
+
+function getSubscriptionPlan(payload: Record<string, unknown>): string {
+  const hasPos = payload.hasPhysicalShop === true && payload.hasPos === true
+  const offersCreditSales = payload.hasPhysicalShop === true && payload.offersCreditSales === true
+  if (hasPos && offersCreditSales) return "pro"
+  if (hasPos) return "growth"
+  return "starter"
+}
+
+function isBusinessAssetUrl(value: string, businessId: string, folder: "logos" | "products"): boolean {
+  try {
+    const publicUrl = new URL(value)
+    const supabaseOrigin = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || "").origin
+    const expectedPath = `/storage/v1/object/public/business-assets/${businessId}/${folder}/`
+    return publicUrl.origin === supabaseOrigin && decodeURIComponent(publicUrl.pathname).startsWith(expectedPath)
+  } catch {
+    return false
+  }
+}
+
 export async function GET() {
   try {
     const auth = await requireAdminAuth()
@@ -118,23 +168,77 @@ export async function POST(request: Request) {
     if (typeof wizardData !== "object" || wizardData === null) {
       return NextResponse.json({ error: "data is required and must be an object." }, { status: 400 })
     }
+    if (publishNow !== undefined && typeof publishNow !== "boolean") {
+      return NextResponse.json({ error: "publishNow must be a boolean." }, { status: 400 })
+    }
 
     const payload = wizardData as Record<string, unknown>
 
     if (typeof payload.businessName !== "string" || !payload.businessName.trim()) {
       return NextResponse.json({ error: "businessName is required." }, { status: 400 })
     }
-    if (typeof payload.category !== "string" || !payload.category) {
-      return NextResponse.json({ error: "category is required." }, { status: 400 })
+    if (typeof payload.category !== "string" || !businessCategories.has(payload.category)) {
+      return NextResponse.json({ error: "Choose a valid business category." }, { status: 400 })
     }
-    if (typeof payload.whatsappNumber !== "string" || payload.whatsappNumber.replace(/\D/g, "").length !== 10) {
+    if (typeof payload.whatsappNumber !== "string" || !/^\d{10}$/.test(payload.whatsappNumber)) {
       return NextResponse.json({ error: "whatsappNumber must be a 10-digit number." }, { status: 400 })
     }
-    if (payload.acceptPaystack === true && typeof payload.paystackPublicKey !== "string") {
+    if (typeof payload.city !== "string" || typeof payload.country !== "string") {
+      return NextResponse.json({ error: "City and country must be text." }, { status: 400 })
+    }
+    if (typeof payload.hasPhysicalShop !== "boolean") {
+      return NextResponse.json({ error: "Choose whether you have a physical shop." }, { status: 400 })
+    }
+    for (const field of ["acceptBankTransfer", "acceptPaystack"] as const) {
+      if (typeof payload[field] !== "boolean") {
+        return NextResponse.json({ error: `${field} must be a boolean.` }, { status: 400 })
+      }
+    }
+    for (const field of ["city", "country", "email", "phone", "bankName", "accountNumber", "accountName", "paystackPublicKey", "logoUrl", "templateId", "personality", "primaryColor", "secondaryColor", "accentColor"] as const) {
+      if (payload[field] !== undefined && typeof payload[field] !== "string") {
+        return NextResponse.json({ error: `${field} must be text.` }, { status: 400 })
+      }
+    }
+    if (payload.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email as string)) {
+      return NextResponse.json({ error: "Enter a valid contact email." }, { status: 400 })
+    }
+    if (
+      typeof payload.primaryColor !== "string" ||
+      typeof payload.secondaryColor !== "string" ||
+      typeof payload.accentColor !== "string" ||
+      !/^#[0-9a-f]{6}$/i.test(payload.primaryColor) ||
+      !/^#[0-9a-f]{6}$/i.test(payload.secondaryColor) ||
+      !/^#[0-9a-f]{6}$/i.test(payload.accentColor)
+    ) {
+      return NextResponse.json({ error: "Choose valid brand colors." }, { status: 400 })
+    }
+    if (
+      typeof payload.logoUrl !== "string" ||
+      (payload.logoUrl !== "" && !isBusinessAssetUrl(payload.logoUrl, businessId, "logos"))
+    ) {
+      return NextResponse.json({ error: "Logo must be uploaded to this business's asset folder." }, { status: 400 })
+    }
+    if (
+      !Array.isArray(payload.productImageUrls) ||
+      payload.productImageUrls.length > 10 ||
+      !payload.productImageUrls.every((url): url is string =>
+        typeof url === "string" && isBusinessAssetUrl(url, businessId, "products")
+      )
+    ) {
+      return NextResponse.json({ error: "Product images must be this business's uploaded images (maximum 10)." }, { status: 400 })
+    }
+    if (payload.acceptPaystack === true && (
+      typeof payload.paystackPublicKey !== "string" ||
+      !payload.paystackPublicKey.trim() ||
+      payload.paystackPublicKey.length > 120
+    )) {
       return NextResponse.json({ error: "paystackPublicKey is required when accepting Paystack." }, { status: 400 })
     }
+    if (payload.paystackSecretKey !== undefined && typeof payload.paystackSecretKey !== "string") {
+      return NextResponse.json({ error: "paystackSecretKey must be text." }, { status: 400 })
+    }
     if (payload.acceptBankTransfer === true) {
-      if (typeof payload.bankName !== "string" || !payload.bankName.trim()) {
+      if (typeof payload.bankName !== "string" || !supportedBanks.has(payload.bankName)) {
         return NextResponse.json({ error: "bankName is required when accepting bank transfer." }, { status: 400 })
       }
       if (typeof payload.accountNumber !== "string" || !/^\d{10}$/.test(payload.accountNumber)) {
@@ -142,6 +246,33 @@ export async function POST(request: Request) {
       }
       if (typeof payload.accountName !== "string" || !payload.accountName.trim()) {
         return NextResponse.json({ error: "accountName is required when accepting bank transfer." }, { status: 400 })
+      }
+    }
+    if (payload.hasPhysicalShop && (
+      typeof payload.hasPos !== "boolean" ||
+      typeof payload.offersCreditSales !== "boolean" ||
+      typeof payload.hasStaff !== "boolean"
+    )) {
+      return NextResponse.json({ error: "Complete the operations questions before continuing." }, { status: 400 })
+    }
+    if (publishNow === true) {
+      if (
+        !payload.hasPhysicalShop &&
+        (payload.hasPos !== false || payload.offersCreditSales !== false || payload.hasStaff !== false)
+      ) {
+        return NextResponse.json({ error: "Online-only businesses cannot enable in-store operations." }, { status: 400 })
+      }
+      if (typeof payload.hasStaff !== "boolean") {
+        return NextResponse.json({ error: "Complete the operations questions before launching." }, { status: 400 })
+      }
+      if (!payload.businessName.toString().trim() || !(payload.city as string).trim() || !(payload.country as string).trim()) {
+        return NextResponse.json({ error: "Complete your business name and location before launching." }, { status: 400 })
+      }
+      if (typeof payload.personality !== "string" || !["bold", "clean", "warm", "luxury", "fresh"].includes(payload.personality)) {
+        return NextResponse.json({ error: "Choose a valid brand personality before launching." }, { status: 400 })
+      }
+      if (typeof payload.templateId !== "string" || !storeTemplates.has(payload.templateId)) {
+        return NextResponse.json({ error: "Choose a valid store design before launching." }, { status: 400 })
       }
     }
 
@@ -201,17 +332,25 @@ export async function POST(request: Request) {
     }
 
     if (publishNow === true) {
-      const { error: publishError } = await supabase
+      const { data: publishedBusiness, error: publishError } = await supabase
         .from("businesses")
         .update({
           name: (payload.businessName as string).trim(),
+          logo_url: payload.logoUrl || null,
+          primary_color: payload.primaryColor,
           is_onboarded: true,
+          subscription_plan: getSubscriptionPlan(payload),
         })
         .eq("id", businessId)
+        .select("id")
+        .maybeSingle()
 
       if (publishError) {
         console.error("Failed to mark onboarding as complete:", publishError)
         return NextResponse.json({ error: "Failed to publish your store." }, { status: 500 })
+      }
+      if (!publishedBusiness) {
+        return NextResponse.json({ error: "Business not found; your store was not launched." }, { status: 404 })
       }
     }
 

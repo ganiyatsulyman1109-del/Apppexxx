@@ -1,6 +1,9 @@
 "use client"
 
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { BarChart3, Bell, Box, CreditCard, Home, LogOut, Package, Settings, ShoppingCart, UserCog, Users, FileText } from "lucide-react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   Sidebar,
   SidebarContent,
@@ -13,7 +16,7 @@ import {
   SidebarMenuItem,
   SidebarSeparator,
 } from "@/components/ui/sidebar"
-import { BrandLogo } from "@/components/brand-logo"
+import { useBusinessConfig } from "@/components/providers/business-provider"
 
 export type AdminPage =
   | "dashboard"
@@ -37,28 +40,73 @@ interface AdminSidebarProps {
 
 const menuItems = [
   { id: "dashboard" as AdminPage, label: "Dashboard", icon: Home },
-  { id: "orders" as AdminPage, label: "Orders", icon: ShoppingCart },
   { id: "products" as AdminPage, label: "Products", icon: Package },
+  { id: "orders" as AdminPage, label: "Orders", icon: ShoppingCart },
+  { id: "customers" as AdminPage, label: "Customers", icon: Users },
+  { id: "pos" as const, label: "POS", icon: CreditCard },
   { id: "inventory" as AdminPage, label: "Inventory", icon: Box },
+  { id: "staff" as AdminPage, label: "Staff Management", icon: UserCog },
+  { id: "analytics" as AdminPage, label: "Analytics", icon: BarChart3 },
   { id: "easybuy" as AdminPage, label: "Easy Buy", icon: CreditCard },
   { id: "investors" as AdminPage, label: "Investors", icon: Users },
-  { id: "customers" as AdminPage, label: "Customers", icon: Users },
-  { id: "analytics" as AdminPage, label: "Analytics", icon: BarChart3 },
   { id: "audit" as AdminPage, label: "Audit Log", icon: FileText },
-  { id: "staff" as AdminPage, label: "Staff Management", icon: UserCog },
   { id: "settings" as AdminPage, label: "Settings", icon: Settings },
   { id: "notifications" as AdminPage, label: "Notifications", icon: Bell },
 ]
 
+type BusinessTier = "presence" | "hybrid" | "enterprise"
+
+const tierPages: Record<BusinessTier, ReadonlySet<AdminPage | "pos">> = {
+  presence: new Set(["dashboard", "products", "orders", "customers", "settings"]),
+  hybrid: new Set(["dashboard", "products", "orders", "customers", "settings", "pos", "inventory", "staff", "analytics"]),
+  enterprise: new Set([
+    "dashboard",
+    "products",
+    "orders",
+    "customers",
+    "settings",
+    "pos",
+    "inventory",
+    "staff",
+    "analytics",
+    "easybuy",
+    "investors",
+    "audit",
+  ]),
+}
+
 export function AdminSidebar({ currentPage, onPageChange, onLogout }: AdminSidebarProps) {
+  const router = useRouter()
+  const { business } = useBusinessConfig()
+  const [logoFailed, setLogoFailed] = useState(false)
+  const plan = business?.subscription_plan?.toLowerCase()
+  const tier: BusinessTier = plan === "pro" ? "enterprise" : plan === "growth" ? "hybrid" : "presence"
+  const tierLabel = tier === "enterprise" ? "Enterprise" : tier === "hybrid" ? "Hybrid Store" : "Online Store"
+  const visibleMenuItems = menuItems.filter((item) => tierPages[tier].has(item.id))
+  const initial = business?.name.trim().charAt(0).toUpperCase() || "B"
+
+  useEffect(() => {
+    setLogoFailed(false)
+  }, [business?.logo_url])
+
   return (
     <Sidebar collapsible="icon" className="bg-white text-[#111827] border-r border-[#e5e7eb]">
       <SidebarHeader className="p-4 bg-white">
         <div className="flex items-center gap-3">
-          <BrandLogo size={36} className="rounded-lg" />
+          <Avatar className="h-9 w-9 rounded-lg">
+            {business?.logo_url && !logoFailed && (
+              <AvatarImage src={business.logo_url} alt={`${business.name} logo`} onError={() => setLogoFailed(true)} />
+            )}
+            <AvatarFallback
+              className="rounded-lg font-semibold text-white"
+              style={{ backgroundColor: "var(--business-primary, #2563eb)" }}
+            >
+              {initial}
+            </AvatarFallback>
+          </Avatar>
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-            <span className="font-semibold text-sm text-[#111827]">Apex</span>
-            <span className="text-xs text-[#6b7280]">Admin Panel</span>
+            <span className="max-w-40 truncate font-semibold text-sm text-[#111827]">{business?.name || "My business"}</span>
+            <span className="text-xs text-[#6b7280]">{tierLabel}</span>
           </div>
         </div>
       </SidebarHeader>
@@ -67,11 +115,17 @@ export function AdminSidebar({ currentPage, onPageChange, onLogout }: AdminSideb
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
+              {visibleMenuItems.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
                     isActive={currentPage === item.id}
-                    onClick={() => onPageChange(item.id)}
+                    onClick={() => {
+                      if (item.id === "pos") {
+                        router.push("/pos")
+                      } else {
+                        onPageChange(item.id)
+                      }
+                    }}
                     tooltip={item.label}
                     className={
                       currentPage === item.id

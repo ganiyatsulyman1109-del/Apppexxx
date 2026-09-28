@@ -3,14 +3,6 @@ import { requireAdminAuth } from "@/lib/auth"
 import { createAdminClient } from "@/lib/utils/supabase"
 
 export const dynamic = "force-dynamic"
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: "5mb",
-    },
-  },
-}
-
 function sanitizeFilename(filename: string): string {
   return filename
     .replace(/[^a-zA-Z0-9._-]/g, "_")
@@ -39,9 +31,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 })
     }
 
-    const maxSize = 5242880
+    const maxSize = 2097152
     if (file.size > maxSize) {
-      return NextResponse.json({ error: "File is too large" }, { status: 413 })
+      return NextResponse.json({ error: "Logo must be 2MB or smaller." }, { status: 413 })
     }
 
     const extension = file.name.split(".").pop()?.toLowerCase() || ""
@@ -54,7 +46,7 @@ export async function POST(request: Request) {
     const filename = `${businessId}/logos/${Date.now()}_${sanitized}.${extension}`
     const buffer = await file.arrayBuffer()
 
-    const { data, error } = await supabase.storage.from("product-images").upload(filename, buffer, {
+    const { data, error } = await supabase.storage.from("business-assets").upload(filename, buffer, {
       contentType: file.type,
       upsert: false,
     })
@@ -64,7 +56,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Failed to upload logo" }, { status: 500 })
     }
 
-    const { data: publicUrlData } = supabase.storage.from("product-images").getPublicUrl(data.path)
+    const { data: publicUrlData } = supabase.storage.from("business-assets").getPublicUrl(data.path)
     const url = publicUrlData.publicUrl
 
     return NextResponse.json({ success: true, url })
