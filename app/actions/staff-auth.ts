@@ -18,60 +18,67 @@ export interface StaffLoginResult {
 }
 
 export async function authenticateStaff(staffId: string, pin: string): Promise<StaffLoginResult> {
-  const headersList = await headers()
-  const ip = headersList.get('x-forwarded-for')
-    || headersList.get('x-real-ip')
-    || 'unknown'
-  const supabase = createAdminClient()
-
-  const rateCheck = await checkRateLimitDB(ip, supabase)
-  if (!rateCheck.allowed) {
-    return {
-      success: false,
-      error: rateCheck.message
-    }
+  if (!staffId.trim() || !pin) {
+    return { success: false, error: "Invalid Staff ID or PIN" }
   }
-
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
     console.error('Missing Supabase environment variables')
     return { success: false, error: "System configuration error: Missing Supabase keys" }
   }
-  
+
+  const headersList = await headers()
+  const ip = headersList.get('x-forwarded-for')
+    || headersList.get('x-real-ip')
+    || 'unknown'
+
   try {
-    // Find staff member by staff_id
-    /* eslint-disable-next-line prefer-const */
-    let { data: staff, error: staffError } = await supabase
+    const supabase = createAdminClient()
+    const rateCheck = await checkRateLimitDB(ip, supabase)
+    if (!rateCheck.allowed) {
+      return { success: false, error: rateCheck.message }
+    }
+
+    const { data: staff, error: staffError } = await supabase
       .from('staff')
-      .select('id, staff_id, full_name, email, pin_hash, is_active')
+      .select('id, staff_id, full_name, pin_hash, is_active')
       .eq('staff_id', staffId.toUpperCase().trim())
       .eq('is_active', true)
       .maybeSingle()
 
-    if (!staff) {
+    if (staffError) {
+      console.error('Staff ID lookup failed:', staffError)
+      return { success: false, error: "Authentication failed" }
+    }
+
+    let matchingStaff = staff
+    if (!matchingStaff) {
       // Try case-insensitive lookup
       const { data: staffLower, error: staffLowerError } = await supabase
         .from('staff')
-        .select('id, staff_id, full_name, email, pin_hash, is_active')
+        .select('id, staff_id, full_name, pin_hash, is_active')
         .ilike('staff_id', staffId.trim())
         .eq('is_active', true)
         .maybeSingle()
-        
-      if (staffLower) {
-        staff = staffLower
+
+      if (staffLowerError) {
+        console.error('Case-insensitive staff lookup failed:', staffLowerError)
+        return { success: false, error: "Authentication failed" }
       }
+
+      matchingStaff = staffLower
     }
 
-    if (!staff || !staff.pin_hash || !(await bcrypt.compare(pin, staff.pin_hash))) {
+    if (!matchingStaff || !matchingStaff.pin_hash || !(await bcrypt.compare(pin, matchingStaff.pin_hash))) {
       await logFailedAttempt(ip, supabase)
       return { success: false, error: "Invalid Staff ID or PIN" }
     }
 
     // Create staff session
     const staffSession = {
-      id: staff.id,
-      staff_id: staff.staff_id,
-      full_name: staff.full_name,
-      email: staff.email,
+      id: matchingStaff.id,
+      staff_id: matchingStaff.staff_id,
+      full_name: matchingStaff.full_name,
+      email: matchingStaff.staff_id,
       role: 'staff' as const
     }
 
@@ -102,8 +109,41 @@ export async function getCurrentStaffSession() {
   }
 
   try {
-    return JSON.parse(staffSession.value)
-  } catch {
+    const session: unknown = JSON.parse(staffSession.value)
+    if (
+      typeof session !== 'object' ||
+      session === null ||
+      !('id' in session) ||
+      typeof session.id !== 'string' ||
+      !('staff_id' in session) ||
+      typeof session.staff_id !== 'string'
+    ) {
+      return null
+    }
+
+    const supabase = createAdminClient()
+    const { data, error } = await supabase
+      .from('staff')
+      .select('id, staff_id, full_name, is_active')
+      .eq('id', session.id)
+      .eq('staff_id', session.staff_id)
+      .eq('is_active', true)
+      .maybeSingle()
+
+    if (error) {
+      console.error('Staff session validation failed:', error)
+      return null
+    }
+    if (!data) return null
+
+    return {
+      id: data.id,
+      staff_id: data.staff_id,
+      full_name: data.full_name,
+      staff_id_display: data.staff_id,
+    }
+  } catch (error) {
+    console.error('Error validating staff session:', error)
     return null
   }
 }

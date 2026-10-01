@@ -6,10 +6,13 @@ export interface Investor {
   email: string
   phone?: string
   investmentAmount: number
-  dailyReturnRate: number // percentage, e.g., 0.5 for 0.5%
+  annualReturnRate: number
+  tenureMonths?: number
+  endDate?: string
+  dailyReturnRate?: number // Derived daily percentage retained for older UI consumers.
   dailyRate?: number // alias for dailyReturnRate
   investmentDate: string // ISO date string
-  status: "active" | "inactive"
+  status: "active" | "inactive" | "completed" | "withdrawn"
   password?: string
   notes?: string
   currentReturns?: number
@@ -28,7 +31,7 @@ export interface InvestorPayment {
   investorId: string
   date: string
   amount: number
-  method: "bank_transfer" | "cash" | "cheque"
+  method: "bank_transfer" | "cash" | "check"
   status: "paid" | "pending"
   recordedBy?: string
   created_at?: string
@@ -43,17 +46,23 @@ export interface BusinessRevenue {
 }
 
 // Calculate daily return amount
-export function calculateDailyReturn(investmentAmount: number, dailyReturnRate: number): number {
-  return investmentAmount * (dailyReturnRate / 100)
+export function calculateDailyReturn(investmentAmount: number, annualReturnRate: number): number {
+  return investmentAmount * (annualReturnRate / 100 / 365)
 }
 
 // Calculate days since investment
-export function calculateDaysSinceInvestment(investmentDate: string): number {
+export function calculateDaysSinceInvestment(investmentDate: string, endDate?: string): number {
   if (!investmentDate) return 0
 
   // Use Nigerian time (UTC+1) for day calculation
   const nigeriaOffset = 60 * 60 * 1000
   const nowNigeria = new Date(Date.now() + nigeriaOffset)
+  if (endDate) {
+    const end = new Date(`${endDate.slice(0, 10)}T00:00:00Z`)
+    if (Number.isFinite(end.getTime()) && end < nowNigeria) {
+      nowNigeria.setTime(end.getTime())
+    }
+  }
   // Set to midnight Nigerian time
   const todayNigeria = new Date(nowNigeria)
   todayNigeria.setUTCHours(0, 0, 0, 0)
@@ -72,8 +81,8 @@ export function calculateDaysSinceInvestment(investmentDate: string): number {
 }
 
 // Calculate total returns
-export function calculateTotalReturns(investmentAmount: number, dailyReturnRate: number, days: number): number {
-  return calculateDailyReturn(investmentAmount, dailyReturnRate) * days
+export function calculateTotalReturns(investmentAmount: number, annualReturnRate: number, days: number): number {
+  return calculateDailyReturn(investmentAmount, annualReturnRate) * days
 }
 
 // Calculate ROI percentage

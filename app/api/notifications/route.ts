@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from "next/server"
 import { assertBelongsToBusiness, requireAdminAuth } from "@/lib/auth"
 import { createAdminClient } from "@/lib/utils/supabase"
+import { presentNotification, toDatabaseNotificationType } from "@/lib/notification-schema"
 
 export const dynamic = "force-dynamic"
 
@@ -39,7 +40,12 @@ export async function GET(request: NextRequest) {
       console.error("Failed to count unread notifications:", unread.error)
       return fail("Failed to count unread notifications")
     }
-    return NextResponse.json({ success: true, notifications: data || [], unread_count: unread.count || 0 })
+    return NextResponse.json({
+      success: true,
+      notifications: (data || []).map(presentNotification),
+      unread_count: unread.count || 0,
+      unreadCount: unread.count || 0,
+    })
   } catch (error) {
     const response = authResponse(error)
     if (response) return response
@@ -55,7 +61,7 @@ export async function POST(request: NextRequest) {
     let body: unknown
     try { body = await request.json() } catch { return fail("Invalid JSON body", 400) }
     if (!isRecord(body)) return fail("Request body must be an object", 400)
-    for (const field of ["title", "message", "type", "category"] as const) {
+    for (const field of ["title", "message", "type"] as const) {
       if (typeof body[field] !== "string" || !body[field].trim()) return fail(`${field} is required`, 400)
     }
     const targetId = body.user_id === undefined ? auth.userId : body.user_id
@@ -69,24 +75,25 @@ export async function POST(request: NextRequest) {
     }
     if (!profile) return fail("Notification recipient not found", 404)
     assertBelongsToBusiness(profile.business_id, auth.businessId)
-    const optionalText = (key: string) => typeof body[key] === "string" && (body[key] as string).trim() ? (body[key] as string).trim() : null
+    const type = toDatabaseNotificationType((body.type as string).trim())
+    if (!type) return fail("Invalid notification type", 400)
+    const link = typeof body.action_url === "string" && body.action_url.trim()
+      ? body.action_url.trim()
+      : typeof body.link === "string" && body.link.trim() ? body.link.trim() : null
     const { data, error } = await supabase.from("notifications").insert({
       business_id: auth.businessId,
       user_id: targetId,
       title: (body.title as string).trim(),
       message: (body.message as string).trim(),
-      type: (body.type as string).trim(),
-      category: (body.category as string).trim(),
-      action_url: optionalText("action_url"),
-      action_text: optionalText("action_text"),
-      expires_at: optionalText("expires_at"),
+      type,
+      link,
       is_read: false,
     }).select("*").single()
     if (error) {
       console.error("Failed to create notification:", error)
       return fail("Failed to create notification")
     }
-    return NextResponse.json({ success: true, notification: data }, { status: 201 })
+    return NextResponse.json({ success: true, notification: presentNotification(data) }, { status: 201 })
   } catch (error) {
     const response = authResponse(error)
     if (response) return response
@@ -95,12 +102,26 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function PATCH() {
+export async function PATCH(request: NextRequest) {
   try {
     const auth = await requireAdminAuth()
     if (!auth.businessId) return fail("No business associated with account", 403)
-    const { error } = await createAdminClient().from("notifications").update({ is_read: true })
-      .eq("business_id", auth.businessId).eq("user_id", auth.userId).eq("is_read", false)
+    let body: unknown = {}
+    try {
+      body = await request.json()
+    } catch {
+      body = {}
+    }
+    if (!isRecord(body)) return fail("Request body must be an object", 400)
+    let query = createAdminClient().from("notifications").update({ is_read: true })
+      .eq("business_id", auth.businessId).eq("user_id", auth.userId)
+    if (body.id !== undefined) {
+      if (typeof body.id !== "string" || !body.id.trim()) return fail("id must be a non-empty string", 400)
+      query = query.eq("id", body.id)
+    } else {
+      query = query.eq("is_read", false)
+    }
+    const { error } = await query
     if (error) {
       console.error("Failed to mark notifications as read:", error)
       return fail("Failed to mark notifications as read")

@@ -253,11 +253,12 @@ export async function POST(request: NextRequest) {
         .filter((item) => item.product_id === product.id)
         .reduce((sum, item) => sum + item.quantity, 0)
       if (newStock <= Number(product.threshold ?? 0)) {
-        await notifyLowStock({ id: product.id, name: product.name, stock: newStock })
+        await notifyLowStock({ id: product.id, name: product.name, stock: newStock, business_id: auth.businessId })
       }
     }
     await notifyNewOrder({
       id: order.id,
+      business_id: auth.businessId,
       order_number: order.order_number,
       total_amount: totalAmount,
       source: "easybuy",

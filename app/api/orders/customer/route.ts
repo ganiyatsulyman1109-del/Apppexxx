@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient , createAdminClient} from '@/lib/utils/supabase'
+import { createAdminClient } from '@/lib/utils/supabase'
 import { getCurrentUserResult } from '@/lib/auth'
+import { parseOrderPage } from '@/lib/order-pagination'
 
 export async function GET(
   request: NextRequest
@@ -33,8 +34,11 @@ export async function GET(
       .eq('user_id', userId)
       .maybeSingle()
       
-    if (customerError || !customer) {
-      console.error('Customer record not found for user:', userId)
+    if (customerError) {
+      console.error('Customer record lookup failed:', customerError)
+      return NextResponse.json({ error: 'Unable to load customer orders.' }, { status: 500 })
+    }
+    if (!customer) {
       return NextResponse.json({ orders: [], total: 0, limit: 0, offset: 0 })
     }
     
@@ -43,13 +47,16 @@ export async function GET(
     // Get query parameters
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
-    const limit = parseInt(searchParams.get('limit') || '50')
-    const offset = parseInt(searchParams.get('offset') || '0')
+    const page = parseOrderPage(searchParams)
+    if (!page) {
+      return NextResponse.json({ error: 'Invalid pagination range.' }, { status: 400 })
+    }
+    const { limit, offset } = page
 
     // Build query
     let query = supabase
       .from('orders')
-      .select(`*, customers(full_name, email, phone)`)
+      .select(`*, customers(full_name, email, phone)`, { count: 'exact' })
       .eq('customer_id', customerId)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)

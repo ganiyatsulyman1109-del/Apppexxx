@@ -63,9 +63,9 @@ export function InvestorDashboard({ investor, onLogout }: InvestorDashboardProps
     }
   }
 
-  const daysSinceInvestment = calculateDaysSinceInvestment(investor.investmentDate)
-  const dailyReturn = calculateDailyReturn(investor.investmentAmount, investor.dailyReturnRate)
-  const totalReturns = calculateTotalReturns(investor.investmentAmount, investor.dailyReturnRate, daysSinceInvestment)
+  const daysSinceInvestment = calculateDaysSinceInvestment(investor.investmentDate, investor.endDate)
+  const dailyReturn = calculateDailyReturn(investor.investmentAmount, investor.annualReturnRate)
+  const totalReturns = calculateTotalReturns(investor.investmentAmount, investor.annualReturnRate, daysSinceInvestment)
   const roi = calculateROI(totalReturns, investor.investmentAmount)
 
   // Calculate cumulative returns
@@ -233,8 +233,8 @@ export function InvestorDashboard({ investor, onLogout }: InvestorDashboardProps
                     <Percent className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-[#111827]">Daily Return Rate</p>
-                    <p className="text-sm text-blue-700">{investor.dailyReturnRate}%</p>
+                    <p className="text-sm font-medium text-[#111827]">Annual Return Rate</p>
+                    <p className="text-sm text-blue-700">{investor.annualReturnRate}%</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">

@@ -84,6 +84,9 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+    if (!["manager", "cashier", "inventory", "viewer"].includes(role)) {
+      return NextResponse.json({ error: "Invalid staff role" }, { status: 400 })
+    }
     if (!/^\d{6}$/.test(String(pin))) {
       return NextResponse.json({ error: "PIN must be exactly 6 digits" }, { status: 400 })
     }
@@ -92,7 +95,6 @@ export async function POST(request: NextRequest) {
     const { data: staffRows, error: staffListError } = await supabase
       .from("staff")
       .select("staff_id")
-      .eq("business_id", auth.businessId)
       .order("created_at", { ascending: false })
 
     if (staffListError) {
@@ -142,6 +144,7 @@ export async function POST(request: NextRequest) {
       .insert({
         business_id: auth.businessId,
         staff_id: staffId,
+        name: fullName,
         full_name: fullName,
         email,
         phone: typeof body.phone === "string" && body.phone.trim() ? body.phone.trim() : null,

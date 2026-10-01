@@ -58,7 +58,7 @@ export function RecordInvestorPaymentModal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           amount: amountNum,
-          payment_type: "daily_return",
+          payment_type: "monthly_return",
           payment_method: method,
           payment_reference: reference || null,
           notes: notes || null,

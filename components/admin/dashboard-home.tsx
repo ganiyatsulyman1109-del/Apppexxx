@@ -28,6 +28,7 @@ import { StockAdjustmentModal } from "./stock-adjustment-modal"
 import type { EcommerceProduct } from "@/lib/ecommerce-types"
 import { createBrowserClient } from "@/lib/utils/supabase"
 import { formatNigerianDate } from "@/lib/utils/date"
+import { AiChatManager } from "@/components/admin/ai-chat-manager"
 
 const STATUS_COLORS = {
   pending: "#f59e0b",
@@ -682,6 +683,7 @@ export function DashboardHome({ onLogout, isLoggingOut }: DashboardHomeProps = {
         product={selectedProduct}
         onSuccess={handleStockAdjustmentSuccess}
       />
+      <AiChatManager />
     </div>
   )
 }

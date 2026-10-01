@@ -172,7 +172,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
     }
 
     if (nextStock <= (currentProduct.threshold ?? 0)) {
-      await notifyLowStock({ id, name: currentProduct.name, stock: nextStock })
+      await notifyLowStock({ id, name: currentProduct.name, stock: nextStock, business_id: auth.businessId })
     }
 
     revalidatePath("/admin/products")

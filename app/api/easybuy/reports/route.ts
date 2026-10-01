@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireStaffOrAdminAuth } from '@/lib/auth'
+import { requireAdminAuth } from '@/lib/auth'
 import { createAdminClient } from '@/lib/utils/supabase'
 
 export const dynamic = 'force-dynamic'
@@ -13,11 +13,10 @@ export async function GET(request: NextRequest) {
     )
   }
 
-    const authResult = await requireStaffOrAdminAuth(request)
-    if (!authResult.authenticated) {
-      return NextResponse.json({ error: authResult.error }, { status: authResult.status })
+    const auth = await requireAdminAuth()
+    if (!auth.businessId) {
+      return NextResponse.json({ error: 'No business associated with account' }, { status: 403 })
     }
-    
     const supabase = createAdminClient()
     const { searchParams } = new URL(request.url)
     const range = searchParams.get('range') || 'this_month'
@@ -46,32 +45,47 @@ export async function GET(request: NextRequest) {
     let creditQuery = supabase
       .from('easybuy_purchases')
       .select('total_amount')
+      .eq('business_id', auth.businessId)
       .gte('purchase_date', startDate.toISOString())
       
     if (useEndDate) {
       creditQuery = creditQuery.lte('purchase_date', endDate.toISOString())
     }
     
-    const { data: creditIssuedData } = await creditQuery
+    const { data: creditIssuedData, error: creditIssuedError } = await creditQuery
+    if (creditIssuedError) {
+      console.error('Failed to load EasyBuy credit totals:', creditIssuedError)
+      return NextResponse.json({ error: 'Failed to load EasyBuy reports' }, { status: 500 })
+    }
     const totalCreditIssued = creditIssuedData?.reduce((sum, p) => sum + Number(p.total_amount || 0), 0) || 0
     
     // Calculate total collected (filtered by date)
     let collectedQuery = supabase
       .from('easybuy_payments')
       .select('amount')
+      .eq('business_id', auth.businessId)
       .gte('payment_date', startDate.toISOString())
       
     if (useEndDate) {
       collectedQuery = collectedQuery.lte('payment_date', endDate.toISOString())
     }
     
-    const { data: collectedData } = await collectedQuery
+    const { data: collectedData, error: collectedError } = await collectedQuery
+    if (collectedError) {
+      console.error('Failed to load EasyBuy collections:', collectedError)
+      return NextResponse.json({ error: 'Failed to load EasyBuy reports' }, { status: 500 })
+    }
     const totalCollected = collectedData?.reduce((sum, p) => sum + Number(p.amount || 0), 0) || 0
 
     // Calculate total outstanding (lifetime - current snapshot)
-    const { data: outstandingData } = await supabase
+    const { data: outstandingData, error: outstandingError } = await supabase
       .from('easybuy_customers')
       .select('current_debt')
+      .eq('business_id', auth.businessId)
+    if (outstandingError) {
+      console.error('Failed to load EasyBuy outstanding balances:', outstandingError)
+      return NextResponse.json({ error: 'Failed to load EasyBuy reports' }, { status: 500 })
+    }
       
     const totalOutstanding = outstandingData?.reduce((sum, c) => sum + Number(c.current_debt || 0), 0) || 0
     
@@ -81,32 +95,48 @@ export async function GET(request: NextRequest) {
       : (totalCollected > 0 ? "100.0" : "0.0")
       
     // Customer Stats
-    const { count: totalCustomers } = await supabase
+    const { count: totalCustomers, error: totalCustomersError } = await supabase
       .from('easybuy_customers')
       .select('*', { count: 'exact', head: true })
+      .eq('business_id', auth.businessId)
       
-    const { count: activeCustomers } = await supabase
+    const { count: activeCustomers, error: activeCustomersError } = await supabase
       .from('easybuy_customers')
       .select('*', { count: 'exact', head: true })
+      .eq('business_id', auth.businessId)
       .gt('current_debt', 0)
+    if (totalCustomersError || activeCustomersError) {
+      console.error('Failed to load EasyBuy customer counts:', totalCustomersError || activeCustomersError)
+      return NextResponse.json({ error: 'Failed to load EasyBuy reports' }, { status: 500 })
+    }
       
     // Overdue (consistent with debt-overview)
-    const { data: overduePurchasesData } = await supabase
+    const { data: overduePurchasesData, error: overdueError } = await supabase
         .from('easybuy_purchases')
         .select('easybuy_customer_id')
+        .eq('business_id', auth.businessId)
         .or('status.eq.overdue,and(status.neq.paid,expected_completion_date.lt.' + now.toISOString() + ')')
-        
+    if (overdueError) {
+      console.error('Failed to load overdue EasyBuy purchases:', overdueError)
+      return NextResponse.json({ error: 'Failed to load EasyBuy reports' }, { status: 500 })
+    }
+
     const uniqueOverdueCustomers = new Set(overduePurchasesData?.map(p => p.easybuy_customer_id)).size
     const overdueCustomers = uniqueOverdueCustomers
     
     // 2. Risk Scores
     // We'll analyze top 10 debtors
-    const { data: highRiskCustomers } = await supabase
+    const { data: highRiskCustomers, error: highRiskError } = await supabase
       .from('easybuy_customers')
       .select('id, full_name, current_debt, credit_limit, last_payment')
+      .eq('business_id', auth.businessId)
       .gt('current_debt', 0)
       .order('current_debt', { ascending: false })
       .limit(10)
+    if (highRiskError) {
+      console.error('Failed to load EasyBuy risk data:', highRiskError)
+      return NextResponse.json({ error: 'Failed to load EasyBuy reports' }, { status: 500 })
+    }
       
     const riskScores = highRiskCustomers?.map(c => {
       let riskLevel: 'low' | 'medium' | 'high' = 'low'
@@ -153,9 +183,8 @@ export async function GET(request: NextRequest) {
       }
     })
     
-  } catch (error: any) {
-    console.error('Reports error:', error)
-    console.error(error);
+  } catch (error: unknown) {
+    console.error('EasyBuy reports error:', error)
     return NextResponse.json(
       { error: 'An internal error occurred. Please try again.' },
       { status: 500 }
@@ -172,31 +201,36 @@ export async function POST(request: NextRequest) {
     )
   }
 
-    const authResult = await requireStaffOrAdminAuth(request)
-    if (!authResult.authenticated) {
-      return NextResponse.json({ error: authResult.error }, { status: authResult.status })
+    const auth = await requireAdminAuth()
+    if (!auth.businessId) {
+      return NextResponse.json({ error: 'No business associated with account' }, { status: 403 })
     }
-    
     const supabase = createAdminClient()
     const body = await request.json()
-    const { type, range } = body
+    const { type } = body
+    if (!["customers", "payments", "debt"].includes(type)) {
+      return NextResponse.json({ error: "Invalid report type" }, { status: 400 })
+    }
     
     // Generate CSV content based on type
     let csvContent = ''
     
     if (type === 'customers') {
-      const { data } = await supabase.from('easybuy_customers').select('*')
+      const { data, error } = await supabase.from('easybuy_customers').select('*').eq('business_id', auth.businessId)
+      if (error) throw error
       csvContent = 'ID,Name,Phone,Current Debt,Total Purchases\n' + 
         (data || []).map(c => `${c.easybuy_id},${c.full_name},${c.phone},${c.current_debt},${c.total_purchases}`).join('\n')
     } else if (type === 'payments') {
-      const { data } = await supabase.from('easybuy_payments').select('*, easybuy_customers(full_name)')
+      const { data, error } = await supabase.from('easybuy_payments').select('*, easybuy_customers(full_name)').eq('business_id', auth.businessId)
+      if (error) throw error
       const formatDate = (d: string) => {
         try { return new Intl.DateTimeFormat('en-NG', { timeZone: 'Africa/Lagos', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(d)) } catch { return new Date(d).toLocaleDateString() }
       }
       csvContent = 'Date,Customer,Amount,Method,Reference\n' + 
         (data || []).map(p => `${formatDate(p.payment_date)},${p.easybuy_customers?.full_name},${p.amount},${p.payment_method},${p.payment_reference || ''}`).join('\n')
     } else if (type === 'debt') {
-      const { data } = await supabase.from('easybuy_customers').select('*').gt('current_debt', 0)
+      const { data, error } = await supabase.from('easybuy_customers').select('*').eq('business_id', auth.businessId).gt('current_debt', 0)
+      if (error) throw error
       const formatDate = (d: string) => {
         try { return new Intl.DateTimeFormat('en-NG', { timeZone: 'Africa/Lagos', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(d)) } catch { return new Date(d).toLocaleDateString() }
       }
@@ -211,8 +245,8 @@ export async function POST(request: NextRequest) {
       }
     })
     
-  } catch (error: any) {
-    console.error(error);
+  } catch (error: unknown) {
+    console.error('EasyBuy report export failed:', error)
     return NextResponse.json(
       { error: 'An internal error occurred. Please try again.' },
       { status: 500 }

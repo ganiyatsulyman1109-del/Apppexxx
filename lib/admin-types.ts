@@ -1,6 +1,6 @@
 export type TimeRange = "today" | "yesterday" | "this_week" | "this_month" | "last_90_days" | "last_month" | "custom" | "all"
 
-export type OrderStatus = "pending" | "processing" | "ready" | "delivered" | "cancelled"
+export type OrderStatus = "pending" | "confirmed" | "processing" | "ready" | "delivered" | "cancelled"
 
 export type OrderSource = "online" | "pos" | "easybuy"
 
@@ -106,6 +106,8 @@ export function getStatusColor(status: OrderStatus): string {
   switch (status) {
     case "pending":
       return "bg-yellow-100 text-yellow-800"
+    case "confirmed":
+      return "bg-green-100 text-green-800"
     case "processing":
       return "bg-blue-100 text-blue-800"
     case "ready":

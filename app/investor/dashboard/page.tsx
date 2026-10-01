@@ -21,7 +21,7 @@ export default function InvestorDashboard() {
       // We should use the API to get the fully synced investor data
       // which calculates returns properly like the admin page does
       try {
-        const response = await fetch(`/api/investors/${session.user.id}`)
+        const response = await fetch(`/api/investors/${session.user.id}/returns`)
         if (response.ok) {
           const data = await response.json()
           if (data.investor) {
@@ -37,14 +37,23 @@ export default function InvestorDashboard() {
       // Fallback to direct supabase query if API fails
       const { data: inv } = await supabase
         .from('investors')
-        .select('*')
+        .select('id, business_id, user_id, full_name, email, phone, principal_amount, return_rate, tenure_months, start_date, end_date, status, is_banned, total_returns_earned, total_returns_paid, current_balance')
         .eq('user_id', session.user.id)
         .maybeSingle()
       if (!inv) {
         router.push('/investor/login')
         return
       }
-      setInvestor(inv)
+      setInvestor({
+        ...inv,
+        name: inv.full_name,
+        investor_id: inv.id,
+        investment_amount: inv.principal_amount,
+        annual_return_rate: inv.return_rate,
+        daily_return_rate: Number(inv.return_rate || 0) / 365,
+        investment_date: inv.start_date,
+        status: inv.status === 'active' && inv.is_banned ? 'inactive' : inv.status,
+      })
       setLoading(false)
     }
     init()
@@ -66,7 +75,7 @@ export default function InvestorDashboard() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold">Welcome, {investor?.full_name}</h1>
-            <p className="text-[#f9fafb]0 text-sm">Investor ID: {investor?.investor_id}</p>
+            <p className="text-[#f9fafb]0 text-sm">Investor ID: {investor?.id}</p>
           </div>
           <button
             onClick={async () => {
@@ -105,15 +114,15 @@ export default function InvestorDashboard() {
             </p>
           </div>
           <div className="bg-white rounded-xl p-5 shadow-sm">
-            <p className="text-sm text-[#f9fafb]0 mb-1">Daily Return Rate</p>
+            <p className="text-sm text-[#f9fafb]0 mb-1">Annual Return Rate</p>
             <p className="text-2xl font-bold text-[#1f2937]">
-              {investor?.daily_return_rate}%
+              {investor?.annual_return_rate}%
             </p>
           </div>
           <div className="bg-white rounded-xl p-5 shadow-sm">
-            <p className="text-sm text-[#f9fafb]0 mb-1">Investment Date</p>
+            <p className="text-sm text-[#f9fafb]0 mb-1">Investment Period</p>
             <p className="text-2xl font-bold text-[#1f2937]">
-              {investor?.investment_date}
+              {investor?.start_date} – {investor?.end_date}
             </p>
           </div>
         </div>

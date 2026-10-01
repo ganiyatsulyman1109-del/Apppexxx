@@ -28,7 +28,8 @@ export function AddInvestorModal({ open, onClose, onSave }: AddInvestorModalProp
     name: "",
     email: "",
     investmentAmount: "",
-    dailyReturnRate: "",
+    annualReturnRate: "",
+    tenureMonths: "",
     investmentDate: new Date().toISOString().split("T")[0],
     password: "",
     status: "active" as "active" | "inactive",
@@ -46,9 +47,11 @@ export function AddInvestorModal({ open, onClose, onSave }: AddInvestorModalProp
     if (!formData.investmentAmount) newErrors.investmentAmount = "Investment amount is required"
     else if (Number(formData.investmentAmount) <= 0)
       newErrors.investmentAmount = "Amount must be greater than 0"
-    if (!formData.dailyReturnRate) newErrors.dailyReturnRate = "Daily return rate is required"
-    else if (Number(formData.dailyReturnRate) <= 0 || Number(formData.dailyReturnRate) > 5)
-      newErrors.dailyReturnRate = "Rate must be between 0.01% and 5%"
+    if (!formData.annualReturnRate) newErrors.annualReturnRate = "Annual return rate is required"
+    else if (!Number.isFinite(Number(formData.annualReturnRate)) || Number(formData.annualReturnRate) <= 0)
+      newErrors.annualReturnRate = "Rate must be greater than 0%"
+    if (!formData.tenureMonths || !Number.isInteger(Number(formData.tenureMonths)) || Number(formData.tenureMonths) <= 0)
+      newErrors.tenureMonths = "Tenure must be a positive number of months"
     if (!formData.investmentDate) newErrors.investmentDate = "Investment date is required"
     if (!formData.password.trim()) newErrors.password = "Password is required"
 
@@ -82,7 +85,8 @@ export function AddInvestorModal({ open, onClose, onSave }: AddInvestorModalProp
         name: formData.name.trim(),
         email: formData.email.trim().toLowerCase(),
         investmentAmount: Number(formData.investmentAmount),
-        dailyReturnRate: Number(formData.dailyReturnRate),
+        annualReturnRate: Number(formData.annualReturnRate),
+        tenureMonths: Number(formData.tenureMonths),
         investmentDate: formData.investmentDate,
         password: formData.password,
         status: formData.status,
@@ -95,7 +99,8 @@ export function AddInvestorModal({ open, onClose, onSave }: AddInvestorModalProp
         name: "",
         email: "",
         investmentAmount: "",
-        dailyReturnRate: "",
+        annualReturnRate: "",
+        tenureMonths: "",
         investmentDate: new Date().toISOString().split("T")[0],
         password: "",
         status: "active",
@@ -160,21 +165,34 @@ export function AddInvestorModal({ open, onClose, onSave }: AddInvestorModalProp
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="rate">Daily Return Rate (%) *</Label>
+            <Label htmlFor="rate">Annual Return Rate (%) *</Label>
             <Input
               id="rate"
               type="number"
               step="0.01"
-              value={formData.dailyReturnRate}
-              onChange={(e) => setFormData({ ...formData, dailyReturnRate: e.target.value })}
-              placeholder="0.5"
+              value={formData.annualReturnRate}
+              onChange={(e) => setFormData({ ...formData, annualReturnRate: e.target.value })}
+              placeholder="12"
               min="0.01"
-              max="5"
             />
-            <p className="text-xs text-muted-foreground">Example: 0.5 for 0.5% daily</p>
-            {errors.dailyReturnRate && (
-              <p className="text-xs text-[#dc2626]">{errors.dailyReturnRate}</p>
+            <p className="text-xs text-muted-foreground">Simple annual rate, accrued per day over a 365-day year.</p>
+            {errors.annualReturnRate && (
+              <p className="text-xs text-[#dc2626]">{errors.annualReturnRate}</p>
             )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="tenure">Tenure (months) *</Label>
+            <Input
+              id="tenure"
+              type="number"
+              step="1"
+              min="1"
+              value={formData.tenureMonths}
+              onChange={(e) => setFormData({ ...formData, tenureMonths: e.target.value })}
+              placeholder="12"
+            />
+            {errors.tenureMonths && <p className="text-xs text-[#dc2626]">{errors.tenureMonths}</p>}
           </div>
 
           <div className="space-y-2">

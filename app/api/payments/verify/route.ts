@@ -14,13 +14,16 @@ async function verify(reference: string) {
   if (!reference.trim()) return fail("reference is required", 400)
   const supabase = createAdminClient()
   const { data: expectedOrder, error: lookupError } = await supabase.from("orders")
-    .select("id,business_id,total_amount,payment_reference")
-    .eq("payment_reference", reference).maybeSingle()
+    .select("id,business_id,total,paystack_reference,payment_method,payment_status")
+    .eq("paystack_reference", reference).maybeSingle()
   if (lookupError) {
     console.error("Failed to locate order for payment reference:", lookupError)
     return fail("Failed to load order")
   }
   if (!expectedOrder || typeof expectedOrder.business_id !== "string") return fail("Order not found", 404)
+  if (expectedOrder.payment_method !== "card" || !["pending", "confirmed", "paid"].includes(expectedOrder.payment_status)) {
+    return fail("Order is not awaiting card payment", 409)
+  }
   const { data: business, error: businessError } = await supabase.from("businesses")
     .select("id,paystack_secret_key").eq("id", expectedOrder.business_id).maybeSingle()
   if (businessError) {
@@ -53,12 +56,13 @@ async function verify(reference: string) {
   const orderId = result.data.metadata.order_id
   if (businessId !== expectedOrder.business_id || orderId !== expectedOrder.id) return fail("Payment metadata does not match the order", 400)
   assertBelongsToBusiness(expectedOrder.business_id, businessId)
-  if (typeof result.data.amount === "number" && Math.abs(result.data.amount / 100 - Number(expectedOrder.total_amount)) > 0.01) {
+  if (typeof result.data.amount === "number" && Math.abs(result.data.amount / 100 - Number(expectedOrder.total)) > 0.01) {
     return fail("Payment amount does not match the order", 400)
   }
   const { data: updatedOrder, error: updateError } = await supabase.from("orders")
     .update({ payment_status: "confirmed", status: "confirmed", updated_at: new Date().toISOString() })
-    .eq("id", orderId).eq("business_id", businessId).eq("payment_reference", reference)
+    .eq("id", orderId).eq("business_id", businessId).eq("paystack_reference", reference)
+  .eq("payment_method", "card").in("payment_status", ["pending", "confirmed", "paid"])
     .select("*").maybeSingle()
   if (updateError) {
     console.error("Failed to confirm paid order:", updateError)
@@ -71,7 +75,20 @@ async function verify(reference: string) {
 
 export async function GET(request: NextRequest) {
   try {
-    return await verify(request.nextUrl.searchParams.get("reference") || request.nextUrl.searchParams.get("trxref") || "")
+    const response = await verify(request.nextUrl.searchParams.get("reference") || request.nextUrl.searchParams.get("trxref") || "")
+    if (!response.ok) return response
+
+    const result: unknown = await response.json()
+    if (!isRecord(result) || result.success !== true || !isRecord(result.order)) {
+      return NextResponse.json({ success: false, error: "Invalid verification result" }, { status: 502 })
+    }
+    return NextResponse.json({
+      success: true,
+      order: {
+        order_number: result.order.order_number,
+        total_amount: result.order.total,
+      },
+    })
   } catch (error) {
     console.error("GET /api/payments/verify failed:", error)
     return fail("Internal server error")

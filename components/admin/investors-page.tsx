@@ -59,8 +59,10 @@ export function InvestorsPage() {
         name: inv.full_name || inv.name,
         email: inv.email,
         investmentAmount: inv.investment_amount,
-        dailyReturnRate: inv.daily_return_rate,
+        annualReturnRate: inv.annual_return_rate,
+        tenureMonths: inv.tenure_months,
         investmentDate: inv.investment_date,
+        endDate: inv.end_date,
         status: inv.status,
         phone: inv.phone,
         notes: inv.notes,
@@ -86,7 +88,7 @@ export function InvestorsPage() {
   const totalInvestment = investors.reduce((sum, inv) => sum + inv.investmentAmount, 0)
   const totalPaid = investors.reduce((sum, inv) => sum + (inv.totalReturnsPaid || 0), 0)
   const totalOwed = investors.reduce((sum, inv) => {
-    const days = calculateDaysSinceInvestment(inv.investmentDate)
+    const days = calculateDaysSinceInvestment(inv.investmentDate, inv.endDate)
     return sum + (days > 0 ? (inv.currentBalance || 0) : 0)
   }, 0)
 
@@ -103,7 +105,8 @@ export function InvestorsPage() {
           email: newInvestor.email,
           phone: newInvestor.phone,
           investment_amount: newInvestor.investmentAmount,
-          daily_return_rate: newInvestor.dailyReturnRate,
+          annual_return_rate: newInvestor.annualReturnRate,
+          tenure_months: newInvestor.tenureMonths,
           investment_date: newInvestor.investmentDate,
           password: newInvestor.password,
           notes: newInvestor.notes
@@ -146,7 +149,9 @@ export function InvestorsPage() {
           email: updatedInvestor.email,
           phone: updatedInvestor.phone,
           investment_amount: updatedInvestor.investmentAmount,
-          daily_return_rate: updatedInvestor.dailyReturnRate,
+          annual_return_rate: updatedInvestor.annualReturnRate,
+          tenure_months: updatedInvestor.tenureMonths,
+          investment_date: updatedInvestor.investmentDate,
           status: updatedInvestor.status,
           notes: updatedInvestor.notes,
           password: updatedInvestor.password
@@ -370,7 +375,7 @@ export function InvestorsPage() {
                       Investment
                     </th>
                     <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">
-                      Daily Rate
+                      Annual Rate
                     </th>
                     <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">
                       Financials
@@ -385,7 +390,7 @@ export function InvestorsPage() {
                 </thead>
                 <tbody className="divide-y">
                   {filteredInvestors.map((investor) => {
-                    const days = calculateDaysSinceInvestment(investor.investmentDate)
+                    const days = calculateDaysSinceInvestment(investor.investmentDate, investor.endDate)
                     const earned = days > 0 ? (investor.totalReturnsEarned || 0) : 0
                     const due = days > 0 ? (investor.currentBalance || 0) : 0
 
@@ -409,7 +414,7 @@ export function InvestorsPage() {
                           {formatNaira(investor.investmentAmount)}
                         </td>
                         <td className="py-4 px-4 text-right font-medium text-[#16a34a]">
-                          {investor.dailyReturnRate}%
+                          {investor.annualReturnRate}%
                         </td>
                         <td className="py-4 px-4 text-right">
                           <div className="space-y-0.5">
@@ -436,7 +441,7 @@ export function InvestorsPage() {
                                 : "badge-negative"
                             }
                           >
-                            {investor.status === "active" ? "Active" : "Inactive"}
+                            {investor.status === "inactive" ? "Inactive" : investor.status}
                           </Badge>
                         </td>
                         <td className="py-4 px-4">
@@ -472,13 +477,14 @@ export function InvestorsPage() {
                             </Button>
                             <button
                               onClick={() => handleToggleStatus(investor)}
+                              disabled={!["active", "inactive"].includes(investor.status)}
                               className={investor.status === 'active'
-                                ? 'text-red-600 hover:bg-red-50'
-                                : 'text-[#16a34a] hover:bg-green-50'}
+                                ? 'text-red-600 hover:bg-red-50 disabled:opacity-50'
+                                : 'text-[#16a34a] hover:bg-green-50 disabled:opacity-50'}
+                              title={!["active", "inactive"].includes(investor.status) ? "Completed or withdrawn investors cannot be reactivated" : undefined}
                             >
-                              {investor.status === 'active'
-                                ? 'Deactivate'
-                                : 'Activate'}
+                              {investor.status === 'active' ? 'Deactivate'
+                                : investor.status === 'inactive' ? 'Activate' : '—'}
                             </button>
                           </div>
                         </td>

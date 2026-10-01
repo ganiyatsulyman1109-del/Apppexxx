@@ -342,6 +342,53 @@ export interface AuthResultError {
 
 export type AuthResult = AuthResultSuccess | AuthResultError
 
+async function resolveStaffSession(value: string): Promise<AuthResultSuccess | null> {
+  let staffData: unknown
+  try {
+    staffData = JSON.parse(value)
+  } catch (error) {
+    console.error("Error parsing staff-session cookie:", error)
+    return null
+  }
+
+  if (
+    typeof staffData !== "object" ||
+    staffData === null ||
+    !("id" in staffData) ||
+    typeof staffData.id !== "string" ||
+    !("staff_id" in staffData) ||
+    typeof staffData.staff_id !== "string"
+  ) {
+    return null
+  }
+
+  const adminSupabase = createAdminClient()
+  const { data: staff, error } = await adminSupabase
+    .from("staff")
+    .select("id, staff_id, is_active")
+    .eq("id", staffData.id)
+    .eq("staff_id", staffData.staff_id)
+    .eq("is_active", true)
+    .maybeSingle()
+
+  if (error) {
+    console.error("Staff session lookup failed:", error)
+    return null
+  }
+  if (!staff) return null
+
+  return {
+    user: {
+      id: staff.id,
+      email: staff.staff_id,
+      role: "staff",
+    },
+    supabase: adminSupabase,
+    authenticated: true,
+    authSource: "staff-session",
+  }
+}
+
 export async function requireStaffOrAdminAuth(request?: Request): Promise<AuthResult> {
   const supabase = createServerClient()
 
@@ -364,58 +411,24 @@ export async function requireStaffOrAdminAuth(request?: Request): Promise<AuthRe
     }
   }
 
-  // 2. Try Staff Session Cookie (POS staff)
+  // Try the POS staff cookie, but trust only an active staff record in the database.
+  let staffSessionValue: string | undefined
   try {
     const { cookies } = await import("next/headers")
     const cookieStore = await cookies()
-    const staffSession = cookieStore.get('staff-session')
-    if (staffSession) {
-      try {
-        const staffData = JSON.parse(staffSession.value)
-        if (staffData?.staff_id) {
-          const adminSupabase = createAdminClient()
-          return {
-            user: {
-              id: staffData.id || staffData.staff_id,
-              email: staffData.email || staffData.staff_id,
-              role: 'staff'
-            },
-            supabase: adminSupabase,
-            authenticated: true,
-            authSource: 'staff-session'
-          }
-        }
-      } catch (error) {
-        console.error("Error parsing staff-session cookie:", error)
-      }
-    }
-  } catch {
-    // Ignore error if cookie reading fails
+    staffSessionValue = cookieStore.get("staff-session")?.value
+  } catch (error) {
+    console.error("Unable to read staff session cookie:", error)
   }
 
-  // 2. Fallback for request header cookie parsing
-  if (request) {
+  if (!staffSessionValue && request) {
     const cookieHeader = request.headers.get('cookie')
     if (cookieHeader) {
       const cookiesArr = cookieHeader.split(';').map(c => c.trim())
       const staffSessionCookie = cookiesArr.find(c => c.startsWith('staff-session='))
-      
       if (staffSessionCookie) {
         try {
-          const staffData = JSON.parse(decodeURIComponent(staffSessionCookie.split('=')[1]))
-          if (staffData.staff_id && staffData.full_name) {
-            const adminSupabase = createAdminClient()
-            return {
-              user: {
-                id: staffData.id || staffData.staff_id,
-                email: staffData.email || staffData.staff_id_display || staffData.staff_id,
-                role: 'staff'
-              },
-              supabase: adminSupabase,
-              authenticated: true,
-              authSource: 'staff-session'
-            }
-          }
+          staffSessionValue = decodeURIComponent(staffSessionCookie.slice("staff-session=".length))
         } catch (error) {
           console.error("Invalid staff session cookie from header:", error)
         }
@@ -423,7 +436,12 @@ export async function requireStaffOrAdminAuth(request?: Request): Promise<AuthRe
     }
   }
 
-  // 3. Fallback to Supabase Auth (admin/staff from auth.users)
+  if (staffSessionValue) {
+    const staffSession = await resolveStaffSession(staffSessionValue)
+    if (staffSession) return staffSession
+  }
+
+  // Fall back to Supabase Auth (admin/staff from auth.users).
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (!authError && user) {
     const { data: roleData } = await supabase

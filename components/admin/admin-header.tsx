@@ -49,7 +49,7 @@ export function AdminHeader({ currentPage, adminEmail, onLogout }: AdminHeaderPr
       const res = await fetch('/api/notifications?limit=5', { credentials: "include" })
       const data = await res.json()
       setNotifications(data.notifications || [])
-      setNotificationCount(data.unreadCount || 0)
+      setNotificationCount(data.unread_count || data.unreadCount || 0)
     } catch (e) {
       console.error('Failed to fetch notifications', e)
     }

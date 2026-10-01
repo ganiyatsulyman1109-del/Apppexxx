@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { Eye, Printer, Search, ChevronDown, Edit } from "lucide-react"
+import { Eye, Printer, Search, ChevronDown, Edit, Loader2 } from "lucide-react"
 import { apiClient } from "@/lib/api-client"
 import type { Order, OrderStatus } from "@/lib/admin-types"
 import { createBrowserClient } from "@/lib/utils/supabase"
@@ -19,6 +19,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
+import { toast } from "@/hooks/use-toast"
 import {
   Table,
   TableBody,
@@ -32,15 +33,17 @@ export function OrdersPage() {
   const channelNameRef = useRef(`orders-realtime-${Math.random().toString(36).slice(2)}`)
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
+  const [activeTab, setActiveTab] = useState<"all" | "pending-transfers">("all")
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null)
+  const [confirmingPayment, setConfirmingPayment] = useState<string | null>(null)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [editingOrder, setEditingOrder] = useState<Order | null>(null)
   const [editStatus, setEditStatus] = useState<OrderStatus>("pending")
   const [editPaymentStatus, setEditPaymentStatus] = useState("pending")
   const [editItems, setEditItems] = useState<any[]>([])
-  const [counts, setCounts] = useState({ total: 0, pending: 0, processing: 0, delivered: 0, confirmed: 0 })
+  const [counts, setCounts] = useState({ total: 0, pending: 0, processing: 0, delivered: 0, confirmed: 0, pendingTransfers: 0 })
 
   useEffect(() => {
     fetchOrders()
@@ -60,23 +63,28 @@ export function OrdersPage() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [])
+  }, [activeTab])
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (pendingTransfersOnly = activeTab === "pending-transfers") => {
     try {
       setLoading(true)
       
       try {
         const countsResponse = await apiClient.getOrders({ countOnly: true })
         if (countsResponse.counts) {
-          setCounts(countsResponse.counts)
+          setCounts((previous) => ({ ...previous, ...countsResponse.counts }))
         }
       } catch (err) {
         console.error("Error fetching order counts:", err)
       }
 
       // Fetch all orders without limit
-      const response = await apiClient.getOrders({ limit: 10000 })
+      const response = await apiClient.getOrders({
+        limit: 10000,
+        ...(pendingTransfersOnly
+          ? { payment_method: "bank_transfer", payment_status: "awaiting_confirmation" }
+          : {}),
+      })
       
       // Map the API response to match the expected Order type
       const mappedOrders = (response.orders || []).map((order: any) => ({
@@ -84,12 +92,12 @@ export function OrdersPage() {
         orderNumber: order.order_number,
         customerName: order.source === 'pos' && !order.customers?.full_name 
           ? 'Walk-in Customer' 
-          : order.customers?.full_name || order.easybuy_customers?.full_name || 'Unknown Customer',
+          : order.customers?.full_name || order.easybuy_customers?.full_name || order.customer_name || 'Unknown Customer',
         date: new Date(order.created_at),
-        source: order.source === 'ecommerce' ? 'online' : order.source === 'easybuy' ? 'easybuy' : 'pos',
+        source: order.source === 'ecommerce' || order.channel === 'online' ? 'online' : order.source === 'easybuy' ? 'easybuy' : 'pos',
         items: typeof order.items === 'string' ? JSON.parse(order.items).length : (order.items?.length || 0),
         itemDetails: typeof order.items === 'string' ? JSON.parse(order.items) : (order.items || []),
-        amount: parseFloat(order.total_amount) || 0,
+        amount: parseFloat(order.total_amount ?? order.total) || 0,
         status: order.status as OrderStatus,
         paymentMethod: order.payment_method,
         paymentStatus: order.payment_status,
@@ -127,6 +135,46 @@ export function OrdersPage() {
       console.error("Error updating order status:", error)
     } finally {
       setUpdatingStatus(null)
+    }
+  }
+
+  const confirmBankTransfer = async (order: Order) => {
+    try {
+      setConfirmingPayment(order.id)
+      const response = await fetch(`/api/orders/${encodeURIComponent(order.id)}/confirm-payment`, {
+        method: "POST",
+        credentials: "include",
+      })
+      const data = await response.json().catch(() => null)
+      if (!response.ok) {
+        throw new Error(data?.error || "Unable to confirm this payment.")
+      }
+
+      const updatedStatus = (data?.order?.status || "confirmed") as OrderStatus
+      const updatedPaymentStatus = data?.order?.payment_status || "confirmed"
+      const updateOrder = (current: Order): Order =>
+        current.id === order.id
+          ? { ...current, status: updatedStatus, paymentStatus: updatedPaymentStatus }
+          : current
+
+      setOrders((current) => current.map(updateOrder))
+      setSelectedOrder((current) => (current ? updateOrder(current) : current))
+      setCounts((current) => ({
+        ...current,
+        pendingTransfers: Math.max(0, current.pendingTransfers - 1),
+      }))
+      toast({
+        title: "Payment confirmed",
+        description: "Payment confirmed ✓ Order is now active",
+      })
+    } catch (error) {
+      toast({
+        title: "Could not confirm payment",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setConfirmingPayment(null)
     }
   }
 
@@ -222,7 +270,10 @@ export function OrdersPage() {
       matchesStatus = order.source === 'online' && 
         order.status === 'delivered' 
     } 
-    return matchesStatus && matchesSearch 
+    const matchesTransferTab =
+      activeTab !== "pending-transfers" ||
+      (order.paymentMethod === "bank_transfer" && order.paymentStatus === "awaiting_confirmation")
+    return matchesStatus && matchesSearch && matchesTransferTab
   })
 
   const getStatusColor = (status: string) => {
@@ -322,9 +373,36 @@ export function OrdersPage() {
         </Select>
       </div>
 
+      <div className="flex flex-wrap gap-2" role="tablist" aria-label="Order filters">
+        <Button
+          type="button"
+          variant={activeTab === "all" ? "default" : "outline"}
+          onClick={() => setActiveTab("all")}
+          role="tab"
+          aria-selected={activeTab === "all"}
+        >
+          All Orders
+        </Button>
+        <Button
+          type="button"
+          variant={activeTab === "pending-transfers" ? "default" : "outline"}
+          onClick={() => setActiveTab("pending-transfers")}
+          role="tab"
+          aria-selected={activeTab === "pending-transfers"}
+          className="gap-2"
+        >
+          Pending Transfers
+          {counts.pendingTransfers > 0 && (
+            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#dc2626] px-1 text-xs text-white">
+              {counts.pendingTransfers}
+            </span>
+          )}
+        </Button>
+      </div>
+
       <Card className="bg-white border-[#e5e7eb] rounded-xl shadow-sm">
         <CardHeader>
-          <CardTitle>All Orders ({filteredOrders.length})</CardTitle>
+          <CardTitle>{activeTab === "pending-transfers" ? "Pending Transfers" : "All Orders"} ({filteredOrders.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-hidden">
@@ -376,6 +454,7 @@ export function OrdersPage() {
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="pending">Pending</SelectItem>
+                              <SelectItem value="confirmed">Confirmed</SelectItem>
                               <SelectItem value="processing">Processing</SelectItem>
                               <SelectItem value="shipped">Shipped</SelectItem>
                               <SelectItem value="delivered">Delivered</SelectItem>
@@ -443,6 +522,26 @@ export function OrdersPage() {
                   <p className="font-medium capitalize">{selectedOrder.paymentMethod || 'N/A'}</p>
                 </div>
               </div>
+
+              {selectedOrder.paymentMethod === "bank_transfer" &&
+                selectedOrder.paymentStatus === "awaiting_confirmation" && (
+                  <div className="mt-2 flex flex-col items-start justify-between gap-3 rounded-lg border border-[#fde68a] bg-[#fffbeb] px-4 py-3 sm:flex-row sm:items-center">
+                    <p className="text-sm font-medium text-[#92400e]">
+                      ⏳ Awaiting bank transfer confirmation
+                    </p>
+                    <Button
+                      type="button"
+                      disabled={confirmingPayment === selectedOrder.id}
+                      onClick={() => void confirmBankTransfer(selectedOrder)}
+                      className="bg-[#d97706] text-white hover:bg-[#b45309]"
+                    >
+                      {confirmingPayment === selectedOrder.id && (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      )}
+                      Confirm Payment Received
+                    </Button>
+                  </div>
+                )}
 
               {selectedOrder.shippingAddress && (
                 <div>

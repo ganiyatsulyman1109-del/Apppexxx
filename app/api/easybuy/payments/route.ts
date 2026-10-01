@@ -102,11 +102,11 @@ export async function POST(request: NextRequest) {
       : ""
     const methodAliases: Record<string, string> = {
       pos_terminal: "pos",
-      bank_transfer: "transfer",
+      bank_transfer: "bank_transfer",
       cash: "cash",
       card: "card",
       pos: "pos",
-      transfer: "transfer",
+      transfer: "bank_transfer",
     }
     const paymentMethod = methodAliases[inputMethod]
     if (!paymentMethod) {
@@ -132,12 +132,11 @@ export async function POST(request: NextRequest) {
     if (amount > customerDebt) {
       return NextResponse.json({ error: "Payment amount exceeds current balance" }, { status: 400 })
     }
-    const processedByInput = typeof body.processed_by === "string" ? body.processed_by : null
-    const processedBy = processedByInput
-      ? await resolveStaffUuid(supabase, auth.businessId, processedByInput)
+    const processedBy = auth.role === "staff"
+      ? await resolveStaffUuid(supabase, auth.businessId, auth.userId)
       : null
-    if (processedByInput && !processedBy) {
-      return NextResponse.json({ error: "Staff member not found" }, { status: 404 })
+    if (auth.role === "staff" && !processedBy) {
+      return NextResponse.json({ error: "Unable to identify the authenticated staff member" }, { status: 403 })
     }
 
     const orderId = typeof body.order_id === "string" ? body.order_id : null
@@ -373,7 +372,7 @@ async function resolveStaffUuid(
   const { data, error } = await supabase
     .from("staff")
     .select("id, business_id")
-    .eq(column, column === "staff_id" ? staffIdentifier.toUpperCase().trim() : staffIdentifier)
+    .eq(column === "staff_id" ? "staff_id" : column === "id" ? "user_id" : column, column === "staff_id" ? staffIdentifier.toUpperCase().trim() : staffIdentifier)
     .eq("business_id", businessId)
     .maybeSingle()
   if (error) throw error

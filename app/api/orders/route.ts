@@ -26,7 +26,6 @@ export async function GET(request: NextRequest) {
     if (!auth.businessId) {
       return NextResponse.json({ error: "No business associated with account" }, { status: 403 })
     }
-
     const supabase = createAdminClient()
     const { searchParams } = request.nextUrl
     const customerId = searchParams.get("customer_id")
@@ -50,6 +49,7 @@ export async function GET(request: NextRequest) {
         tenantOrders().eq("source", "easybuy").eq("payment_status", "pending"),
         tenantOrders().eq("source", "ecommerce").not("status", "in", '("delivered","cancelled")'),
         tenantOrders().eq("source", "ecommerce").eq("status", "delivered"),
+        tenantOrders().eq("payment_method", "bank_transfer").eq("payment_status", "awaiting_confirmation"),
       ])
       const failed = results.find(({ error }) => error)
       if (failed?.error) {
@@ -63,6 +63,7 @@ export async function GET(request: NextRequest) {
           pending: results[1].count || 0,
           processing: results[2].count || 0,
           delivered: results[3].count || 0,
+          pendingTransfers: results[4].count || 0,
         },
       })
     }
@@ -124,6 +125,7 @@ export async function POST(request: NextRequest) {
     if (!auth.businessId) {
       return NextResponse.json({ error: "No business associated with account" }, { status: 403 })
     }
+    const businessId = auth.businessId
 
     const body = await request.json()
     const {
@@ -215,7 +217,7 @@ export async function POST(request: NextRequest) {
     try {
       order = await createOrderTransaction(supabase, {
         source,
-        business_id: auth.businessId,
+        business_id: businessId,
         order_number: generatedOrderNumber,
         customer_id: customerId,
         easybuy_customer_id: easybuyCustomerId,
@@ -246,7 +248,7 @@ export async function POST(request: NextRequest) {
         const unitPrice = Number(item.price || item.unit_price || 0)
         const itemTotal = unitPrice * quantity
         return supabase.from("easybuy_purchases").insert({
-          business_id: auth.businessId,
+          business_id: businessId,
           easybuy_customer_id: easybuyCustomerId,
           order_id: order.id,
           product_id: item.product_id || item.productId,
@@ -311,11 +313,17 @@ export async function POST(request: NextRequest) {
       }
       await Promise.all((products || [])
         .filter((product) => product.stock <= product.threshold)
-        .map((product) => notifyLowStock({ id: product.id, name: product.name, stock: product.stock })))
+        .map((product) => notifyLowStock({
+          id: product.id,
+          name: product.name,
+          stock: product.stock,
+          business_id: businessId,
+        })))
     }
 
     await notifyNewOrder({
       id: order.id,
+      business_id: businessId,
       order_number: order.order_number,
       source: order.source,
       total_amount: order.total_amount || total,

@@ -35,8 +35,8 @@ export async function POST(request: NextRequest) {
   }
   try {
     const supabase = createAdminClient()
-    const { data: order, error: orderError } = await supabase.from("orders").select("id,business_id,payment_reference")
-      .eq("id", metadata.order_id).eq("business_id", metadata.business_id).eq("payment_reference", reference).maybeSingle()
+    const { data: order, error: orderError } = await supabase.from("orders").select("id,business_id,paystack_reference,payment_method,payment_status")
+      .eq("id", metadata.order_id).eq("business_id", metadata.business_id).eq("paystack_reference", reference).maybeSingle()
     if (orderError) {
       console.error("Failed to locate order for Paystack webhook:", orderError)
       return NextResponse.json({ success: false, error: "Failed to locate order" }, { status: 500 })
@@ -46,9 +46,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, received: true, processed: false })
     }
     assertBelongsToBusiness(order.business_id, metadata.business_id)
+    if (order.payment_method !== "card" || !["pending", "confirmed", "paid"].includes(order.payment_status)) {
+      return NextResponse.json({ success: true, received: true, processed: false })
+    }
     const { data: updated, error: updateError } = await supabase.from("orders")
       .update({ payment_status: "confirmed", status: "confirmed", updated_at: new Date().toISOString() })
-      .eq("id", order.id).eq("business_id", metadata.business_id).eq("payment_reference", reference)
+      .eq("id", order.id).eq("business_id", metadata.business_id).eq("paystack_reference", reference)
+      .eq("payment_method", "card").in("payment_status", ["pending", "confirmed", "paid"])
       .select("id,business_id,payment_status,status").maybeSingle()
     if (updateError) {
       console.error("Failed to confirm order from Paystack webhook:", updateError)

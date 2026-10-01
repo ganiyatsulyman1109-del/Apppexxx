@@ -15,15 +15,17 @@ import { SettingsPage } from "./settings-page"
 import { EasyBuyAdminPage } from "./easybuy-admin-page"
 import { AuditLogPage } from "./audit-log-page"
 import { CustomersPage } from "./customers-page"
+import { PublishBanner } from "./publish-banner"
 
 interface AdminDashboardProps {
   adminEmail: string
   onLogout: () => void
   isLoggingOut?: boolean
+  initialPage?: AdminPage
 }
 
-export function AdminDashboard({ adminEmail, onLogout, isLoggingOut }: AdminDashboardProps) {
-  const [currentPage, setCurrentPage] = useState<AdminPage>("dashboard")
+export function AdminDashboard({ adminEmail, onLogout, isLoggingOut, initialPage = "dashboard" }: AdminDashboardProps) {
+  const [currentPage, setCurrentPage] = useState<AdminPage>(initialPage)
   const searchParams = useSearchParams()
 
   useEffect(() => {
@@ -67,6 +69,7 @@ export function AdminDashboard({ adminEmail, onLogout, isLoggingOut }: AdminDash
       <AdminSidebar currentPage={currentPage} onPageChange={setCurrentPage} onLogout={onLogout} />
       <SidebarInset className="overflow-hidden">
         <AdminHeader currentPage={currentPage} adminEmail={adminEmail} onLogout={onLogout} />
+        <PublishBanner />
         <main className="flex-1 overflow-y-auto overflow-x-hidden">{renderPage()}</main>
       </SidebarInset>
     </SidebarProvider>

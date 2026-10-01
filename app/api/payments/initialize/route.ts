@@ -35,13 +35,21 @@ async function initialize(input: PaymentInput) {
   }
   if (!business) return fail("Business not found", 404)
   const { data: order, error: orderError } = await supabase.from("orders")
-    .select("id,business_id,total_amount,payment_status").eq("id", input.order_id).eq("business_id", business.id).maybeSingle()
+    .select("id,business_id,total,payment_status,payment_method,customer_email,paystack_reference")
+    .eq("id", input.order_id).eq("business_id", business.id).maybeSingle()
   if (orderError) {
     console.error("Failed to validate payment order:", orderError)
     return fail("Failed to validate order")
   }
   if (!order) return fail("Order not found", 404)
-  if (Math.abs(Number(order.total_amount) - amount) > 0.01) return fail("Payment amount does not match the order", 400)
+  if (order.payment_method !== "card" || order.payment_status !== "pending") {
+    return fail("Order is not awaiting card payment", 409)
+  }
+  if (order.customer_email?.toLowerCase() !== input.customer_email.trim().toLowerCase()) {
+    return fail("Payment email does not match the order", 403)
+  }
+  if (order.paystack_reference) return fail("Payment has already been initialized for this order", 409)
+  if (Math.abs(Number(order.total) - amount) > 0.01) return fail("Payment amount does not match the order", 400)
 
   const secretKey = business.paystack_secret_key || process.env.PAYSTACK_SECRET_KEY
   const publicKey = business.paystack_public_key || process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY
@@ -78,13 +86,16 @@ async function initialize(input: PaymentInput) {
     console.error("Paystack initialization failed:", result.message || response.status)
     return fail("Failed to initialize payment", 502)
   }
-  const { error: referenceError } = await supabase.from("orders")
-    .update({ payment_reference: reference })
+  const { data: referencedOrder, error: referenceError } = await supabase.from("orders")
+    .update({ paystack_reference: reference })
     .eq("id", order.id).eq("business_id", business.id)
+    .eq("payment_status", "pending").is("paystack_reference", null)
+    .select("id").maybeSingle()
   if (referenceError) {
     console.error("Failed to save Paystack reference:", referenceError)
     return fail("Payment started but its reference could not be saved", 500)
   }
+  if (!referencedOrder) return fail("Payment initialization changed; please retry checkout", 409)
   return NextResponse.json({ success: true, authorization_url: authorizationUrl, reference, public_key: publicKey })
 }
 

@@ -195,16 +195,28 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
   }, [refetch])
 
   useEffect(() => {
-    const color = business?.primary_color
-    if (color && CSS.supports("color", color)) {
-      document.documentElement.style.setProperty("--business-primary", color)
-    } else {
-      document.documentElement.style.removeProperty("--business-primary")
+    const primary = business?.primary_color ?? "#2563eb"
+    const secondary = business?.secondary_color ?? "#1e40af"
+    const accent = business?.accent_color ?? "#f59e0b"
+
+    const setColor = (name: string, value: string | null) => {
+      if (value && CSS.supports("color", value)) {
+        document.documentElement.style.setProperty(name, value)
+      } else {
+        document.documentElement.style.removeProperty(name)
+      }
     }
+
+    setColor("--business-primary", primary)
+    setColor("--business-secondary", secondary)
+    setColor("--business-accent", accent)
+
     return () => {
       document.documentElement.style.removeProperty("--business-primary")
+      document.documentElement.style.removeProperty("--business-secondary")
+      document.documentElement.style.removeProperty("--business-accent")
     }
-  }, [business?.primary_color])
+  }, [business?.primary_color, business?.secondary_color, business?.accent_color])
 
   const value = useMemo(
     () => ({ business, businessId, user, role, isLoading, error, refetch }),

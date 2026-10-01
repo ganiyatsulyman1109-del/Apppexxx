@@ -4,6 +4,7 @@
  * This file will be removed in a future cleanup.
  */
 import type { Investor, InvestorPayment, BusinessRevenue } from "./investor-types"
+import { calculateDailyReturn } from "./investor-types"
 
 // Mock investors
 export const mockInvestors: Investor[] = []
@@ -13,7 +14,7 @@ export function generatePaymentHistory(investor: Investor): InvestorPayment[] {
   const payments: InvestorPayment[] = []
   const startDate = new Date(investor.investmentDate)
   const today = new Date()
-  const dailyReturn = investor.investmentAmount * (investor.dailyReturnRate / 100)
+  const dailyReturn = calculateDailyReturn(investor.investmentAmount, investor.annualReturnRate)
 
   const currentDate = new Date(startDate)
   currentDate.setDate(currentDate.getDate() + 1) // Start from day after investment

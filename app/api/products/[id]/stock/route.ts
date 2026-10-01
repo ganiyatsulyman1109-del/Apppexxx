@@ -110,7 +110,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     }
 
     if (newStock <= (currentProduct.threshold ?? 0)) {
-      await notifyLowStock({ id, name: currentProduct.name, stock: newStock })
+      await notifyLowStock({ id, name: currentProduct.name, stock: newStock, business_id: auth.businessId })
     }
 
     revalidatePath("/admin/inventory")

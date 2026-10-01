@@ -67,9 +67,9 @@ export function ViewInvestorModal({
     }
   }
 
-  const daysSinceInvestment = calculateDaysSinceInvestment(investor.investmentDate)
-  const dailyReturn = calculateDailyReturn(investor.investmentAmount, investor.dailyReturnRate)
-  const totalReturns = calculateTotalReturns(investor.investmentAmount, investor.dailyReturnRate, daysSinceInvestment)
+  const daysSinceInvestment = calculateDaysSinceInvestment(investor.investmentDate, investor.endDate)
+  const dailyReturn = calculateDailyReturn(investor.investmentAmount, investor.annualReturnRate)
+  const totalReturns = calculateTotalReturns(investor.investmentAmount, investor.annualReturnRate, daysSinceInvestment)
   const roi = calculateROI(totalReturns, investor.investmentAmount)
 
   const handleInputChange = (field: keyof Investor, value: string | number) => {
@@ -114,8 +114,10 @@ export function ViewInvestorModal({
                 <div class="value">${investor.phone}</div>
                 <div class="label">Investment Amount:</div>
                 <div class="value">${formatNaira(investor.investmentAmount)}</div>
-                <div class="label">Daily Return Rate:</div>
-                <div class="value">${investor.dailyReturnRate}%</div>
+                <div class="label">Annual Return Rate:</div>
+                <div class="value">${investor.annualReturnRate}%</div>
+                <div class="label">Tenure:</div>
+                <div class="value">${investor.tenureMonths || "N/A"} months</div>
                 <div class="label">Investment Date:</div>
                 <div class="value">${formatDate(investor.investmentDate)}</div>
                 <div class="label">Days Since Investment:</div>
@@ -236,13 +238,25 @@ export function ViewInvestorModal({
                   />
                 </div>
                 <div>
-                  <Label htmlFor="dailyReturnRate">Daily Return Rate (%)</Label>
+                  <Label htmlFor="annualReturnRate">Annual Return Rate (%)</Label>
                   <Input
-                    id="dailyReturnRate"
+                    id="annualReturnRate"
                     type="number"
                     step="0.01"
-                    value={formData.dailyReturnRate}
-                    onChange={(e) => handleInputChange("dailyReturnRate", Number(e.target.value))}
+                    value={formData.annualReturnRate}
+                    onChange={(e) => handleInputChange("annualReturnRate", Number(e.target.value))}
+                    disabled={!editMode}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="tenureMonths">Tenure (months)</Label>
+                  <Input
+                    id="tenureMonths"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={formData.tenureMonths || ""}
+                    onChange={(e) => handleInputChange("tenureMonths", Number(e.target.value))}
                     disabled={!editMode}
                   />
                 </div>

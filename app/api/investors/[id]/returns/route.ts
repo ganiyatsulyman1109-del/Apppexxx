@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { assertBelongsToBusiness, requireAdminAuth } from "@/lib/auth"
-import { createAdminClient } from "@/lib/utils/supabase"
+import { createAdminClient, createServerClient } from "@/lib/utils/supabase"
+import { calculateAnnualSimpleReturn, calculateInvestorAccrualDays, presentInvestor } from "@/lib/investor-finance"
 
 export const dynamic = "force-dynamic"
 
@@ -10,63 +11,75 @@ function authErrorResponse(error: unknown): Response | null {
   return error instanceof Response ? error : null
 }
 
-function toStartOfDay(value: Date): Date {
-  const date = new Date(value)
-  date.setHours(0, 0, 0, 0)
-  return date
-}
-
 export async function GET(_request: NextRequest, { params }: RouteContext) {
   try {
     if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
       return NextResponse.json({ error: "Database service not configured" }, { status: 500 })
     }
-    const auth = await requireAdminAuth()
-    if (!auth.businessId) {
-      return NextResponse.json({ error: "No business associated with account" }, { status: 403 })
-    }
-
     const { id } = await params
     const supabase = createAdminClient()
-    let investorQuery = supabase
-      .from("investors")
-      .select("*")
-      .eq("business_id", auth.businessId)
-    investorQuery = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)
-      ? investorQuery.or(`id.eq.${id},user_id.eq.${id}`)
-      : investorQuery.eq("investor_id", id)
+    const { data: { user }, error: userError } = await createServerClient().auth.getUser()
+    if (userError || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("role, business_id")
+      .eq("id", user.id)
+      .maybeSingle()
+    if (profileError) {
+      console.error("Failed to resolve investor account:", profileError)
+      return NextResponse.json({ error: "Failed to resolve account" }, { status: 500 })
+    }
+
+    let businessId = profile?.business_id || null
+    const isInvestorSelf = profile?.role === "investor"
+    if (!isInvestorSelf) {
+      const adminAuth = await requireAdminAuth()
+      businessId = adminAuth.businessId
+      if (!businessId) return NextResponse.json({ error: "No business associated with account" }, { status: 403 })
+    }
+    if (!businessId) return NextResponse.json({ error: "No business associated with account" }, { status: 403 })
+
+    let investorQuery = supabase.from("investors").select("*").eq("business_id", businessId)
+    investorQuery = isInvestorSelf
+      ? investorQuery.eq("user_id", user.id)
+      : /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)
+        ? investorQuery.or(`id.eq.${id},user_id.eq.${id}`)
+        : investorQuery.eq("id", id)
     const { data: investor, error: investorError } = await investorQuery.maybeSingle()
     if (investorError) {
       console.error("Failed to load investor returns:", investorError)
       return NextResponse.json({ error: "Failed to load investor" }, { status: 500 })
     }
     if (!investor) return NextResponse.json({ error: "Investor not found" }, { status: 404 })
-    assertBelongsToBusiness(investor.business_id, auth.businessId)
+    if (isInvestorSelf && id !== user.id && id !== investor.id) {
+      return NextResponse.json({ error: "Investor not found" }, { status: 404 })
+    }
+    assertBelongsToBusiness(investor.business_id, businessId)
 
-    const investmentAmount = Number(investor.investment_amount || 0)
-    const dailyReturnRate = Number(investor.daily_return_rate || 0)
-    const dailyEarnings = investmentAmount * (dailyReturnRate / 100)
-    const investmentDate = new Date(investor.investment_date)
-    if (!Number.isFinite(investmentDate.getTime())) {
+    const investmentAmount = Number(investor.principal_amount || 0)
+    const annualReturnRate = Number(investor.return_rate || 0)
+    const investmentDate = new Date(investor.start_date)
+    if (!Number.isFinite(investmentDate.getTime()) || !investor.end_date) {
       return NextResponse.json({ error: "Investor has an invalid investment date" }, { status: 500 })
     }
-    const daysInvested = Math.max(
-      0,
-      Math.ceil((toStartOfDay(new Date()).getTime() - toStartOfDay(investmentDate).getTime()) / 86400000)
-    )
-    const totalReturnsEarned = dailyEarnings * daysInvested
+    const daysInvested = calculateInvestorAccrualDays(investor.start_date, investor.end_date)
+    const dailyEarnings = calculateAnnualSimpleReturn(investmentAmount, annualReturnRate, 1)
+    const totalReturnsEarned = ["active", "completed"].includes(investor.status)
+      ? calculateAnnualSimpleReturn(investmentAmount, annualReturnRate, daysInvested)
+      : Number(investor.total_returns_earned || 0)
     const totalReturnsPaid = Number(investor.total_returns_paid || 0)
-    const currentBalance = totalReturnsEarned - totalReturnsPaid
+    const currentBalance = Math.max(0, totalReturnsEarned - totalReturnsPaid)
 
     const { data: updatedInvestor, error: investorUpdateError } = await supabase
       .from("investors")
       .update({
         total_returns_earned: totalReturnsEarned,
-        current_balance: currentBalance,
+        current_balance: Math.max(0, currentBalance),
         updated_at: new Date().toISOString(),
       })
       .eq("id", investor.id)
-      .eq("business_id", auth.businessId)
+      .eq("business_id", businessId)
       .select("id")
       .maybeSingle()
     if (investorUpdateError) {
@@ -81,22 +94,22 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
       supabase
         .from("investor_payments")
         .select("*")
-        .eq("business_id", auth.businessId)
+        .eq("business_id", businessId)
         .eq("investor_id", investor.id)
         .order("payment_date", { ascending: false }),
       supabase
         .from("orders")
-        .select("total_amount, created_at")
-        .eq("business_id", auth.businessId)
+        .select("total, created_at")
+        .eq("business_id", businessId)
         .gte("created_at", thirtyFiveDaysAgo.toISOString())
-        .eq("payment_status", "paid")
+        .eq("payment_status", "confirmed")
         .not("status", "eq", "cancelled")
         .not("status", "eq", "refunded")
-        .neq("source", "easybuy"),
+        .neq("channel", "easybuy"),
       supabase
         .from("easybuy_payments")
         .select("amount, created_at")
-        .eq("business_id", auth.businessId)
+        .eq("business_id", businessId)
         .gte("created_at", thirtyFiveDaysAgo.toISOString()),
     ])
     if (paymentsResult.error || ordersResult.error || easyBuyPaymentsResult.error) {
@@ -119,7 +132,7 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
       if (revenueByDate.has(key)) revenueByDate.set(key, (revenueByDate.get(key) || 0) + amount)
     }
     for (const order of ordersResult.data || []) {
-      addRevenue(order.created_at, Number(order.total_amount || 0))
+      addRevenue(order.created_at, Number(order.total || 0))
     }
     for (const payment of easyBuyPaymentsResult.data || []) {
       addRevenue(payment.created_at, Number(payment.amount || 0))
@@ -128,26 +141,19 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
       .sort((left, right) => left.date.localeCompare(right.date))
 
     return NextResponse.json({
-      investor: {
-        id: investor.id,
-        name: investor.full_name,
-        full_name: investor.full_name,
-        email: investor.email,
-        investment_amount: investor.investment_amount,
-        daily_return_rate: investor.daily_return_rate,
-        investment_date: investor.investment_date,
-        status: investor.status,
-      },
+      investor: presentInvestor(investor),
       returns: {
         investmentAmount,
-        dailyReturnRate,
+        annualReturnRate,
+        dailyReturnRate: annualReturnRate / 365,
         dailyEarnings,
         daysInvested,
         totalReturnsEarned,
         totalReturnsPaid,
         currentBalance,
-        investmentDate: investor.investment_date,
-        nextPaymentDate: investor.next_payment_date,
+        investmentDate: investor.start_date,
+        endDate: investor.end_date,
+        nextPaymentDate: investor.end_date,
       },
       payments: paymentsResult.data || [],
       monthlyRevenueData,

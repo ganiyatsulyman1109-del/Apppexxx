@@ -116,6 +116,7 @@ class ApiClient {
     source?: string
     status?: string
     payment_status?: string
+    payment_method?: string
     countOnly?: boolean
     limit?: number
   } = {}) {
@@ -124,6 +125,7 @@ class ApiClient {
     if (filters.source) params.append('source', filters.source)
     if (filters.status) params.append('status', filters.status)
     if (filters.payment_status) params.append('payment_status', filters.payment_status)
+    if (filters.payment_method) params.append('payment_method', filters.payment_method)
     if (filters.countOnly) params.append('countOnly', 'true')
     if (filters.limit) params.append('limit', filters.limit.toString())
     

@@ -13,19 +13,19 @@ export interface InvestorReturnsData {
 }
 
 // Calculate daily return amount
-export function calculateDailyReturn(investmentAmount: number, dailyReturnRate: number): number {
-  return investmentAmount * (dailyReturnRate / 100)
+export function calculateDailyReturn(investmentAmount: number, annualReturnRate: number): number {
+  return investmentAmount * (annualReturnRate / 100 / 365)
 }
 
 // Calculate cumulative returns from investment date to today
-export function calculateCumulativeReturns(investmentAmount: number, dailyReturnRate: number, investmentDate: string): number {
+export function calculateCumulativeReturns(investmentAmount: number, annualReturnRate: number, investmentDate: string): number {
   const start = new Date(investmentDate)
   const today = new Date()
   const diffTime = today.getTime() - start.getTime()
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
   const days = Math.max(0, diffDays)
   
-  return calculateDailyReturn(investmentAmount, dailyReturnRate) * days
+  return calculateDailyReturn(investmentAmount, annualReturnRate) * days
 }
 
 // Calculate ROI percentage
@@ -63,12 +63,12 @@ export function generateMonthlyRevenueData(ordersData: any[]): MonthlyRevenueDat
 // Calculate investor returns data
 export function calculateInvestorReturns(
   investmentAmount: number,
-  dailyReturnRate: number,
+  annualReturnRate: number,
   investmentDate: string,
   ordersData: any[]
 ): InvestorReturnsData {
-  const dailyReturn = calculateDailyReturn(investmentAmount, dailyReturnRate)
-  const cumulativeReturns = calculateCumulativeReturns(investmentAmount, dailyReturnRate, investmentDate)
+  const dailyReturn = calculateDailyReturn(investmentAmount, annualReturnRate)
+  const cumulativeReturns = calculateCumulativeReturns(investmentAmount, annualReturnRate, investmentDate)
   const roi = calculateROI(investmentAmount, cumulativeReturns)
   const monthlyRevenue = generateMonthlyRevenueData(ordersData)
   

@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import type { EcommerceProduct } from "@/lib/ecommerce-types"
 import { apiClient } from "@/lib/api-client"
 import { storageService } from "@/lib/storage"
-import { Upload } from "lucide-react"
+import { Sparkles, Upload } from "lucide-react"
 
 interface ProductModalProps {
   open: boolean
@@ -41,6 +41,7 @@ export function ProductModal({ open, onClose, product, onSuccess }: ProductModal
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [imageFile, setImageFile] = useState<File | null>(null)
+  const [isGenerating, setIsGenerating] = useState(false)
 
   useEffect(() => {
     if (product) {
@@ -73,6 +74,7 @@ export function ProductModal({ open, onClose, product, onSuccess }: ProductModal
       })
     }
     setError("")
+    setIsGenerating(false)
   }, [product, open])
 
   const handleImageUpload = async (file: File) => {
@@ -83,6 +85,34 @@ export function ProductModal({ open, onClose, product, onSuccess }: ProductModal
     } catch (error) {
       setError('Failed to upload image')
       console.error('Image upload error:', error)
+    }
+  }
+
+  const generateDescription = async () => {
+    if (!formData.name.trim()) return
+    setIsGenerating(true)
+    setError("")
+    try {
+      const response = await fetch("/api/ai/describe-product", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.name,
+          category: formData.category,
+          brand: formData.brand,
+          price: formData.price,
+        }),
+      })
+      const data = await response.json().catch(() => null)
+      if (!response.ok || data?.success !== true || typeof data.description !== "string") {
+        throw new Error(data?.error || "Unable to generate product description.")
+      }
+      setFormData((current) => ({ ...current, description: data.description }))
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Unable to generate product description.")
+    } finally {
+      setIsGenerating(false)
     }
   }
 
@@ -228,7 +258,18 @@ export function ProductModal({ open, onClose, product, onSuccess }: ProductModal
           </div>
 
           <div>
-            <Label htmlFor="description">Description</Label>
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <Label htmlFor="description">Description</Label>
+              <button
+                type="button"
+                onClick={() => void generateDescription()}
+                disabled={isGenerating || !formData.name.trim()}
+                className="flex items-center gap-1 text-xs text-[#2563eb] hover:text-[#1d4ed8] disabled:opacity-50"
+              >
+                <Sparkles className="h-3 w-3" />
+                {isGenerating ? "Generating..." : "Generate with AI"}
+              </button>
+            </div>
             <Textarea
               id="description"
               value={formData.description}

@@ -128,6 +128,7 @@ export async function POST(request: NextRequest) {
     }
     
     await notifyPayment({
+      business_id: order.business_id,
       amount,
       reference: receipt_number || undefined
     })

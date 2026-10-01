@@ -1,141 +1,143 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createAdminClient } from '@/lib/utils/supabase'
-
-function toNigeriaDateString(utcTimestamp: string | Date): string {
-  const date = new Date(utcTimestamp)
-  date.setHours(date.getHours() + 1)
-  return date.toISOString().split('T')[0]
-}
+import { NextRequest, NextResponse } from "next/server"
+import { createAdminClient } from "@/lib/utils/supabase"
+import { isValidCronAuthorization } from "@/lib/cron-auth"
+import { calculateAnnualSimpleReturn } from "@/lib/investor-finance"
+import { getNigeriaDate, getPreviousNigeriaDayWindow } from "@/lib/nigeria-time"
 
 export async function POST(request: NextRequest) {
   try {
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return NextResponse.json(
-      { error: 'Database service not configured' },
-      { status: 500 }
-    )
-  }
-  
-
-    // 1. Verify Cron Secret
-    const authHeader = request.headers.get('x-cron-secret')
-    const cronSecret = process.env.CRON_SECRET || 'apex-cron-2026' // Fallback for dev, set in env for prod
-    
-    // Allow localhost/admin manual trigger too if authenticated as admin
-    // But primarily rely on secret for external cron
-    if (authHeader !== cronSecret) {
-        // If no secret, check for admin session
-        // (Skipping for now to keep it simple: requires secret)
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json({ error: "Database service not configured" }, { status: 500 })
+    }
+    if (!isValidCronAuthorization(
+      process.env.CRON_SECRET,
+      request.headers.get("x-cron-secret"),
+      request.headers.get("authorization"),
+    )) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const supabase = createAdminClient()
     const now = new Date()
-    
-    // 2. Get Today's Total Revenue
-    // (Orders paid + EasyBuy payments received)
-    // We calculate "Yesterday's" revenue if running at midnight for the previous day, 
-    // or "Today's" if running at 11pm.
-    // Let's assume this runs at end of day (23:55) for the current day.
-    
-    const startOfDay = new Date(now)
-    startOfDay.setUTCHours(0, 0, 0, 0)
-    const endOfDay = new Date(now)
-    endOfDay.setUTCHours(23, 59, 59, 999)
-    
-    // Orders Revenue
-    const { data: paidOrders } = await supabase
-      .from('orders')
-      .select('total_amount')
-      .in('payment_status', ['paid'])
-      .not('status', 'eq', 'cancelled')
-      .not('status', 'eq', 'refunded')
-      .neq('source', 'easybuy')
-      .gte('created_at', startOfDay.toISOString())
-      .lte('created_at', endOfDay.toISOString())
-      
-    const ordersRevenue = (paidOrders || []).reduce((sum, o: any) => sum + Number(o.total_amount || 0), 0)
-    
-    // EasyBuy Payments Revenue
-    const { data: ebPayments } = await supabase
-      .from('easybuy_payments')
-      .select('amount')
-      .gte('created_at', startOfDay.toISOString())
-      .lte('created_at', endOfDay.toISOString())
-      
-    const ebRevenue = (ebPayments || []).reduce((sum, p: any) => sum + Number(p.amount || 0), 0)
-    
-    const totalDailyRevenue = ordersRevenue + ebRevenue
-    
-    if (totalDailyRevenue <= 0) {
-        return NextResponse.json({ 
-            message: 'No revenue today, no returns distributed.',
-            revenue: 0 
-        })
+    const processedDate = getPreviousNigeriaDayWindow(now)
+    const currentDate = getNigeriaDate(now)
+
+    const [ordersResult, easyBuyPaymentsResult] = await Promise.all([
+      supabase
+        .from("orders")
+        .select("business_id, total, created_at")
+        .eq("payment_status", "confirmed")
+        .not("status", "eq", "cancelled")
+        .neq("channel", "easybuy")
+        .gte("created_at", processedDate.start.toISOString())
+        .lte("created_at", processedDate.end.toISOString()),
+      supabase
+        .from("easybuy_payments")
+        .select("business_id, amount, created_at")
+        .gte("created_at", processedDate.start.toISOString())
+        .lte("created_at", processedDate.end.toISOString()),
+    ])
+    if (ordersResult.error || easyBuyPaymentsResult.error) {
+      console.error("Failed to load daily investor revenue:", {
+        ordersError: ordersResult.error,
+        easyBuyPaymentsError: easyBuyPaymentsResult.error,
+      })
+      return NextResponse.json({ error: "Failed to load daily revenue" }, { status: 500 })
     }
-    
-    // 3. Distribute Returns to Active Investors
-    const { data: investors } = await supabase
-      .from('investors')
-      .select('id, investor_id, investment_amount, daily_return_rate, total_returns_earned, current_balance, updated_at')
-      .eq('status', 'active')
-      
-    if (!investors || investors.length === 0) {
-        return NextResponse.json({ message: 'No active investors found.' })
+
+    const revenueByBusiness = new Map<string, number>()
+    for (const order of ordersResult.data || []) {
+      revenueByBusiness.set(
+        order.business_id,
+        (revenueByBusiness.get(order.business_id) || 0) + Number(order.total || 0)
+      )
     }
-    
-    const results = []
-    const todayNigeriaDate = toNigeriaDateString(now)
-    
+    for (const payment of easyBuyPaymentsResult.data || []) {
+      revenueByBusiness.set(
+        payment.business_id,
+        (revenueByBusiness.get(payment.business_id) || 0) + Number(payment.amount || 0)
+      )
+    }
+    const totalDailyRevenue = Array.from(revenueByBusiness.values()).reduce((sum, amount) => sum + amount, 0)
+    const { data: investors, error: investorsError } = await supabase
+      .from("investors")
+      .select("id, business_id, full_name, principal_amount, return_rate, total_returns_earned, total_returns_paid, current_balance, start_date, end_date, status, is_banned, last_return_processed_date")
+      .eq("status", "active")
+    if (investorsError) {
+      console.error("Failed to load active investors:", investorsError)
+      return NextResponse.json({ error: "Failed to load active investors" }, { status: 500 })
+    }
+    if (!investors?.length) return NextResponse.json({ message: "No active investors found." })
+
+    const failures: string[] = []
+    let processedCount = 0
+    let totalDistributed = 0
     for (const investor of investors) {
-        const amount = Number(investor.investment_amount || 0)
-        const rate = Number(investor.daily_return_rate || 0)
-        
-        // Prevent double counting: skip if already processed today
-        if (investor.updated_at && toNigeriaDateString(investor.updated_at) === todayNigeriaDate) {
-            continue
+      const matured = investor.end_date <= currentDate
+      const alreadyProcessed = investor.last_return_processed_date === processedDate.date
+      let returnProcessingFailed = false
+      const amount = Number(investor.principal_amount || 0)
+      const annualRate = Number(investor.return_rate || 0)
+      const insideInvestmentTerm = processedDate.date >= investor.start_date && processedDate.date < investor.end_date
+      if (!alreadyProcessed && insideInvestmentTerm && amount > 0 && annualRate > 0) {
+        const earning = calculateAnnualSimpleReturn(amount, annualRate, 1)
+        if (earning > 0) {
+          let updateQuery = supabase
+            .from("investors")
+            .update({
+              total_returns_earned: Number(investor.total_returns_earned || 0) + earning,
+              current_balance: Number(investor.current_balance || 0) + earning,
+              last_return_processed_date: processedDate.date,
+              updated_at: now.toISOString(),
+            })
+            .eq("id", investor.id)
+            .eq("business_id", investor.business_id)
+            .eq("status", "active")
+          updateQuery = investor.last_return_processed_date === null
+            ? updateQuery.is("last_return_processed_date", null)
+            : updateQuery.eq("last_return_processed_date", investor.last_return_processed_date)
+          const { data: updated, error } = await updateQuery.select("id").maybeSingle()
+          if (error || !updated) {
+            console.error("Failed to update investor daily return:", investor.id, error || "Investor changed during processing")
+            failures.push(investor.id)
+            returnProcessingFailed = true
+          } else {
+            processedCount += 1
+            totalDistributed += earning
+          }
         }
-        
-        // Calculate daily earning
-        // Formula: Investment * (Rate / 100)
-        // Only if revenue > 0 (which we checked)
-        const dailyEarning = amount * (rate / 100)
-        
-        if (dailyEarning > 0) {
-            // Update investor record
-            const { error } = await supabase
-                .from('investors')
-                .update({
-                    total_returns_earned: Number(investor.total_returns_earned || 0) + dailyEarning,
-                    current_balance: Number(investor.current_balance || 0) + dailyEarning,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('id', investor.id)
-                
-            if (!error) {
-                // Optional: Log transaction if a table existed, currently just updating balance
-                results.push({ 
-                    id: investor.investor_id, 
-                    earned: dailyEarning 
-                })
-            }
+      }
+      if (matured && !returnProcessingFailed) {
+        const { error } = await supabase
+          .from("investors")
+          .update({ status: "completed", updated_at: now.toISOString() })
+          .eq("id", investor.id)
+          .eq("business_id", investor.business_id)
+          .eq("status", "active")
+        if (error) {
+          console.error("Failed to complete matured investor:", investor.id, error)
+          failures.push(investor.id)
         }
+      }
     }
-    
+
+    if (failures.length > 0) {
+      return NextResponse.json({
+        success: false,
+        error: "Some investor returns could not be processed.",
+        investors_processed: processedCount,
+        failed_investors: failures.length,
+      }, { status: 500 })
+    }
     return NextResponse.json({
-        success: true,
-        date: startOfDay.toISOString().split('T')[0],
-        total_revenue: totalDailyRevenue,
-        investors_processed: results.length,
-        total_distributed: results.reduce((s, r) => s + r.earned, 0)
+      success: true,
+      date: processedDate.date,
+      total_revenue: totalDailyRevenue,
+      investors_processed: processedCount,
+      total_distributed: totalDistributed,
     })
-    
-  } catch (error: any) {
-    console.error('Cron job error:', error)
-    console.error(error);
-    return NextResponse.json(
-      { error: 'An internal error occurred. Please try again.' },
-      { status: 500 }
-    )
+  } catch (error) {
+    console.error("Cron job error:", error)
+    return NextResponse.json({ error: "An internal error occurred. Please try again." }, { status: 500 })
   }
 }

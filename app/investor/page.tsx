@@ -41,15 +41,18 @@ export default function InvestorPage() {
 
         if (investorData) {
           const investor: Investor = {
-            id: user.id,
-            name: investorData.name,
+            id: investorData.id,
+            name: investorData.full_name,
             email: user.email,
             status: investorData.status,
-            investmentAmount: investorData.investment_amount,
-            dailyReturnRate: investorData.daily_rate,
-            investmentDate: investorData.investment_date,
-            dailyRate: investorData.daily_rate,
-            totalReturns: investorData.total_returns,
+            investmentAmount: investorData.principal_amount,
+            annualReturnRate: investorData.return_rate,
+            tenureMonths: investorData.tenure_months,
+            dailyReturnRate: Number(investorData.return_rate) / 365,
+            investmentDate: investorData.start_date,
+            endDate: investorData.end_date,
+            dailyRate: Number(investorData.return_rate) / 365,
+            totalReturns: investorData.total_returns_earned,
             createdAt: investorData.created_at
           }
           setCurrentInvestor(investor)
