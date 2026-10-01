@@ -54,6 +54,15 @@ function isBusinessAssetUrl(value: string, businessId: string, folder: "logos" |
   }
 }
 
+function isMissingBusinessScopedSettingsSchema(error: { code?: string; message?: string }): boolean {
+  const message = error.message?.toLowerCase() || ""
+  return (
+    (error.code === "42703" && message.includes("business_id")) ||
+    error.code === "42P10" ||
+    message.includes("no unique or exclusion constraint matching the on conflict specification")
+  )
+}
+
 export async function GET() {
   try {
     const auth = await requireAdminAuth()
@@ -328,6 +337,11 @@ export async function POST(request: Request) {
 
     if (upsertError) {
       console.error("Failed to save onboarding settings:", upsertError)
+      if (isMissingBusinessScopedSettingsSchema(upsertError)) {
+        return NextResponse.json({
+          error: "The settings database migration is missing. Ask your administrator to apply supabase/migrations/20261002000000_scope_settings_to_businesses.sql in Supabase, then retry. Your onboarding entries are still on this page.",
+        }, { status: 503 })
+      }
       return NextResponse.json({ error: "Failed to save onboarding settings." }, { status: 500 })
     }
 
