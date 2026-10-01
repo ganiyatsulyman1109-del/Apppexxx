@@ -16,7 +16,7 @@ export interface Product {
   sku: string
   price: number
   stock: number
-  category: ProductCategory
+  category: ProductCategory | string
   image: string
 }
 
@@ -25,7 +25,7 @@ export interface CartItem {
   quantity: number
 }
 
-export type PaymentMethod = "cash" | "pos_terminal" | "easybuy"
+export type PaymentMethod = "cash" | "card" | "bank_transfer" | "pos_terminal" | "easybuy"
 
 export interface SaleItem {
   productName: string

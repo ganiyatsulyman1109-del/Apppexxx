@@ -1,11 +1,7 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Delete, Loader2 } from "lucide-react"
 import { authenticateStaff } from "@/app/actions/staff-auth"
 import { BrandLogo } from "@/components/brand-logo"
 
@@ -16,105 +12,97 @@ interface POSLoginProps {
 export function POSLogin({ onLogin }: POSLoginProps) {
   const [staffId, setStaffId] = useState("")
   const [pin, setPin] = useState("")
-  const [rememberDevice, setRememberDevice] = useState(false)
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const submit = async (submittedPin: string) => {
     if (!staffId.trim()) {
-      setError("Please enter your Staff ID")
+      setError("Enter your Staff ID first.")
+      setPin("")
       return
     }
-    if (pin.length < 6) {
-      setError("Please enter a valid PIN")
-      return
-    }
-
+    if (submittedPin.length !== 6 || isLoading) return
     setIsLoading(true)
     setError("")
-
     try {
-      const result = await authenticateStaff(staffId, pin)
-      
+      const result = await authenticateStaff(staffId, submittedPin)
       if (result.success && result.staff) {
         onLogin(result.staff.full_name)
       } else {
         setError(result.error || "Invalid Staff ID or PIN")
-        setPin("") // Clear PIN on error
+        setPin("")
       }
-    } catch (err) {
+    } catch (loginError) {
+      console.error("POS staff login failed:", loginError)
       setError("Login failed. Please try again.")
-      setPin("") // Clear PIN on error
+      setPin("")
     } finally {
       setIsLoading(false)
     }
   }
 
+  const enterDigit = (digit: string) => {
+    if (isLoading || pin.length >= 6) return
+    const updated = `${pin}${digit}`
+    setPin(updated)
+    setError("")
+    if (updated.length === 6) void submit(updated)
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <BrandLogo size={80} className="mx-auto rounded-2xl mb-4" />
-          <h1 className="text-3xl font-bold text-foreground">Apex</h1>
-          <p className="text-muted-foreground text-lg">POS</p>
+    <main className="flex min-h-screen items-center justify-center bg-[#f9fafb] px-4 py-8">
+      <section className="w-full max-w-sm rounded-2xl border border-[#e5e7eb] bg-white p-7 shadow-sm">
+        <div className="mb-6 text-center">
+          <BrandLogo size={64} className="mx-auto mb-3 rounded-xl" />
+          <h1 className="text-2xl font-bold text-[#111827]">POS Terminal</h1>
+          <p className="mt-1 text-sm text-[#6b7280]">Sign in with your staff ID and PIN</p>
         </div>
 
-        {/* Login Form */}
-        <form onSubmit={handleSubmit} className="bg-card rounded-2xl shadow-lg p-6 space-y-6">
-          <div className="space-y-2">
-            <label htmlFor="staffId" className="text-sm font-medium text-foreground">
-              Staff ID / Email
-            </label>
-            <Input
-              id="staffId"
-              type="text"
-              placeholder=""
-              value={staffId}
-              onChange={(e) => {
-                setStaffId(e.target.value)
-                setError("")
+        <label htmlFor="pos-staff-id" className="mb-2 block text-sm font-medium text-[#374151]">Staff ID</label>
+        <input
+          id="pos-staff-id"
+          value={staffId}
+          onChange={(event) => {
+            setStaffId(event.target.value)
+            setError("")
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") void submit(pin)
+          }}
+          autoComplete="username"
+          placeholder="e.g. STAFF123"
+          className="mb-5 h-12 w-full rounded-lg border border-[#e5e7eb] px-4 text-[#111827] outline-none focus:border-[#2563eb] focus:ring-2 focus:ring-blue-100"
+        />
+
+        <p className="mb-3 text-center text-sm font-medium text-[#374151]">Enter your 6-digit PIN</p>
+        <div aria-label={`${pin.length} of 6 PIN digits entered`} className="mb-5 flex justify-center gap-3">
+          {Array.from({ length: 6 }, (_, index) => (
+            <span key={index} className={`h-3.5 w-3.5 rounded-full ${index < pin.length ? "bg-[#2563eb]" : "border border-[#d1d5db] bg-white"}`} />
+          ))}
+        </div>
+
+        <div className="mx-auto grid max-w-[250px] grid-cols-3 gap-2">
+          {["1", "2", "3", "4", "5", "6", "7", "8", "9", "clear", "0", "delete"].map((key) => (
+            <button
+              key={key}
+              type="button"
+              disabled={isLoading}
+              onClick={() => {
+                if (key === "clear") setPin("")
+                else if (key === "delete") setPin((value) => value.slice(0, -1))
+                else enterDigit(key)
               }}
-              className="h-12 text-base"
-              autoComplete="username"
-            />
-          </div>
+              className="flex h-14 items-center justify-center rounded-xl border border-[#e5e7eb] bg-white text-lg font-bold text-[#111827] hover:bg-[#f9fafb] active:bg-[#eff6ff] disabled:opacity-50"
+              aria-label={key === "delete" ? "Delete last digit" : key === "clear" ? "Clear PIN" : `Digit ${key}`}
+            >
+              {key === "delete" ? <Delete className="h-5 w-5" /> : key === "clear" ? <span className="text-sm">Clear</span> : key}
+            </button>
+          ))}
+        </div>
 
-          <div className="space-y-2">
-            <label htmlFor="pin" className="text-sm font-medium text-foreground">PIN Code</label>
-            <Input
-              id="pin"
-              type="password"
-              placeholder=""
-              value={pin}
-              onChange={(e) => {
-                setPin(e.target.value)
-                setError("")
-              }}
-              className="h-12 text-base"
-              autoComplete="current-password"
-            />
-          </div>
-
-          {error && <p className="text-destructive text-sm text-center">{error}</p>}
-
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="remember"
-              checked={rememberDevice}
-              onCheckedChange={(checked) => setRememberDevice(checked === true)}
-            />
-            <label htmlFor="remember" className="text-sm text-muted-foreground cursor-pointer">
-              Remember this device
-            </label>
-          </div>
-
-          <Button type="submit" className="w-full h-12 text-lg font-semibold" disabled={isLoading}>
-            {isLoading ? "Logging in..." : "Login"}
-          </Button>
-        </form>
-      </div>
-    </div>
+        {error && <p role="alert" className="mt-4 text-center text-sm font-medium text-[#dc2626]">{error}</p>}
+        {isLoading && <p className="mt-4 flex items-center justify-center gap-2 text-sm text-[#6b7280]"><Loader2 className="h-4 w-4 animate-spin" /> Verifying staff session…</p>}
+      </section>
+    </main>
   )
 }

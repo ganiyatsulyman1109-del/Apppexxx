@@ -5,7 +5,7 @@ import type React from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Printer, Banknote, CreditCard, Clock } from "lucide-react"
+import { Printer, Banknote, CreditCard, Clock, Building2 } from "lucide-react"
 import type { Sale, PaymentMethod } from "@/lib/pos-types"
 
 interface RecentSalesProps {
@@ -22,6 +22,16 @@ const PAYMENT_BADGES: Record<PaymentMethod, { label: string; className: string; 
     label: "POS",
     className: "bg-blue-100 text-blue-800 hover:bg-blue-100",
     icon: <CreditCard className="w-3 h-3" />,
+  },
+  card: {
+    label: "Card",
+    className: "bg-purple-100 text-purple-800 hover:bg-purple-100",
+    icon: <CreditCard className="w-3 h-3" />,
+  },
+  bank_transfer: {
+    label: "Transfer",
+    className: "bg-blue-100 text-blue-800 hover:bg-blue-100",
+    icon: <Building2 className="w-3 h-3" />,
   },
   easybuy: {
     label: "Easy Buy",
@@ -43,10 +53,6 @@ export function RecentSales({ sales }: RecentSalesProps) {
 
   const formatTime = (date: Date) => {
     return toNigeriaDateTime(date.toISOString())
-  }
-
-  const handleReprint = (saleId: string) => {
-    // In production, this would trigger a reprint
   }
 
   return (
@@ -84,7 +90,7 @@ export function RecentSales({ sales }: RecentSalesProps) {
                     variant="ghost"
                     size="icon"
                     className="w-9 h-9 text-muted-foreground hover:text-foreground"
-                    onClick={() => handleReprint(sale.id)}
+                    onClick={() => window.print()}
                     aria-label="Reprint receipt"
                   >
                     <Printer className="w-4 h-4" />
