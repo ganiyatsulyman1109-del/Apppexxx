@@ -336,13 +336,20 @@ export async function POST(request: Request) {
     const { error: upsertError } = await supabase.from("settings").upsert(rows, { onConflict: "business_id,key" })
 
     if (upsertError) {
-      console.error("Failed to save onboarding settings:", upsertError)
+      console.error("Failed to save onboarding settings:", {
+        code: upsertError.code,
+        message: upsertError.message,
+        details: upsertError.details,
+        hint: upsertError.hint,
+      })
       if (isMissingBusinessScopedSettingsSchema(upsertError)) {
         return NextResponse.json({
           error: "The settings database migration is missing. Ask your administrator to apply supabase/migrations/20261002000000_scope_settings_to_businesses.sql in Supabase, then retry. Your onboarding entries are still on this page.",
         }, { status: 503 })
       }
-      return NextResponse.json({ error: "Failed to save onboarding settings." }, { status: 500 })
+      return NextResponse.json({
+        error: `Failed to save onboarding settings (database error ${upsertError.code || "unknown"}). Check the application server logs for details.`,
+      }, { status: 500 })
     }
 
     if (publishNow === true) {
@@ -380,7 +387,10 @@ export async function POST(request: Request) {
       )
     }
 
-    console.error("Failed to complete onboarding:", error)
+    console.error("Failed to complete onboarding:", {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    })
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
