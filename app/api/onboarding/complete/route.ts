@@ -347,6 +347,11 @@ export async function POST(request: Request) {
           error: "The settings database migration is missing. Ask your administrator to apply supabase/migrations/20261002000000_scope_settings_to_businesses.sql in Supabase, then retry. Your onboarding entries are still on this page.",
         }, { status: 503 })
       }
+      if (upsertError.code === "PGRST204") {
+        return NextResponse.json({
+          error: `Supabase's schema cache cannot find a settings column: ${upsertError.message} Run NOTIFY pgrst, 'reload schema' in the Supabase SQL Editor, then retry.`,
+        }, { status: 500 })
+      }
       return NextResponse.json({
         error: `Failed to save onboarding settings (database error ${upsertError.code || "unknown"}). Check the application server logs for details.`,
       }, { status: 500 })
