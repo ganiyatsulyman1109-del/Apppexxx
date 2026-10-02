@@ -353,7 +353,7 @@ export async function POST(request: Request) {
     }
 
     if (publishNow === true) {
-      const { data: publishedBusiness, error: publishError } = await supabase
+      const { error: publishError } = await supabase
         .from("businesses")
         .update({
           name: (payload.businessName as string).trim(),
@@ -363,12 +363,35 @@ export async function POST(request: Request) {
           subscription_plan: getSubscriptionPlan(payload),
         })
         .eq("id", businessId)
-        .select("id")
-        .maybeSingle()
 
       if (publishError) {
-        console.error("Failed to mark onboarding as complete:", publishError)
-        return NextResponse.json({ error: "Failed to publish your store." }, { status: 500 })
+        console.error("Failed to update business during onboarding:", {
+          code: publishError.code,
+          message: publishError.message,
+          details: publishError.details,
+          hint: publishError.hint,
+        })
+        return NextResponse.json({
+          error: `Failed to publish your store (database error ${publishError.code || "unknown"}). Check the application server logs for details.`,
+        }, { status: 500 })
+      }
+
+      const { data: publishedBusiness, error: verifyError } = await supabase
+        .from("businesses")
+        .select("id")
+        .eq("id", businessId)
+        .maybeSingle()
+
+      if (verifyError) {
+        console.error("Failed to verify onboarding business update:", {
+          code: verifyError.code,
+          message: verifyError.message,
+          details: verifyError.details,
+          hint: verifyError.hint,
+        })
+        return NextResponse.json({
+          error: `Failed to verify store publication (database error ${verifyError.code || "unknown"}). Check the application server logs for details.`,
+        }, { status: 500 })
       }
       if (!publishedBusiness) {
         return NextResponse.json({ error: "Business not found; your store was not launched." }, { status: 404 })

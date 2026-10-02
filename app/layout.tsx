@@ -1,7 +1,6 @@
 import type React from "react"
 import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
-import { Analytics } from "@vercel/analytics/next"
 import { CartProvider } from "@/components/ecommerce/cart-context"
 import { CartDrawer } from "@/components/ecommerce/cart-drawer"
 import { ErrorBoundary } from "@/components/error-boundary"
@@ -18,12 +17,8 @@ export const metadata: Metadata = {
   description: "Your trusted source for quality products and everyday essentials",
   generator: "v0.app",
   icons: {
-    icon: [
-      {
-        url: "/apex-logo.png",
-      },
-    ],
-    apple: "/apex-logo.png",
+    icon: "/icon.svg",
+    apple: "/apple-icon.png",
   },
 }
 
@@ -48,7 +43,6 @@ export default function RootLayout({
           </ErrorBoundary>
           <CartDrawer />
         </CartProvider>
-        <Analytics />
       </body>
     </html>
   )

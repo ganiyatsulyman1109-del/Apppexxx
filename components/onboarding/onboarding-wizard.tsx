@@ -6,7 +6,7 @@ import { ArrowLeft, ArrowRight, Check, LoaderCircle, Save } from "lucide-react"
 import { BrandLogo } from "@/components/brand-logo"
 import { Button } from "@/components/ui/button"
 import { StepBasics } from "@/components/onboarding/step-basics"
-import { StepOperations } from "@/components/onboarding/step-operations"
+import { getBusinessTier, StepOperations } from "@/components/onboarding/step-operations"
 import { StepPersonality } from "@/components/onboarding/step-personality"
 import { StepContact } from "@/components/onboarding/step-contact"
 import { StepUpload } from "@/components/onboarding/step-upload"
@@ -210,6 +210,13 @@ export function OnboardingWizard({
     }
     setIsSaving(true)
     try {
+      console.info("Submitting onboarding:", {
+        category: data.category,
+        tier: getBusinessTier(data),
+        personality: data.personality,
+        templateId: data.templateId,
+        publishNow,
+      })
       const response = await fetch("/api/onboarding/complete", {
         method: "POST",
         credentials: "include",
@@ -218,6 +225,10 @@ export function OnboardingWizard({
       })
       const result = (await response.json()) as { error?: string; redirect?: string; success?: boolean }
       if (!response.ok || !result.success) {
+        console.error("Onboarding request failed:", {
+          status: response.status,
+          error: result.error,
+        })
         throw new Error(result.error || "Unable to save your onboarding details.")
       }
       if (data.paystackSecretKey.trim()) setSecretConfigured(true)

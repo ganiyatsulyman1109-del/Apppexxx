@@ -1,55 +1,60 @@
 "use client"
 
 import { useState } from "react"
-import Image from "next/image"
 import { cn } from "@/lib/utils"
 
 interface BrandLogoProps {
+  logoUrl?: string | null
+  businessName?: string
   size?: number
   className?: string
   imageClassName?: string
   priority?: boolean
-  src?: string
 }
 
-export function BrandLogo({ size = 40, className, imageClassName, priority = false, src }: BrandLogoProps) {
-  const [srcIndex, setSrcIndex] = useState(0)
-  const sources = [
-    src,
-    process.env.NEXT_PUBLIC_BRAND_LOGO,
-    "/apex-logo.png",
-    "/apex-logo.jpg",
-    "/apex-logo.jpeg",
-    "/placeholder-logo.png",
-    "/placeholder-logo.svg",
-  ].filter((value): value is string => Boolean(value))
-  const [hasImageError, setHasImageError] = useState(false)
+export function BrandLogo({
+  logoUrl,
+  businessName = "Apex Enterprise",
+  size = 40,
+  className,
+  imageClassName,
+}: BrandLogoProps) {
+  const [failedLogoUrl, setFailedLogoUrl] = useState<string | null>(null)
 
-  const currentSrc = sources[srcIndex]
+  const initials = businessName
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((word) => word[0]?.toUpperCase())
+    .join("") || "A"
+  const validLogoUrl = logoUrl && /^https?:\/\//i.test(logoUrl) ? logoUrl : null
 
   return (
-    <div className={cn("relative overflow-hidden", className)} style={{ width: size, height: size }}>
-      {currentSrc && !hasImageError ? (
-        <Image
-          src={currentSrc}
-          alt="Apex Enterprise logo"
-          fill
-          sizes={`${size}px`}
-          priority={priority}
-          onError={() => {
-            if (srcIndex < sources.length - 1) {
-              setSrcIndex((current) => current + 1)
-            } else {
-              setHasImageError(true)
-            }
-          }}
-          className={cn("object-contain", imageClassName)}
+    <span className={cn("relative inline-flex overflow-hidden", className)} style={{ width: size, height: size }}>
+      {validLogoUrl && failedLogoUrl !== validLogoUrl ? (
+        <img
+          src={validLogoUrl}
+          alt={`${businessName} logo`}
+          width={size}
+          height={size}
+          onError={() => setFailedLogoUrl(validLogoUrl)}
+          className={cn("h-full w-full rounded-lg object-cover", imageClassName)}
         />
       ) : (
-        <div className="flex h-full w-full items-center justify-center rounded-[10px] bg-[#2563EB] text-white text-base font-bold leading-none">
-          AE
-        </div>
+        <svg
+          role="img"
+          aria-label={`${businessName} mark`}
+          viewBox="0 0 100 100"
+          width={size}
+          height={size}
+          className="h-full w-full rounded-[10px]"
+        >
+          <rect width="100" height="100" rx="18" fill="#2563EB" />
+          <text x="50" y="54" dominantBaseline="middle" textAnchor="middle" fill="white" fontSize="40" fontWeight="700">
+            {initials}
+          </text>
+        </svg>
       )}
-    </div>
+    </span>
   )
 }
