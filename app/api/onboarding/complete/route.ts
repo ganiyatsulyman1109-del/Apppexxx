@@ -287,6 +287,30 @@ export async function POST(request: Request) {
 
     const supabase = createAdminClient()
 
+    const { data: businessAccess, error: businessAccessError } = await supabase
+      .from("businesses")
+      .select("id")
+      .eq("id", businessId)
+      .maybeSingle()
+
+    if (businessAccessError) {
+      console.error("Failed to verify onboarding business access:", {
+        code: businessAccessError.code,
+        message: businessAccessError.message,
+        details: businessAccessError.details,
+        hint: businessAccessError.hint,
+      })
+      return NextResponse.json({
+        error: `Failed to verify your business record (database error ${businessAccessError.code || "unknown"}). Check the application server logs for details.`,
+      }, { status: 500 })
+    }
+    if (!businessAccess) {
+      console.error("Onboarding business record not found:", { businessId, userId: auth.userId })
+      return NextResponse.json({
+        error: "Your business record could not be found. Sign out and back in, then retry.",
+      }, { status: 404 })
+    }
+
     const settingsToUpsert = [
       { key: "business_name", value: (payload.businessName as string).trim(), dataType: "string" },
       { key: "business_category", value: payload.category, dataType: "string" },

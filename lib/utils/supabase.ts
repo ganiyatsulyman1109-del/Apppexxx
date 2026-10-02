@@ -32,7 +32,8 @@ export const createAdminClient = () => {
   return createClient(url, serviceKey, {
     auth: {
       autoRefreshToken: false,
-      persistSession: false
+      persistSession: false,
+      detectSessionInUrl: false,
     }
   })
 }
