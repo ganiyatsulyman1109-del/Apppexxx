@@ -351,7 +351,6 @@ export async function POST(request: Request) {
       key: setting.key,
       value: String(setting.value),
       data_type: setting.dataType,
-      category: "onboarding",
       description: null,
       is_public: false,
       updated_at: new Date().toISOString(),
